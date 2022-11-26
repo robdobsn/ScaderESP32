@@ -1,0 +1,18 @@
+build
+builds
+sdkconfig
+compile_commands_win.json
+*.pyc
+logs/
+test/logs
+devScripts/exerciseCommandSerial/.vscode/settings.json
+scripts/config.ini
+.venv
+test/eepromPartitionTest/prewritedata.bin
+test/eepromPartitionTest/readbackdata.bin
+
+# Generated updater files
+current_version.json
+ot[ac]_current_version.json
+updates/
+node_modules/

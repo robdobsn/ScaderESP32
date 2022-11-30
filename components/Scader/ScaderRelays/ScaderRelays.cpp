@@ -183,7 +183,8 @@ void ScaderRelays::setup()
         if (configGetArrayElems("ScaderRelays/relays", relayInfos))
         {
             // Names array
-            _relayNames.resize(relayInfos.size());
+            uint32_t numNames = relayInfos.size() > _maxRelays ? _maxRelays : relayInfos.size();
+            _relayNames.resize(numNames);
 
             // Set names
             for (int i = 0; i < relayInfos.size(); i++)
@@ -282,35 +283,56 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
         return;
     }
 
+    // Get list of relays to control
     bool rslt = false;
-    
-    // Get relay number
-    int relayNum = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1).toInt();
-
-    // Get newState
-    String newStateStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
-    bool newState = (newStateStr == "1") || (newStateStr.equalsIgnoreCase("on"));
-
-    // Check validity
-    if ((relayNum >= 1) && (relayNum <= _relayStates.size()))
+    String relayNumsStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
+    int relayNums[DEFAULT_MAX_RELAYS];    
+    int numRelaysInList = 0;
+    if (relayNumsStr.length() > 0)
     {
-        uint32_t relayIdx = relayNum - 1;
-
-        // Set state
-        _relayStates[relayIdx] = newState;
-        _mutableDataChangeLastMs = millis();
-        _mutableDataDirty = true;
-        rslt = true;
-
-        // Set relays
-        setRelays();
-        
-        // Debug
-        LOG_I(MODULE_PREFIX, "apiControl relayIdx %d turned %s", relayIdx, newState ? "on" : "off");
+        // Get the relay numbers
+        numRelaysInList = parseIntList(relayNumsStr, relayNums, _relayNames.size());
     }
     else
     {
-        LOG_I(MODULE_PREFIX, "apiControl invalid relayNum %d", relayNum);
+        // No relay numbers so do all
+        for (int i = 0; i < _relayNames.size(); i++)
+            relayNums[i] = i;
+        numRelaysInList = _relayNames.size();
+    }
+
+    // Get newState
+    String relayCmdStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
+    bool newState = (relayCmdStr == "1") || (relayCmdStr.equalsIgnoreCase("on"));
+
+    // Execute command
+    uint32_t numRelaysSet = 0;
+    for (int i = 0; i < numRelaysInList; i++)
+    {
+        int relayIdx = relayNums[i] - 1;
+        if (relayIdx >= 0 && relayIdx < _relayNames.size())
+    {
+        // Set state
+        _relayStates[relayIdx] = newState;
+        _mutableDataChangeLastMs = millis();
+            numRelaysSet++;
+        }
+    }
+
+    // Check something changed
+    if (numRelaysSet > 0)
+    {
+        // Set relays
+        _mutableDataDirty = true;
+        setRelays();
+        rslt = true;
+        
+        // Debug
+        LOG_I(MODULE_PREFIX, "apiControl %d relays (of %d) turned %s", numRelaysSet, _relayNames.size(), newState ? "on" : "off");
+    }
+    else
+    {
+        LOG_I(MODULE_PREFIX, "apiControl no valid relays specified");
     }
 
     // Set result
@@ -475,4 +497,26 @@ void ScaderRelays::debugShowRelayStates()
         relaysStr += String(_relayStates[i]);
     }
     LOG_I(MODULE_PREFIX, "debugShowRelayStates %s", relaysStr.c_str());
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Parse list of integers
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int ScaderRelays::parseIntList(String &str, int *pIntList, int maxInts)
+{
+    int numInts = 0;
+    int idx = 0;
+    while (idx < str.length())
+    {
+        int nextCommaIdx = str.indexOf(',', idx);
+        if (nextCommaIdx < 0)
+            nextCommaIdx = str.length();
+        String intStr = str.substring(idx, nextCommaIdx);
+        int intVal = intStr.toInt();
+        if (numInts < maxInts)
+            pIntList[numInts++] = intVal;
+        idx = nextCommaIdx + 1;
+    }
+    return numInts;
 }

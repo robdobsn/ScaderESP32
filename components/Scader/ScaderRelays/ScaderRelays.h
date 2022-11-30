@@ -81,4 +81,5 @@ private:
     void saveMutableData();
     void debugShowRelayStates();
     void getStatusHash(std::vector<uint8_t>& stateHash);
+    int parseIntList(String &str, int *pIntList, int maxInts);
 };

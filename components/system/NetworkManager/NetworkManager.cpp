@@ -50,20 +50,24 @@ void NetworkManager::applySetup()
     // Extract info from config
     bool isWiFiEnabled = (configGetLong("WiFiEnabled", 0) != 0);
     bool isEthEnabled = (configGetLong("EthEnabled", 0) != 0);
+    bool isWiFiAPModeEnabled = (configGetLong("WiFiAPModeEn", 0) != 0);
+    bool isWiFiSTAModeEnabled = (configGetLong("WiFiSTAModeEn", 0) != 0);
+    bool isEthWiFiBrided = (configGetLong("EthWiFiBridge", 0) != 0);
     String hostname = configGetString("defaultHostname", _defaultHostname.c_str());
-    networkSystem.setup(isWiFiEnabled, isEthEnabled, hostname.c_str());
+    networkSystem.setup(isWiFiEnabled, isEthEnabled, hostname.c_str(), 
+                isWiFiSTAModeEnabled, isWiFiAPModeEnabled, isEthWiFiBrided);
 
     // Get SSID and password
     String ssid = configGetString("WiFiSSID", "");
     String password = configGetString("WiFiPass", "");
-    if ((ssid.length() > 0) && (password.length() > 0))
-    {
+    String apSSID = configGetString("WiFiAPSSID", "");
+    String apPassword = configGetString("WiFiAPPass", "");
         // Set WiFi credentials
-        networkSystem.configureWiFi(ssid, password, hostname);
-    }
+    networkSystem.configureWiFi(ssid, password, hostname, apSSID, apPassword);
 
     // Debug
-    LOG_D(MODULE_PREFIX, "setup isEnabled %s hostname %s", isWiFiEnabled ? "YES" : "NO", hostname.c_str());
+    LOG_D(MODULE_PREFIX, "setup isEnabled %s hostname %s ", isWiFiEnabled ? "YES" : "NO", hostname.c_str(), 
+            ssid.c_str(), password.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,20 +191,25 @@ void NetworkManager::apiWifiSet(const String &reqStr, String &respStr, const API
     // LOG_I(MODULE_PREFIX, "WiFi PW length %d PW %s", pw.length(), pw.c_str());
     // Get hostname - as above
     String hostname = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3, false);
+    // Get AP SSID
+    String apSSID = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 4, false);
+    // Get AP pw
+    String apPassword = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 5, false);
+
 
     // Debug
-    if (ssid.length() > 0)
+    if ((ssid.length() > 0) || (apSSID.length() > 0))
     {
-        LOG_I(MODULE_PREFIX, "apiWifiSet SSID %s (len %d) hostname %s (len %d)", 
-                        ssid.c_str(), ssid.length(), hostname.c_str(), hostname.length());
+        LOG_I(MODULE_PREFIX, "apiWifiSet SSID %s (len %d) hostname %s (len %d) AP SSID %s (len %d) ", 
+                        ssid.c_str(), ssid.length(), hostname.c_str(), hostname.length(), apSSID.c_str(), apSSID.length());
     }
     else
     {
-        LOG_I(MODULE_PREFIX, "apiWifiSet SSID is not set");
+        LOG_I(MODULE_PREFIX, "apiWifiSet neither STA or AP SSID is set");
     }
 
     // Configure WiFi
-    bool rslt = networkSystem.configureWiFi(ssid, pw, hostname);
+    bool rslt = networkSystem.configureWiFi(ssid, pw, hostname, apSSID, apPassword);
     Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
 }
 

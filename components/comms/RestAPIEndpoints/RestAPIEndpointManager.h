@@ -50,7 +50,8 @@ public:
 
     // Get matching endpoint def
     RestAPIEndpoint* getMatchingEndpoint(const char *requestStr,
-                    RestAPIEndpoint::EndpointMethod endpointMethod = RestAPIEndpoint::ENDPOINT_GET);
+                    RestAPIEndpoint::EndpointMethod endpointMethod = RestAPIEndpoint::ENDPOINT_GET,
+                    bool optionsMatchesAll = false);
 
     // Form a string from a char buffer with a fixed length
     static void formStringFromCharBuf(String &outStr, const char *pStr, int len);

@@ -299,7 +299,7 @@ bool WebServer::restAPIMatchEndpoint(const char* url, RdWebServerMethod method,
 
     // Rest API match
     RestAPIEndpoint::EndpointMethod restAPIMethod = convWebToRESTAPIMethod(method);
-    RestAPIEndpoint* pEndpointDef = getRestAPIEndpointManager()->getMatchingEndpoint(url, restAPIMethod);
+    RestAPIEndpoint* pEndpointDef = getRestAPIEndpointManager()->getMatchingEndpoint(url, restAPIMethod, false);
     if (pEndpointDef)
     {
         endpoint.restApiFn = pEndpointDef->_callbackMain;

@@ -17,7 +17,7 @@ static const char* MODULE_PREFIX = "SysTypeManager";
 
 // #define DEBUG_SYS_TYPE_CONFIG
 // #define DEBUG_SYS_TYPE_CONFIG_DETAIL
-// #define DEBUG_GET_POST_SETTINGS
+#define DEBUG_GET_POST_SETTINGS
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor

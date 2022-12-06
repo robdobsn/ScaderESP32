@@ -35,7 +35,8 @@ public:
         ENDPOINT_GET = 0,
         ENDPOINT_POST = 1,
         ENDPOINT_PUT = 2,
-        ENDPOINT_DELETE = 3
+        ENDPOINT_DELETE = 3,
+        ENDPOINT_OPTIONS = 4,
     };
 
     enum EndpointCache_t

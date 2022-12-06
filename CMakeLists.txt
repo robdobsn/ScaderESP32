@@ -39,7 +39,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   raftwebserver
   GIT_REPOSITORY https://github.com/robdobsn/RaftWebServer
-  GIT_TAG        v0.0.3
+  GIT_TAG        v0.0.4
 )
 
 # Populate first so we have a folder that we can add in EXTRA_COMPONENT_DIRS

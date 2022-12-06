@@ -10,7 +10,7 @@ idf_component_register(
                 SRCS 
                   "ScaderCommon/ScaderCommon.cpp"
                   "ScaderRelays/ScaderRelays.cpp"
-                  # "ScaderShades/ScaderShades.cpp"
+                  "ScaderShades/ScaderShades.cpp"
                   # "ScaderOpener/ScaderOpener.cpp"
                   # "ScaderLEDPixels/ScaderLEDPixels.cpp"
                   # "ScaderOpener/DoorOpener.cpp"
@@ -24,7 +24,7 @@ idf_component_register(
                 INCLUDE_DIRS
                   "ScaderCommon"
                   "ScaderRelays"
-                  # "ScaderShades"
+                  "ScaderShades"
                   # "ScaderOpener"
                   # "ScaderCat"
                   # "ScaderLEDPixels"

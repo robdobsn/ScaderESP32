@@ -13,6 +13,8 @@
 #include <ConfigPinMap.h>
 #include <RestAPIEndpointManager.h>
 #include <SysManager.h>
+#include <JSONParams.h>
+#include <ESPUtils.h>
 
 static const char *MODULE_PREFIX = "ScaderShades";
 
@@ -34,7 +36,6 @@ void ScaderShades::setup()
     // Get settings
     _isEnabled = configGetLong("enable", false) != 0;
     _maxElems = configGetLong("maxElems", DEFAULT_MAX_ELEMS);
-    _luxReportSecs = configGetLong("luxReportSecs", 10);
 
     // Check enabled
     if (_isEnabled)
@@ -51,9 +52,6 @@ void ScaderShades::setup()
         };
         ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
 
-        // Get the lux reporting period
-        _luxLastReportMs = millis();
-
         // Check valid
         if ((_hc595_RST < 0) || (_hc595_LATCH < 0) || (_hc595_SCK < 0) || (_hc595_SER < 0))
         {
@@ -69,7 +67,7 @@ void ScaderShades::setup()
         _isInitialised = true;
 
         // Reset the shades parameters
-        for (int i = 0; i < MAX_WINDOW_SHADES; i++)
+        for (int i = 0; i < DEFAULT_MAX_ELEMS; i++)
         {
             _msTimeouts[i] = 0;
             _tickCounts[i] = 0;
@@ -102,41 +100,24 @@ void ScaderShades::setup()
 
         // Element names
         std::vector<String> elemInfos;
-        if (configGetArrayElems("ScaderRelays/elems", elemInfos))
+        if (configGetArrayElems("ScaderShades/elems", elemInfos))
         {
             // Names array
-            uint32_t numNames = elemInfos.size() > _maxRelays ? _maxRelays : elemInfos.size();
+            uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();
             _elemNames.resize(numNames);
 
             // Set names
             for (int i = 0; i < numNames; i++)
             {
-                JSONParams relayInfo = elemInfos[i];
-                _elemNames[i] = relayInfo.getString("name", ("Relay " + String(i+1)).c_str());
-                LOG_I(MODULE_PREFIX, "Relay %d name %s", i+1, _elemNames[i].c_str());
+                JSONParams elemInfo = elemInfos[i];
+                _elemNames[i] = elemInfo.getString("name", ("Shade " + String(i+1)).c_str());
+                LOG_I(MODULE_PREFIX, "Shade %d name %s", i+1, _elemNames[i].c_str());
             }
         }
 
-        // Setup publisher with callback functions
-        SysManager* pSysManager = getSysManager();
-        if (pSysManager)
-        {
-            // Register publish message generator
-            pSysManager->sendMsgGenCB("Publish", "ScaderShades", 
-                [this](const char* messageName, CommsChannelMsg& msg) {
-                    String statusStr = getStatusJSON();
-                    msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
-                    return true;
-                },
-                [this](const char* messageName, std::vector<uint8_t>& stateHash) {
-                    return getStatusHash(stateHash);
-                }
-            );
-        }
-
         // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled luxReportSecs %d HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d LIGHTLVL_1 %d LIGHTLVL_2 %d LIGHTLVL_3 %d",
-                    _luxReportSecs, _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST, _lightLevel0, _lightLevel1, _lightLevel2);
+        LOG_I(MODULE_PREFIX, "setup enabled HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d LIGHTLVL_1 %d LIGHTLVL_2 %d LIGHTLVL_3 %d",
+                    _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST, _lightLevelPins[0], _lightLevelPins[1], _lightLevelPins[2]);
     }
     else
     {
@@ -155,7 +136,7 @@ void ScaderShades::service()
 
     // See if any shade actions need to end
     bool somethingSet = false;
-    for (int shadeIdx = 0; shadeIdx < MAX_WINDOW_SHADES; shadeIdx++)
+    for (int shadeIdx = 0; shadeIdx < DEFAULT_MAX_ELEMS; shadeIdx++)
     {
         if (_msTimeouts[shadeIdx] != 0)
         {
@@ -167,7 +148,7 @@ void ScaderShades::service()
                 // Check for sequence step complete
                 if (_sequenceRunning)
                 {
-                    if (shadeIdx == _sequence._shadeIdx)
+                    if (shadeIdx == _sequence._elemIdx)
                     {
                         LOG_I(MODULE_PREFIX, "sequenceStepComplete");
                         sequenceStepComplete();
@@ -198,9 +179,9 @@ bool ScaderShades::sendBitsToShiftRegister()
     sprintf(settingStr, "%08x", _curShadeCtrlBits);
     LOG_I(MODULE_PREFIX, "sendBitsToShiftRegister %s", settingStr);
     uint32_t dataVal = _curShadeCtrlBits;
-    uint32_t bitMask = 1 << (MAX_WINDOW_SHADES * BITS_PER_SHADE - 1);
+    uint32_t bitMask = 1 << (DEFAULT_MAX_ELEMS * BITS_PER_SHADE - 1);
     // Send the value to the shift register
-    for (int bitCount = 0; bitCount < MAX_WINDOW_SHADES * BITS_PER_SHADE; bitCount++)
+    for (int bitCount = 0; bitCount < DEFAULT_MAX_ELEMS * BITS_PER_SHADE; bitCount++)
     {
         // Set the data
         digitalWrite(_hc595_SER, (dataVal & bitMask) != 0);
@@ -226,7 +207,7 @@ bool ScaderShades::sendBitsToShiftRegister()
 bool ScaderShades::isBusy(int shadeIdx)
 {
     // Check validity
-    if (shadeIdx < 0 || shadeIdx >= MAX_WINDOW_SHADES)
+    if (shadeIdx < 0 || shadeIdx >= DEFAULT_MAX_ELEMS)
         return false;
     return _msTimeouts[shadeIdx] != 0;
 }
@@ -293,7 +274,7 @@ bool ScaderShades::setTimedOutput(int shadeIdx, int bitMask, bool bitOn, uint32_
 bool ScaderShades::doCommand(int shadeIdx, String &cmdStr, String &durationStr)
 {
     // Check validity
-    if (shadeIdx < 0 || shadeIdx >= MAX_WINDOW_SHADES)
+    if (shadeIdx < 0 || shadeIdx >= DEFAULT_MAX_ELEMS)
         return false;
 
     // Get duration and on/off
@@ -387,13 +368,9 @@ void ScaderShades::getLightLevels(int lightLevels[], int numLevels)
 {
     for (int i = 0; i < numLevels; i++)
     {
-        lightLevels[i] = _lightLevels[i];
+        if (lightLevels[i] >= 0)
+            lightLevels[i] = analogRead(_lightLevelPins[i]);
     }
-}
-{
-    l0 = _lightLevel0 >= 0 ? analogRead(_lightLevel0) : 0;
-    l1 = _lightLevel1 >= 0 ? analogRead(_lightLevel1) : 0;
-    l2 = _lightLevel2 >= 0 ? analogRead(_lightLevel2) : 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -473,7 +450,7 @@ bool ScaderShades::sequenceStart(int shadeIdx)
 {
     if (_sequence._isBusy)
         return false;
-    _sequence._shadeIdx = shadeIdx;
+    _sequence._elemIdx = shadeIdx;
     return true;
 }
 
@@ -511,7 +488,7 @@ void ScaderShades::sequenceStartStep(int stepIdx)
     int pinState = _sequence._steps[stepIdx]._pinState;
     uint32_t msDuration = _sequence._steps[stepIdx]._msDuration;
     bool clearExisting = _sequence._steps[stepIdx]._clearExisting;
-    setTimedOutput(_sequence._shadeIdx, mask, pinState, msDuration, clearExisting);
+    setTimedOutput(_sequence._elemIdx, mask, pinState, msDuration, clearExisting);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -527,7 +504,7 @@ void ScaderShades::sequenceStepComplete()
         _sequence._isBusy = false;
         _sequence._curStep = 0;
         _sequence._numSteps = 0;
-        clearShadeBits(_sequence._shadeIdx);
+        clearShadeBits(_sequence._elemIdx);
         sendBitsToShiftRegister();
     }
     else

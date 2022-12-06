@@ -155,7 +155,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #ifdef FEATURE_INCLUDE_SCADER
 // Scader components
 #include "ScaderRelays.h"
-// #include "ScaderShades.h"
+#include "ScaderShades.h"
 // #include "ScaderOpener.h"
 // #include "ScaderCat.h"
 // #include "ScaderLEDPixels.h"
@@ -380,7 +380,7 @@ void mainTask(void *pvParameters)
 #ifdef FEATURE_INCLUDE_SCADER
     // Scader components
     ScaderRelays _scaderRelays("ScaderRelays", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    // // ScaderShades _scaderShades("ScaderShades", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
+    ScaderShades _scaderShades("ScaderShades", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
     // ScaderOpener _scaderOpener("ScaderOpener", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
     // // ConfigBase cfg;
     // // ScaderOpener _scaderOpener("ScaderOpener", cfg, nullptr, &_scaderMutableConfig);

@@ -124,7 +124,7 @@ private:
     int _hc595_RST = -1;
 
     // Light level pins
-    static const NUM_LIGHT_LEVELS = 3;
+    static const uint32_t NUM_LIGHT_LEVELS = 3;
     int _lightLevelPins[NUM_LIGHT_LEVELS] = {};
 
     // Timing

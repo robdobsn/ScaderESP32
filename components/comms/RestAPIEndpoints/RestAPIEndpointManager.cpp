@@ -114,7 +114,7 @@ RestAPIEndpoint* RestAPIEndpointManager::getEndpoint(const char *pEndpointStr)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 RestAPIEndpoint* RestAPIEndpointManager::getMatchingEndpoint(const char *requestStr,
-                    RestAPIEndpoint::EndpointMethod endpointMethod)
+                    RestAPIEndpoint::EndpointMethod endpointMethod, bool optionsMatchesAll)
 {
     // Get req endpoint name
     String requestEndpoint = getNthArgStr(requestStr, 0);
@@ -130,14 +130,15 @@ RestAPIEndpoint* RestAPIEndpointManager::getMatchingEndpoint(const char *request
     {
         if (endpoint._endpointType != RestAPIEndpoint::ENDPOINT_CALLBACK)
             continue;
-        if (endpoint._endpointMethod != endpointMethod)
+        if ((endpoint._endpointMethod != endpointMethod) && 
+                !((endpointMethod == RestAPIEndpoint::EndpointMethod::ENDPOINT_OPTIONS) && optionsMatchesAll))
             continue;
         if (requestEndpoint.equalsIgnoreCase(endpoint._endpointStr))
             return &endpoint;
     }
 #ifdef WARN_ON_NON_MATCHING_ENDPOINTS
-    LOG_W(MODULE_PREFIX, "getMatchingEndpoint %s method %d not found", 
-                requestEndpoint.c_str(), endpointMethod);
+    LOG_W(MODULE_PREFIX, "getMatchingEndpoint %s method %s not found", 
+                requestEndpoint.c_str(), getEndpointMethodStr(endpointMethod));
 #endif
     return NULL;    
 }
@@ -307,13 +308,14 @@ const char* RestAPIEndpointManager::getEndpointTypeStr(RestAPIEndpoint::Endpoint
 
 const char* RestAPIEndpointManager::getEndpointMethodStr(RestAPIEndpoint::EndpointMethod endpointMethod)
 {
-    if (endpointMethod == RestAPIEndpoint::ENDPOINT_POST)
-        return "POST";
-    if (endpointMethod == RestAPIEndpoint::ENDPOINT_PUT)
-        return "PUT";
-    if (endpointMethod == RestAPIEndpoint::ENDPOINT_DELETE)
-        return "DELETE";
-    return "GET";
+    switch(endpointMethod)
+    {
+        case RestAPIEndpoint::ENDPOINT_POST: return "POST";
+        case RestAPIEndpoint::ENDPOINT_PUT: return "PUT";
+        case RestAPIEndpoint::ENDPOINT_DELETE: return "DELETE";
+        case RestAPIEndpoint::ENDPOINT_OPTIONS: return "OPTIONS";
+        default: return "GET";
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -185,8 +185,7 @@
 			"HC595_RST": 17,
 			"LED_OP": 13,
 			"LED_ACT": 15,
-			"LIGHTLVLPINS": [36, 39, 34],
-			"luxReportSecs": 10
+			"LIGHTLVLPINS": [36, 39, 34]
 		},
 		"ScaderOpener": {
 			"DoorOpenMs": 45000,

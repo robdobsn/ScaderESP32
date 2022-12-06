@@ -83,7 +83,7 @@ function ScaderShades(props:ScaderScreenProps) {
     const splitId = event.currentTarget.id.split("-");
     const elemIndex = Number(splitId[1]);
     const cmdName = splitId[2];
-    scaderManager.sendCommand(`/${restCommandName}/${elemIndex}/${cmdName}/pulse`);
+    scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/${cmdName}/pulse`);
   };
 
   const editModeScreen = () => {

@@ -182,21 +182,18 @@ export class ScaderManager {
         console.log(`ScaderManager getting app settings`);
         let getSettingsResponse = null;
         try {
-            getSettingsResponse = await fetch(serverAddr + this._urlPrefix + "/getsettings/nv",
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
+            getSettingsResponse = await fetch(serverAddr + this._urlPrefix + "/getsettings/nv");
             if (getSettingsResponse && getSettingsResponse.ok) {
                 const settings = await getSettingsResponse.json();
                 if ("nv" in settings) {
 
+                    // Start with a base config
+                    const configBase = new ScaderConfig();
+                    Object.assign(configBase, settings.nv);
+
                     // Extract non-volatile settings
-                    this._scaderConfig = settings.nv;
-                    this._mutableConfig = JSON.parse(JSON.stringify(settings.nv));
+                    this._scaderConfig = configBase;
+                    this._mutableConfig = JSON.parse(JSON.stringify(configBase));
 
                     // Inform screens of config change
                     this._configChangeCallbacks.forEach(callback => {
@@ -219,7 +216,8 @@ export class ScaderManager {
     // Post applicaton settings
     async postAppSettings(): Promise<boolean> {
         try {
-            const postSettingsResponse = await fetch(this._serverAddressPrefix + this._urlPrefix + "/postsettings", 
+            const postSettingsURI = this._serverAddressPrefix + this._urlPrefix + "/postsettings";
+            const postSettingsResponse = await fetch(postSettingsURI, 
                 {
                     method: "POST",
                     headers: {

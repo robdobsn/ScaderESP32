@@ -39,7 +39,7 @@ def generateWebUI(sourceFolder, destFolder, gzipContent):
     # Execute npm run build in the source folder
     # Copy the resulting files to the destination folder
     # If gzipContent is true, gzip the files
-    subprocess.run(["npm", "run", "start"], cwd=sourceFolder)
+    subprocess.run(["npm", "run", "build"], cwd=sourceFolder)
     
     buildFolder = os.path.join(sourceFolder, "build")
     for fname in os.listdir(buildFolder):

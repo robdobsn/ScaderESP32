@@ -17,6 +17,16 @@ ot[ac]_current_version.json
 updates/
 node_modules/
 
+# Remove generated webui files
+FSImage/*.gz
+FSImage/manifest.json
+FSImage/asset-manifest.json
+FSImage/favicon.ico
+FSImage/logo192.png
+FSImage/logo512.png
+FSImage/robots.txt
+FSImage/*.LICENSE.txt
+
 WebUIOld.old
 WebUIReact.old
 

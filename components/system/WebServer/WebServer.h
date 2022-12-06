@@ -87,6 +87,7 @@ private:
             case WEB_METHOD_POST: return RestAPIEndpoint::ENDPOINT_POST;
             case WEB_METHOD_PUT: return RestAPIEndpoint::ENDPOINT_PUT;
             case WEB_METHOD_DELETE: return RestAPIEndpoint::ENDPOINT_DELETE;
+            case WEB_METHOD_OPTIONS: return RestAPIEndpoint::ENDPOINT_OPTIONS;
             default: return RestAPIEndpoint::ENDPOINT_GET;
         }
     }

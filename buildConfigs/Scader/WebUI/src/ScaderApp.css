@@ -1,0 +1,168 @@
+.ScaderApp {
+  text-align: center;
+}
+
+.ScaderApp-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ScaderApp-logo {
+    animation: ScaderApp-logo-spin infinite 20s linear;
+  }
+}
+
+.ScaderApp-body {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.ScaderApp-link {
+  color: #61dafb;
+}
+
+.ScaderElem-button {
+  width: 12rem;
+  height: 12rem;
+  background-color: #909090;
+  border: 1px solid #505050;
+  border-radius: 20px;
+  color: white;
+  padding: 5px 5px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 1.4rem;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.ScaderElem-button div {
+  width: 100%;
+  height: 40%;
+  position: relative;
+  top: 1rem;
+}
+
+.ScaderElem-button svg {
+  width: 60%;
+  height: 60%;
+  position: relative;
+  top: 0rem;
+}
+
+.ScaderElem-input {
+  font-size: calc(10px + 2vmin);
+  margin-left: 10px;
+}
+
+.ScaderElem-checkbox {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.ScaderHeader {
+  width: 100%;
+}
+
+.ScaderHeader-bar {
+  padding: 1% 2%;
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.ScaderHeader-button-bar {
+  /* display: flex; */
+  flex-direction: row;
+  align-items: start;
+  justify-content: space-between;
+  flex: 10;
+  margin-top: 15px;
+}
+
+.ScaderHeader-title {
+  flex: auto;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #e0e0e0;
+  text-align: center;
+}
+
+.ScaderHeader-title-edit {
+  flex: auto;
+  font-size: 4rem;
+  font-weight: bold;
+  color: black;
+  text-align: left;
+}
+
+.ScaderHeader-button {
+  flex: auto;
+  height: 3rem;
+  width: auto;
+  padding: 10px 20px;
+  font-size: 1.4rem;
+  margin: 10px;
+}
+
+.ScaderHeader-hamburger {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  background-color: transparent;
+  border: 1px solid #505050;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  margin-top: 25px;
+}
+
+.ScaderHeader-hamburger svg {
+  padding: 0px 2px;
+  width: 150%;
+  height: 150%;
+}
+
+.ScaderElem-gridhoriz {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex: 10;
+  margin-top: 15px;
+}
+
+.ScaderElem-shadegroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px;
+}
+
+.ScaderElem-shadegroup button {
+  background-color: transparent;
+  border: none;
+  width: auto;
+  height: auto;
+  max-width: 8rem;
+}
+
+@keyframes ScaderApp-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

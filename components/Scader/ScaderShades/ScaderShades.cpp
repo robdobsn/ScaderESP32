@@ -23,11 +23,6 @@ static const char *MODULE_PREFIX = "ScaderShades";
 ScaderShades::ScaderShades(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
     : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
 {
-    // Init
-    _isEnabled = false;
-    _isInitialised = false;
-    _luxReportSecs = 10;
-    _luxLastReportMs = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,6 +33,7 @@ void ScaderShades::setup()
 {
     // Get settings
     _isEnabled = configGetLong("enable", false) != 0;
+    _maxElems = configGetLong("maxElems", DEFAULT_MAX_ELEMS);
     _luxReportSecs = configGetLong("luxReportSecs", 10);
 
     // Check enabled
@@ -49,9 +45,9 @@ void ScaderShades::setup()
             ConfigPinMap::PinDef("HC595_SCK", ConfigPinMap::GPIO_OUTPUT, &_hc595_SCK),
             ConfigPinMap::PinDef("HC595_LATCH", ConfigPinMap::GPIO_OUTPUT, &_hc595_LATCH),
             ConfigPinMap::PinDef("HC595_RST", ConfigPinMap::GPIO_OUTPUT, &_hc595_RST),
-            ConfigPinMap::PinDef("LIGHTLVL_1", ConfigPinMap::GPIO_INPUT, &_lightLevel0),
-            ConfigPinMap::PinDef("LIGHTLVL_2", ConfigPinMap::GPIO_INPUT, &_lightLevel1),
-            ConfigPinMap::PinDef("LIGHTLVL_3", ConfigPinMap::GPIO_INPUT, &_lightLevel2)
+            ConfigPinMap::PinDef("LIGHTLVLPINS[0]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[0]),
+            ConfigPinMap::PinDef("LIGHTLVLPINS[1]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[1]),
+            ConfigPinMap::PinDef("LIGHTLVLPINS[2]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[2])
         };
         ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
 
@@ -98,6 +94,44 @@ void ScaderShades::setup()
                 // [this](const char* messageName, std::vector<uint8_t>& stateHash) {
                 // }
                 );
+        }
+
+        // Name set in UI
+        _scaderFriendlyName = configGetString("ScaderCommon/name", "Scader");
+        LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderFriendlyName.c_str());
+
+        // Element names
+        std::vector<String> elemInfos;
+        if (configGetArrayElems("ScaderRelays/elems", elemInfos))
+        {
+            // Names array
+            uint32_t numNames = elemInfos.size() > _maxRelays ? _maxRelays : elemInfos.size();
+            _elemNames.resize(numNames);
+
+            // Set names
+            for (int i = 0; i < numNames; i++)
+            {
+                JSONParams relayInfo = elemInfos[i];
+                _elemNames[i] = relayInfo.getString("name", ("Relay " + String(i+1)).c_str());
+                LOG_I(MODULE_PREFIX, "Relay %d name %s", i+1, _elemNames[i].c_str());
+            }
+        }
+
+        // Setup publisher with callback functions
+        SysManager* pSysManager = getSysManager();
+        if (pSysManager)
+        {
+            // Register publish message generator
+            pSysManager->sendMsgGenCB("Publish", "ScaderShades", 
+                [this](const char* messageName, CommsChannelMsg& msg) {
+                    String statusStr = getStatusJSON();
+                    msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
+                    return true;
+                },
+                [this](const char* messageName, std::vector<uint8_t>& stateHash) {
+                    return getStatusHash(stateHash);
+                }
+            );
         }
 
         // Debug
@@ -349,7 +383,13 @@ bool ScaderShades::doCommand(int shadeIdx, String &cmdStr, String &durationStr)
 // getLightLevels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderShades::getLightLevels(int &l0, int &l1, int &l2)
+void ScaderShades::getLightLevels(int lightLevels[], int numLevels)
+{
+    for (int i = 0; i < numLevels; i++)
+    {
+        lightLevels[i] = _lightLevels[i];
+    }
+}
 {
     l0 = _lightLevel0 >= 0 ? analogRead(_lightLevel0) : 0;
     l1 = _lightLevel1 >= 0 ? analogRead(_lightLevel1) : 0;
@@ -362,11 +402,67 @@ void ScaderShades::getLightLevels(int &l0, int &l1, int &l2)
 
 String ScaderShades::getStatusJSON()
 {
-    int l0, l1, l2;
-    getLightLevels(l0, l1, l2);
-    char llStr[50];
-    snprintf(llStr, sizeof(llStr), R"({"lux0":%d,"lux1":%d,"lux2":%d})", l0, l1, l2);
+    // Get length of JSON
+    uint32_t jsonLen = 200 + _scaderFriendlyName.length();
+    for (int i = 0; i < _elemNames.size(); i++)
+        jsonLen += 30 + _elemNames[i].length();
+    static const uint32_t MAX_JSON_STR_LEN = 4500;
+    if (jsonLen > MAX_JSON_STR_LEN)
+    {
+        LOG_E(MODULE_PREFIX, "getStatusJSON jsonLen %d > MAX_JSON_STR_LEN %d", jsonLen, MAX_JSON_STR_LEN);
+        return "{}";
+    }
+
+    // Get network information
+    JSONParams networkJson = sysModGetStatusJSON("NetMan");
+
+    // Extract hostname
+    String hostname = networkJson.getString("Hostname", "");
+
+    // Check if ethernet connected
+    bool ethConnected = networkJson.getLong("ethConn", false) != 0;
+
+    // Extract MAC address
+    String macAddress;
+    String ipAddress;
+    if (ethConnected)
+    {
+        macAddress = getSystemMACAddressStr(ESP_MAC_ETH, ":").c_str(),
+        ipAddress = networkJson.getString("ethIP", "");
+    }
+    else
+    {
+        macAddress = getSystemMACAddressStr(ESP_MAC_WIFI_STA, ":").c_str(),
+        ipAddress = networkJson.getString("IP", "");
+    }
+
+    int lightLevels[NUM_LIGHT_LEVELS];
+    getLightLevels(lightLevels, NUM_LIGHT_LEVELS);
+    char llStr[100];
+    snprintf(llStr, sizeof(llStr), R"({"lux0":%d,"lux1":%d,"lux2":%d})", lightLevels[0], lightLevels[1], lightLevels[2]);
     return llStr;
+
+    // Create JSON string
+    char* pJsonStr = new char[jsonLen];
+    if (!pJsonStr)
+        return "{}";
+
+    // Format JSON
+    snprintf(pJsonStr, jsonLen, R"({"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","elems":[)", 
+                _scaderFriendlyName.c_str(), 
+                getSysManager()->getSystemVersion().c_str(),
+                hostname.c_str(), ipAddress.c_str(), macAddress.c_str());
+    for (int i = 0; i < _elemNames.size(); i++)
+    {
+        if (i > 0)
+            strncat(pJsonStr, ",", jsonLen);
+        snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"({"name":"%s","state":%s})", 
+                            _elemNames[i].c_str(), isBusy(i) ? "1" : "0");
+    }
+    strncat(pJsonStr, "]}", jsonLen);
+    String jsonStr = pJsonStr;
+    delete[] pJsonStr;
+    return jsonStr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -449,11 +545,11 @@ void ScaderShades::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 {
     // Control shade
     endpointManager.addEndpoint("shade", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
-                            std::bind(&ScaderShades::apiShadesControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                            std::bind(&ScaderShades::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                             "Control Shades - /1..N/up|stop|down/pulse|on|off");
     // Alternate control shade name
     endpointManager.addEndpoint("blind", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
-                            std::bind(&ScaderShades::apiShadesControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                            std::bind(&ScaderShades::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                             "Control Shades - /1..N/up|stop|down/pulse|on|off");
 }
 
@@ -461,14 +557,14 @@ void ScaderShades::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Control shades via API
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderShades::apiShadesControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+void ScaderShades::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     String shadeNumStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
     int shadeNum = shadeNumStr.toInt();
     String shadeCmdStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
     String shadeDurationStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3);
 
-    if ((shadeNum < 1) || (shadeNum > getMaxNumShades()))
+    if ((shadeNum < 1) || (shadeNum > _maxElems))
     {
         Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
         return;

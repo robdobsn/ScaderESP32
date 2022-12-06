@@ -16,3 +16,7 @@ current_version.json
 ot[ac]_current_version.json
 updates/
 node_modules/
+
+WebUIOld.old
+WebUIReact.old
+

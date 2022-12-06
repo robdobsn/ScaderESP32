@@ -19,9 +19,9 @@ class APISourceInfo;
 class ScaderRelays : public SysModBase
 {
   public:
-    static const int DEFAULT_MAX_RELAYS = 24;
-    static const int RELAYS_PER_CHIP = 8;
-    static const int SPI_MAX_CHIPS = DEFAULT_MAX_RELAYS/RELAYS_PER_CHIP;
+    static const int DEFAULT_MAX_ELEMS = 24;
+    static const int ELEMS_PER_CHIP = 8;
+    static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
     ScaderRelays(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
 
 protected:
@@ -40,32 +40,32 @@ protected:
     
 private:
     // Enabled and initalised flags
-    bool _isEnabled;
-    bool _isInitialised;
+    bool _isEnabled = false;
+    bool _isInitialised = false;
 
     // Settings
-    uint32_t _maxRelays;
+    uint32_t _maxElems = DEFAULT_MAX_ELEMS;
 
     // SPI control
-    int _spiMosi;
-    int _spiMiso;
-    int _spiClk;
-    int _spiChipSelects[SPI_MAX_CHIPS];
+    int _spiMosi = -1;
+    int _spiMiso = -1;
+    int _spiClk = -1;
+    int _spiChipSelects[SPI_MAX_CHIPS] = {};
 
     // SPI device handles
-    spi_device_handle_t _spiDeviceHandles[SPI_MAX_CHIPS];
+    spi_device_handle_t _spiDeviceHandles[SPI_MAX_CHIPS] = {};
 
     // On/Off Key
-    int _onOffKey;
+    int _onOffKey = -1;
 
-    // Name of relay panel
-    String _relayPanelName;
+    // Name set in Scader UI
+    String _scaderFriendlyName;
 
-    // Names of relays
-    std::vector<String> _relayNames;
+    // Names of control elements
+    std::vector<String> _elemNames;
 
-    // Current state of relays
-    std::vector<bool> _relayStates;
+    // Current state of elements
+    std::vector<bool> _elemStates;
 
     // Mutable data saving
     static const uint32_t MUTABLE_DATA_SAVE_MIN_MS = 5000;
@@ -73,13 +73,13 @@ private:
     bool _mutableDataDirty = false;
 
     // Helpers
-    bool setRelays();
+    bool applyCurrentState();
 
     // Helper functions
     void deinit();
     void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void saveMutableData();
-    void debugShowRelayStates();
+    void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
     int parseIntList(String &str, int *pIntList, int maxInts);
 };

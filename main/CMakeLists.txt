@@ -32,7 +32,7 @@ unset(_systypes_json)
 
 # Process WebUI files
 add_custom_target(generateWebUI
-    COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/UITemplater.py ${WEB_UI_GEN_FLAGS} ${UI_SOURCE_PATH} ${FS_IMAGE_PATH}
+    COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/GenWebUI.py ${WEB_UI_GEN_FLAGS} ${UI_SOURCE_PATH} ${FS_IMAGE_PATH}
     COMMENT "Generating Web UI"
     )
 add_dependencies(${COMPONENT_LIB} generateWebUI)

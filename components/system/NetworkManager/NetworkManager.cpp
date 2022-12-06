@@ -51,7 +51,7 @@ void NetworkManager::applySetup()
     bool isWiFiEnabled = (configGetLong("WiFiEnabled", 0) != 0);
     bool isEthEnabled = (configGetLong("EthEnabled", 0) != 0);
     bool isWiFiAPModeEnabled = (configGetLong("WiFiAPModeEn", 0) != 0);
-    bool isWiFiSTAModeEnabled = (configGetLong("WiFiSTAModeEn", 0) != 0);
+    bool isWiFiSTAModeEnabled = (configGetLong("WiFiSTAModeEn", 1) != 0);
     bool isEthWiFiBrided = (configGetLong("EthWiFiBridge", 0) != 0);
     String hostname = configGetString("defaultHostname", _defaultHostname.c_str());
     networkSystem.setup(isWiFiEnabled, isEthEnabled, hostname.c_str(), 

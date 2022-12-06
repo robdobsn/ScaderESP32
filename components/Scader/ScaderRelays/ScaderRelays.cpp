@@ -27,16 +27,6 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 ScaderRelays::ScaderRelays(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
     : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
 {
-    // Init
-    _isEnabled = false;
-    _isInitialised = false;
-    _maxRelays = DEFAULT_MAX_RELAYS;
-    
-    // Clear SPI device handles
-    for (int i = 0; i < SPI_MAX_CHIPS; i++)
-    {
-        _spiDeviceHandles[i] = NULL;
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +37,7 @@ void ScaderRelays::setup()
 {
     // Get settings
     _isEnabled = configGetLong("enable", false) != 0;
-    _maxRelays = configGetLong("maxRelays", DEFAULT_MAX_RELAYS);
+    _maxElems = configGetLong("maxElems", DEFAULT_MAX_ELEMS);
 
     // Check enabled
     if (_isEnabled)
@@ -157,8 +147,8 @@ void ScaderRelays::setup()
         }
 
         // Clear states
-        _relayStates.resize(_maxRelays);
-        std::fill(_relayStates.begin(), _relayStates.end(), false);
+        _elemStates.resize(_maxElems);
+        std::fill(_elemStates.begin(), _elemStates.end(), false);
 
         // Set states from mutable config
         std::vector<String> relayStateStrs;
@@ -169,42 +159,38 @@ void ScaderRelays::setup()
             {
                 // Check if valid
                 bool isOn = relayStateStrs[i] == "1";
-                if (i < _relayStates.size())
-                    _relayStates[i] = isOn;
+                if (i < _elemStates.size())
+                    _elemStates[i] = isOn;
             }
         }
 
-        // Relay panel name
-        _relayPanelName = configGetString("ScaderCommon/name", "Scader");
-        LOG_I(MODULE_PREFIX, "setup relayPanelName %s", _relayPanelName.c_str());
+        // Name set in UI
+        _scaderFriendlyName = configGetString("ScaderCommon/name", "Scader");
+        LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderFriendlyName.c_str());
 
-        // Relay names
-        std::vector<String> relayInfos;
-        if (configGetArrayElems("ScaderRelays/relays", relayInfos))
+        // Element names
+        std::vector<String> elemInfos;
+        if (configGetArrayElems("ScaderRelays/elems", elemInfos))
         {
             // Names array
-            uint32_t numNames = relayInfos.size() > _maxRelays ? _maxRelays : relayInfos.size();
-            _relayNames.resize(numNames);
+            uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();
+            _elemNames.resize(numNames);
 
             // Set names
-            for (int i = 0; i < relayInfos.size(); i++)
+            for (int i = 0; i < numNames; i++)
             {
-                JSONParams relayInfo = relayInfos[i];
-                int idx = relayInfo.getLong("idx", -1);
-                if ((idx < 0) || (idx >= _relayNames.size()))
-                    continue;
-                _relayNames[idx] = relayInfo.getString("name", ("Relay " + String(idx)).c_str());
-
-                LOG_I(MODULE_PREFIX, "Relay %d name %s", idx, _relayNames[idx].c_str());
+                JSONParams relayInfo = elemInfos[i];
+                _elemNames[i] = relayInfo.getString("name", ("Relay " + String(i+1)).c_str());
+                LOG_I(MODULE_PREFIX, "Relay %d name %s", i+1, _elemNames[i].c_str());
             }
         }
 
         // Debug
         LOG_I(MODULE_PREFIX, "setup enabled maxRelays %d MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d onOffKey %d",
-                    _maxRelays, _spiMosi, _spiMiso, _spiClk, _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], _onOffKey);
+                    _maxElems, _spiMosi, _spiMiso, _spiClk, _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], _onOffKey);
 
         // Debug show states
-        debugShowRelayStates();
+        debugShowCurrentState();
 
         // Setup publisher with callback functions
         SysManager* pSysManager = getSysManager();
@@ -225,7 +211,7 @@ void ScaderRelays::setup()
 
         // HW Now initialised
         _isInitialised = true;
-        setRelays();
+        applyCurrentState();
     }
     else
     {
@@ -286,19 +272,19 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
     // Get list of relays to control
     bool rslt = false;
     String relayNumsStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
-    int relayNums[DEFAULT_MAX_RELAYS];    
+    int relayNums[DEFAULT_MAX_ELEMS];    
     int numRelaysInList = 0;
     if (relayNumsStr.length() > 0)
     {
         // Get the relay numbers
-        numRelaysInList = parseIntList(relayNumsStr, relayNums, _relayNames.size());
+        numRelaysInList = parseIntList(relayNumsStr, relayNums, _elemNames.size());
     }
     else
     {
         // No relay numbers so do all
-        for (int i = 0; i < _relayNames.size(); i++)
+        for (int i = 0; i < _elemNames.size(); i++)
             relayNums[i] = i;
-        numRelaysInList = _relayNames.size();
+        numRelaysInList = _elemNames.size();
     }
 
     // Get newState
@@ -310,10 +296,10 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
     for (int i = 0; i < numRelaysInList; i++)
     {
         int relayIdx = relayNums[i] - 1;
-        if (relayIdx >= 0 && relayIdx < _relayNames.size())
+        if (relayIdx >= 0 && relayIdx < _elemNames.size())
     {
         // Set state
-        _relayStates[relayIdx] = newState;
+        _elemStates[relayIdx] = newState;
         _mutableDataChangeLastMs = millis();
             numRelaysSet++;
         }
@@ -324,11 +310,11 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
     {
         // Set relays
         _mutableDataDirty = true;
-        setRelays();
+        applyCurrentState();
         rslt = true;
         
         // Debug
-        LOG_I(MODULE_PREFIX, "apiControl %d relays (of %d) turned %s", numRelaysSet, _relayNames.size(), newState ? "on" : "off");
+        LOG_I(MODULE_PREFIX, "apiControl %d relays (of %d) turned %s", numRelaysSet, _elemNames.size(), newState ? "on" : "off");
     }
     else
     {
@@ -346,9 +332,9 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
 String ScaderRelays::getStatusJSON()
 {
     // Get length of JSON
-    uint32_t jsonLen = 200 + _relayPanelName.length();
-    for (int i = 0; i < _relayNames.size(); i++)
-        jsonLen += 30 + _relayNames[i].length();
+    uint32_t jsonLen = 200 + _scaderFriendlyName.length();
+    for (int i = 0; i < _elemNames.size(); i++)
+        jsonLen += 30 + _elemNames[i].length();
     static const uint32_t MAX_JSON_STR_LEN = 4500;
     if (jsonLen > MAX_JSON_STR_LEN)
     {
@@ -385,16 +371,16 @@ String ScaderRelays::getStatusJSON()
         return "{}";
 
     // Format JSON
-    snprintf(pJsonStr, jsonLen, R"({"numRelays":%d,"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","relays":[)", 
-                _relayNames.size(), _relayPanelName.c_str(), 
+    snprintf(pJsonStr, jsonLen, R"({"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","elems":[)", 
+                _scaderFriendlyName.c_str(), 
                 getSysManager()->getSystemVersion().c_str(),
                 hostname.c_str(), ipAddress.c_str(), macAddress.c_str());
-    for (int i = 0; i < _relayNames.size(); i++)
+    for (int i = 0; i < _elemNames.size(); i++)
     {
         if (i > 0)
             strncat(pJsonStr, ",", jsonLen);
-        snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"({"num":%d,"name":"%s","state":%s})", 
-                            i + 1, _relayNames[i].c_str(), _relayStates[i] ? "1" : "0");
+        snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"({"name":"%s","state":%s})", 
+                            _elemNames[i].c_str(), _elemStates[i] ? "1" : "0");
     }
     strncat(pJsonStr, "]}", jsonLen);
     String jsonStr = pJsonStr;
@@ -409,7 +395,7 @@ String ScaderRelays::getStatusJSON()
 void ScaderRelays::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     stateHash.clear();
-    for (bool state : _relayStates)
+    for (bool state : _elemStates)
         stateHash.push_back(state ? 1 : 0);
 }
 
@@ -421,11 +407,11 @@ void ScaderRelays::saveMutableData()
 {
     // Save relay states
     String jsonConfig = "\"relayStates\":[";
-    for (uint32_t i = 0; i < _maxRelays; i++)
+    for (uint32_t i = 0; i < _maxElems; i++)
     {
         if (i > 0)
             jsonConfig += ",";
-        jsonConfig += String(i < _relayStates.size() ? _relayStates[i] : false);
+        jsonConfig += String(i < _elemStates.size() ? _elemStates[i] : false);
     }
     jsonConfig += "]";
 
@@ -436,31 +422,31 @@ void ScaderRelays::saveMutableData()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// setRelays
+// applyCurrentState
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ScaderRelays::setRelays()
+bool ScaderRelays::applyCurrentState()
 {
     if (!_isInitialised)
         return false;
 
     // Perform in three steps as each block of 8 relays is controlled by a different chip
-    for (int chipIdx = 0; chipIdx < _maxRelays/RELAYS_PER_CHIP; chipIdx++)
+    for (int chipIdx = 0; chipIdx < _maxElems/ELEMS_PER_CHIP; chipIdx++)
     {
         // Setup bits to transfer - 2 bits per relay, 0b10 for relay on, 0b11 for relay off
         uint16_t txVal = 0;
-        for (int bitIdx = 0; bitIdx < RELAYS_PER_CHIP; bitIdx++)
+        for (int bitIdx = 0; bitIdx < ELEMS_PER_CHIP; bitIdx++)
         {
-            uint32_t relayIdx = chipIdx*RELAYS_PER_CHIP + RELAYS_PER_CHIP - 1 - bitIdx;
+            uint32_t relayIdx = chipIdx*ELEMS_PER_CHIP + ELEMS_PER_CHIP - 1 - bitIdx;
             txVal = txVal << 2;
-            bool isOn = relayIdx < _relayStates.size() ? _relayStates[relayIdx] : false;
+            bool isOn = relayIdx < _elemStates.size() ? _elemStates[relayIdx] : false;
             txVal |= (isOn ? 0b10 : 0b11);
-            // LOG_I(MODULE_PREFIX, "setRelays chipIdx %d bitIdx %d txVal %04x relayState[%d] %d", 
+            // LOG_I(MODULE_PREFIX, "applyCurrentState chipIdx %d bitIdx %d txVal %04x relayState[%d] %d", 
             //             chipIdx, bitIdx, txVal, relayIdx, isOn);
         }
         // Need to swap the two bytes
         uint16_t txValSwapped = (txVal >> 8) | (txVal << 8);
-        // LOG_I(MODULE_PREFIX, "setRelays chipIdx %d txVal %04x", chipIdx, txValSwapped);
+        // LOG_I(MODULE_PREFIX, "applyCurrentState chipIdx %d txVal %04x", chipIdx, txValSwapped);
 
         // SPI transaction
         uint16_t rxVal = 0;
@@ -487,16 +473,16 @@ bool ScaderRelays::setRelays()
 // debug show relay states
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderRelays::debugShowRelayStates()
+void ScaderRelays::debugShowCurrentState()
 {
     String relaysStr;
-    for (uint32_t i = 0; i < _relayStates.size(); i++)
+    for (uint32_t i = 0; i < _elemStates.size(); i++)
     {
         if (i > 0)
             relaysStr += ",";
-        relaysStr += String(_relayStates[i]);
+        relaysStr += String(_elemStates[i]);
     }
-    LOG_I(MODULE_PREFIX, "debugShowRelayStates %s", relaysStr.c_str());
+    LOG_I(MODULE_PREFIX, "debugShowCurrentState %s", relaysStr.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

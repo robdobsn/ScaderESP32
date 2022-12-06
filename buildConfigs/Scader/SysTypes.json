@@ -151,11 +151,24 @@
 							"rateHz": 0.1
 						}
 					]
+				},
+				{
+					"type": "HW",
+					"name": "ScaderShades",
+					"trigger": "Time",
+					"msgID": "ScaderShades",
+					"rates": [
+						{
+							"if": "scaderOut",
+							"protocol": "RICJSON",
+							"rateHz": 0.1
+						}
+					]
 				}
 			]
 		},
 		"ScaderRelays": {
-			"maxRelays": 24,
+			"maxElems": 24,
 			"SPI_MOSI": 33,
 			"SPI_MISO": 32,
 			"SPI_CLK": 16,
@@ -165,15 +178,14 @@
 			"ONOFF_KEY": 34
 		},
 		"ScaderShades": {
+			"maxElems": 5,
 			"HC959_SER": 21,
 			"HC595_SCK": 4,
 			"HC595_LATCH": 16,
 			"HC595_RST": 17,
 			"LED_OP": 13,
 			"LED_ACT": 15,
-			"LIGHTLVL_3": 36,
-			"LIGHTLVL_2": 39,
-			"LIGHTLVL_1": 34,
+			"LIGHTLVLPINS": [36, 39, 34],
 			"luxReportSecs": 10
 		},
 		"ScaderOpener": {

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { ShadesConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
-import { DownIcon, StopIcon, UpIcon } from './ScaderIcons';
+import { DownIcon, StopIcon, UpIcon, PlusIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
 import { ScaderState } from './ScaderState';
 
@@ -15,8 +15,10 @@ function ScaderShades(props:ScaderScreenProps) {
   const subElemsFriendly = "shades";
   const subElemsFriendlyCaps = "Shade";
   const restCommandName = "shade";
+  
   const [config, setConfig] = React.useState(props.config[scaderName]);
   const [state, setState] = React.useState(new ScaderState()[scaderName]);
+  const [advanced, setAdvanced] = React.useState(false);
 
   useEffect(() => {
     scaderManager.onConfigChange((newConfig) => {
@@ -77,13 +79,30 @@ function ScaderShades(props:ScaderScreenProps) {
     console.log(`${scaderName}.handleElemNameChange ${JSON.stringify(newConfig)}`);
   };
 
-  const handleElemClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleElemMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
     console.log(`${scaderName}.handleElemClick ${event.currentTarget.id}`);
     // Send command to change elem state
     const splitId = event.currentTarget.id.split("-");
     const elemIndex = Number(splitId[1]);
     const cmdName = splitId[2];
-    scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/${cmdName}/pulse`);
+    const cmdFull = cmdName.endsWith('/') ? cmdName + (advanced ? "on" : "pulse") : `${cmdName}/`;
+    scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/${cmdFull}`);
+  };
+
+  const handleElemMouseUp = (event: React.MouseEvent<HTMLButtonElement>) => {
+    console.log(`${scaderName}.handleElemClick ${event.currentTarget.id}`);
+    // Send command to change elem state
+    const splitId = event.currentTarget.id.split("-");
+    const elemIndex = Number(splitId[1]);
+    const cmdName = splitId[2];
+    if (cmdName.endsWith('/') && advanced) {
+      scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/${cmdName}off`);
+    }
+  };
+
+  const handleAdvancedClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    console.log(`${scaderName}.handleAdvancedClick`);
+    setAdvanced(!advanced);
   };
 
   const editModeScreen = () => {
@@ -137,20 +156,57 @@ function ScaderShades(props:ScaderScreenProps) {
                 <div className="ScaderElem-shadegroup" key={index} >
                   <div className="ScaderElem-shadename">{elem.name}</div>
                   <button key={index*50+10} className="ScaderElem-button" 
-                          onClick={handleElemClick}
-                          id={`${subElemsFriendly}-${index}-up`}>
+                          onMouseDown={handleElemMouseDown}
+                          onMouseUp={handleElemMouseUp}
+                          id={`${subElemsFriendly}-${index}-up/`}>
                       {<UpIcon fill="#ffffff" />}
                   </button>
                   <button key={index*50+11} className="ScaderElem-button" 
-                          onClick={handleElemClick}
-                          id={`${subElemsFriendly}-${index}-stop`}>
+                          onMouseDown={handleElemMouseDown}
+                          onMouseUp={handleElemMouseUp}
+                          id={`${subElemsFriendly}-${index}-stop/`}>
                       {<StopIcon fill="#ffffff" />}
                   </button>
                   <button key={index*50+12} className="ScaderElem-button" 
-                          onClick={handleElemClick}
-                          id={`${subElemsFriendly}-${index}-down`}>
+                          onMouseDown={handleElemMouseDown}
+                          onMouseUp={handleElemMouseUp}
+                          id={`${subElemsFriendly}-${index}-down/`}>
                       {<DownIcon fill="#ffffff" />}
                   </button>
+                  <button key={index*50+12} className="ScaderElem-button ScaderElem-button-small" 
+                          onClick={handleAdvancedClick}
+                          id={`${subElemsFriendly}-${index}-plus`}>
+                      {<PlusIcon fill="#ffffff" />}
+                  </button>
+                  {advanced ?
+                    <div className="ScaderElem-shadegroup">
+                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                              onClick={handleElemMouseDown}
+                              id={`${subElemsFriendly}-${index}-resetmemory`}>
+                          Clear motor memory
+                      </button>
+                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                              onClick={handleElemMouseDown}
+                              id={`${subElemsFriendly}-${index}-reversedirn`}>
+                          Change motion direction
+                      </button>
+                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                              onClick={handleElemMouseDown}
+                              id={`${subElemsFriendly}-${index}-setuplimit`}>
+                          Set Up Limit ...
+                      </button>
+                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                              onClick={handleElemMouseDown}
+                              id={`${subElemsFriendly}-${index}-setdownlimit`}>
+                          ... Down Limit + Save
+                      </button>
+                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                              onClick={handleElemMouseDown}
+                              id={`${subElemsFriendly}-${index}-setfavourite`}>
+                          Set favourite position
+                      </button>
+                    </div>
+                    : null}
                 </div>
               ))}
             </div>

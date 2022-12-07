@@ -57,9 +57,25 @@
   top: 0rem;
 }
 
+.ScaderElem-button {
+  width: 6rem;
+  height: 6rem;
+}
+
+.ScaderElem-button-small svg {
+  width: 30%;
+  height: 30%;
+  position: relative;
+  top: 0rem;
+}
+
 .ScaderElem-input {
   font-size: calc(10px + 2vmin);
   margin-left: 10px;
+}
+
+.ScaderElem-button-border {
+  border: 3px solid #505050 !important;
 }
 
 .ScaderElem-checkbox {

@@ -74,6 +74,7 @@ export const UpIcon = (props:IconColour) => {
         </svg>
     );
 }
+
 export const StopIcon = (props:IconColour) => {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255" fill={props.fill}>
@@ -94,21 +95,21 @@ export const DownIcon = (props:IconColour) => {
     );
 }
 
-export const RoundUpIcon = () => {
+export const RoundUpIcon = (props:IconColour) => {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255" fill={props.fill}>
             <g>
                 <path
                     d="m 148.45202,88.934798 c -3.42749,5.936585 -41.56664,7.268621 -48.42162,7.268621 -6.854975,0 -44.994128,-1.332036 -48.421618,-7.268622 -3.427489,-5.936585 14.48851,-39.632078 17.915999,-45.568663 3.42749,-5.936586 23.650644,-38.3000442 30.505619,-38.3000444 6.85498,-2e-7 27.07813,32.3634574 30.50562,38.3000424 3.42749,5.936586 21.34349,39.63208 17.916,45.568666 z"
-                    transform="translate(-50 0)" stroke="#808080" strokeWidth="0" fill="#FCFBE3 " />
+                    transform="translate(-50 0)" stroke="#808080" strokeWidth="0" />
             </g>
         </svg>
     );
 }
 
-export const RoundDownIcon = () => {
+export const RoundDownIcon = (props:IconColour) => {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255" fill={props.fill}>
             <g>
                 <path
                     d="m 148.45202,88.934798 c -3.42749,5.936585 -41.56664,7.268621 -48.42162,7.268621 -6.854975,0 -44.994128,-1.332036 -48.421618,-7.268622 -3.427489,-5.936585 14.48851,-39.632078 17.915999,-45.568663 3.42749,-5.936586 23.650644,-38.3000442 30.505619,-38.3000444 6.85498,-2e-7 27.07813,32.3634574 30.50562,38.3000424 3.42749,5.936586 21.34349,39.63208 17.916,45.568666 z"
@@ -119,18 +120,27 @@ export const RoundDownIcon = () => {
     );
 }
 
-export const RoundStopIcon = () => {
+export const RoundStopIcon = (props:IconColour) => {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255" fill={props.fill}>
             <g>
                 <path
                     d="m 325.31606,731.63474 c -20.92686,20.92686 -179.99732,27.53433 -209.59238,27.53433 -29.59505,0 -188.665516,-6.60747 -209.592381,-27.53433 -20.926859,-20.92686 -27.534329,-179.99732 -27.534329,-209.59238 0,-29.59505 6.60746,-188.66552 27.534328,-209.59238 20.926863,-20.92686 179.99732,-27.53433 209.592372,-27.53433 29.59506,0 188.66552,6.60746 209.59239,27.53433 20.92686,20.92686 27.53433,179.99732 27.53433,209.59237 0,29.59506 -6.60747,188.66552 -27.53433,209.59239 z"
-                    transform="translate(120 -290)" stroke="#808080" strokeWidth="0" fill="#FCFBE3 " />
+                    transform="translate(120 -290)" stroke="#808080" strokeWidth="0" />
             </g>
         </svg>
     );
 }
 
+export const PlusIcon = (props:IconColour) => {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255 255" fill={props.fill}>
+            <g>
+                <polygon points="255,100 160,100 160,0 100,0 100,100 0,100 0,160 100,160 100,255 160,255 160,160 255,160" stroke="#808080" strokeWidth="0" ></polygon>
+            </g>
+        </svg>
+    );
+}
 
 export const MenuIcon = (props:IconColour) => {
     return (

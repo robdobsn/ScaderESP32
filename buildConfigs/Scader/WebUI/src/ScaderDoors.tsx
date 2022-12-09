@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { RelayConfig } from './ScaderConfig';
+import { DoorConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
 import { OffIcon, OnIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
@@ -7,14 +7,14 @@ import { ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
-function ScaderRelays(props:ScaderScreenProps) {
+function ScaderDoors(props:ScaderScreenProps) {
 
-  const scaderName = "ScaderRelays";
+  const scaderName = "ScaderDoors";
   const configElemsName = "elems";
   const stateElemsName = "elems";
-  const subElemsFriendly = "relays";
-  const subElemsFriendlyCaps = "Relay";
-  const restCommandName = "relay";
+  const subElemsFriendly = "doors";
+  const subElemsFriendlyCaps = "Door";
+  const restCommandName = "door";
   const [config, setConfig] = React.useState(props.config[scaderName]);
   const [state, setState] = React.useState(new ScaderState()[scaderName]);
 
@@ -53,7 +53,7 @@ function ScaderRelays(props:ScaderScreenProps) {
     if (config[configElemsName].length < Number(event.target.value)) {
       // Add elements
       console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
-      let newElems:Array<RelayConfig> = [];
+      let newElems:Array<DoorConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
         newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`});
       }
@@ -159,4 +159,4 @@ function ScaderRelays(props:ScaderScreenProps) {
   );
 }
 
-export default ScaderRelays;
+export default ScaderDoors;

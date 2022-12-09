@@ -1,9 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// ScaderRelays
+// ScaderDoors
 //
-// Rob Dobson 2013-2020
-// More details at http://robdobson.com/2013/10/moving-my-window-shades-control-to-mbed/
+// Rob Dobson 2013-2022
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -12,17 +11,14 @@
 #include <RaftUtils.h>
 #include <ConfigBase.h>
 #include <SysModBase.h>
-#include <driver/spi_master.h>
 
 class APISourceInfo;
 
-class ScaderRelays : public SysModBase
+class ScaderDoors : public SysModBase
 {
   public:
-    static const int DEFAULT_MAX_ELEMS = 24;
-    static const int ELEMS_PER_CHIP = 8;
-    static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
-    ScaderRelays(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    static const int DEFAULT_MAX_ELEMS = 2;
+    ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
 
 protected:
 
@@ -46,17 +42,8 @@ private:
     // Settings
     uint32_t _maxElems = DEFAULT_MAX_ELEMS;
 
-    // SPI control
-    int _spiMosi = -1;
-    int _spiMiso = -1;
-    int _spiClk = -1;
-    int _spiChipSelects[SPI_MAX_CHIPS] = {};
-
-    // SPI device handles
-    spi_device_handle_t _spiDeviceHandles[SPI_MAX_CHIPS] = {};
-
-    // On/Off Key
-    int _onOffKey = -1;
+    // Door strike control
+    int _strikeControlPins[DEFAULT_MAX_ELEMS] = { -1, -1 };
 
     // Name set in Scader UI
     String _scaderFriendlyName;

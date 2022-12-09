@@ -56,13 +56,15 @@ export class ScaderConfig {
         name: "ScaderShades",
         elems: [],
     }
-    ScaderDoor: {
+    ScaderDoors: {
         enable: boolean,
+        maxElems: number,
         name: string,
-        doors: Array<DoorConfig>;
+        elems: Array<DoorConfig>;
     } = {
         enable: false,
-        name: "ScaderDoor",
-        doors: [],
+        maxElems: 2,
+        name: "ScaderDoors",
+        elems: [],
     }
 }

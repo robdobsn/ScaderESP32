@@ -164,6 +164,19 @@
 							"rateHz": 0.1
 						}
 					]
+				},
+				{
+					"type": "HW",
+					"name": "ScaderDoors",
+					"trigger": "Time",
+					"msgID": "ScaderDoors",
+					"rates": [
+						{
+							"if": "scaderOut",
+							"protocol": "RICJSON",
+							"rateHz": 0.1
+						}
+					]
 				}
 			]
 		},
@@ -179,13 +192,17 @@
 		},
 		"ScaderShades": {
 			"maxElems": 5,
-			"HC959_SER": 21,
+			"HC959_SER": 32,
 			"HC595_SCK": 4,
-			"HC595_LATCH": 16,
-			"HC595_RST": 17,
-			"LED_OP": 13,
+			"HC595_LATCH": 14,
+			"HC595_RST": 13,
+			"LED_OP": -1,
 			"LED_ACT": 15,
-			"LIGHTLVLPINS": [36, 39, 34]
+			"LIGHTLVLPINS": [34, 39, -1]
+		},
+		"ScaderDoors": {
+			"maxElems": 2,
+			"STRIKE_PINS": [1, 16]
 		},
 		"ScaderOpener": {
 			"DoorOpenMs": 45000,

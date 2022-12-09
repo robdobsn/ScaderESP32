@@ -59,7 +59,7 @@ let curSettings = {
         { "name": "Shade 5", "busy": false}
     ]
   },
-  "ScaderDoor": {
+  "ScaderDoors": {
     "enable": false,
     "name": "Door Control",
     "doors": [
@@ -86,7 +86,7 @@ const updateStatesFromConfig = () => {
       for (const elem of curSettings[key].elems) {
         states[key].elems.push({name:elem.name, state:0});
       }
-    } else if (key == 'ScaderDoor') {
+    } else if (key == 'ScaderDoors') {
       states[key] = {doors:[]};
       for (const door of curSettings[key].doors) {
         states[key].doors.push({name:door.name, state:0});

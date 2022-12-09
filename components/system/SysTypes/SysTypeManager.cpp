@@ -284,11 +284,12 @@ void SysTypeManager::apiSysTypePostSettings(const String &reqStr, String &respSt
 void SysTypeManager::apiSysTypePostSettingsBody(const String& reqStr, const uint8_t *pData, size_t len, 
                 size_t index, size_t total, const APISourceInfo& sourceInfo)
 {
-    LOG_I(MODULE_PREFIX, "apiSysTypePostSettingsBody len %d index %d total %d curBufLen %d", len, index, total, _postResultBuf.size());
     if (len == total)
     {
         // Store the settings
         _lastPostResultOk = setSysSettings(pData, len);
+        LOG_I(MODULE_PREFIX, "apiSysTypePostSettingsBody oneblock rslt %s len %d index %d total %d curBufLen %d", 
+                    _lastPostResultOk ? "OK" : "FAIL", len, index, total, _postResultBuf.size());
         return;
     }
 
@@ -305,5 +306,12 @@ void SysTypeManager::apiSysTypePostSettingsBody(const String& reqStr, const uint
         // Store the settings from buffer and clear the buffer
         _lastPostResultOk = setSysSettings(_postResultBuf.data(), _postResultBuf.size());
         _postResultBuf.clear();
+        LOG_I(MODULE_PREFIX, "apiSysTypePostSettingsBody multiblock rslt %s len %d index %d total %d", 
+                    _lastPostResultOk ? "OK" : "FAIL", len, index, total);
+    }
+    else
+    {
+        LOG_I(MODULE_PREFIX, "apiSysTypePostSettingsBody partial len %d index %d total %d curBufLen %d", 
+            len, index, total, _postResultBuf.size());
     }
 }

@@ -36,7 +36,9 @@ void ScaderShades::setup()
     // Get settings
     _isEnabled = configGetLong("enable", false) != 0;
     _maxElems = configGetLong("maxElems", DEFAULT_MAX_ELEMS);
-
+    if (_maxElems > DEFAULT_MAX_ELEMS)
+        _maxElems = DEFAULT_MAX_ELEMS;
+        
     // Check enabled
     if (_isEnabled)
     {
@@ -368,7 +370,7 @@ void ScaderShades::getLightLevels(int lightLevels[], int numLevels)
 {
     for (int i = 0; i < numLevels; i++)
     {
-        if (lightLevels[i] >= 0)
+        if (_lightLevelPins[i] >= 0)
             lightLevels[i] = analogRead(_lightLevelPins[i]);
     }
 }

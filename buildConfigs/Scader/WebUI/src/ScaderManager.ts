@@ -1,5 +1,5 @@
 import { ScaderConfig } from "./ScaderConfig";
-import { ScaderRelayStates, ScaderShadeState, ScaderShadeStates, ScaderState } from "./ScaderState";
+import { ScaderRelayStates, ScaderShadeStates, ScaderDoorStates, ScaderState } from "./ScaderState";
 
 export class ScaderManager {
 
@@ -28,7 +28,7 @@ export class ScaderManager {
     private _configChangeCallbacks: Array<(config: ScaderConfig) => void> = [];
 
     // State change callbacks
-    private _stateChangeCallbacks: Array<(config: ScaderRelayStates | ScaderShadeStates) => void> = [];
+    private _stateChangeCallbacks: Array<(config: ScaderRelayStates | ScaderShadeStates | ScaderDoorStates) => void> = [];
 
     // Get instance
     public static getInstance(): ScaderManager {
@@ -79,7 +79,16 @@ export class ScaderManager {
         // Open a websocket to the server
         let ws:WebSocket | null = null;
         try {
-            ws = new WebSocket(this._serverAddressPrefix.replace("http", "ws") + "/scader");
+            console.log(`ScaderManager init location.origin ${window.location.origin} ${window.location.protocol} ${window.location.host} ${window.location.hostname} ${window.location.port} ${window.location.pathname} ${window.location.search} ${window.location.hash}`)
+            let webSocketURL = this._serverAddressPrefix;
+            if (webSocketURL.startsWith("http")) {
+                webSocketURL = webSocketURL.replace(/^http/, 'ws');
+            } else {
+                webSocketURL = window.location.origin.replace(/^http/, 'ws');
+            }
+            webSocketURL += "/scader";
+            console.log(`ScaderManager init opening websocket ${webSocketURL}`);
+            ws = new WebSocket(webSocketURL);
             if (!ws) {
                 console.error("ScaderManager init unable to create websocket");
                 return false;
@@ -168,7 +177,7 @@ export class ScaderManager {
     }
 
     // Register a state change callback
-    public onStateChange(callback: (state:ScaderRelayStates | ScaderShadeStates) => void): void {
+    public onStateChange(callback: (state:ScaderRelayStates | ScaderShadeStates | ScaderDoorStates) => void): void {
         // Add the callback
         this._stateChangeCallbacks.push(callback);
     }

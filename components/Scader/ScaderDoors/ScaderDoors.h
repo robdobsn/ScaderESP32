@@ -11,6 +11,7 @@
 #include <RaftUtils.h>
 #include <ConfigBase.h>
 #include <SysModBase.h>
+#include <DoorStrike.h>
 
 class APISourceInfo;
 
@@ -42,8 +43,20 @@ private:
     // Settings
     uint32_t _maxElems = DEFAULT_MAX_ELEMS;
 
-    // Door strike control
+    // Door strike/sense pins
     int _strikeControlPins[DEFAULT_MAX_ELEMS] = { -1, -1 };
+    bool _strikePinLevel[DEFAULT_MAX_ELEMS] = { false, false };
+    uint32_t _strikeTimeSecs[DEFAULT_MAX_ELEMS] = { 0, 0 };
+    int _openSensePins[DEFAULT_MAX_ELEMS] = { -1, -1 };
+    bool _openSensePinLevel[DEFAULT_MAX_ELEMS] = { false, false };
+    int _closedSensePins[DEFAULT_MAX_ELEMS] = { -1, -1 };
+
+    // Bell pressed sense pin
+    int _bellPressedPin = -1;
+    bool _bellPressedPinLevel = false;
+
+    // Master door index
+    uint32_t _masterDoorIndex = 0;
 
     // Name set in Scader UI
     String _scaderFriendlyName;
@@ -51,8 +64,8 @@ private:
     // Names of control elements
     std::vector<String> _elemNames;
 
-    // Current state of elements
-    std::vector<bool> _elemStates;
+    // Door strikes
+    std::vector<DoorStrike> _doorStrikes;
 
     // Mutable data saving
     static const uint32_t MUTABLE_DATA_SAVE_MIN_MS = 5000;

@@ -202,7 +202,25 @@
 		},
 		"ScaderDoors": {
 			"maxElems": 2,
-			"STRIKE_PINS": [1, 16]
+			"doors": [
+				{
+					"strikePin": 1,
+					"strikeOn": 1,
+					"openSensePin": 2,
+					"senseLevel": 1,
+					"unlockForSecs": 10
+				},
+				{
+					"strikePin": 16,
+					"strikeOn": 1,
+					"openSensePin": -1,
+					"senseLevel": 1,
+					"unlockForSecs": 30
+				}
+			],
+			"masterDoorIdx": 0,
+			"bellSensePin": 3,
+			"bellSensePress": 0
 		},
 		"ScaderOpener": {
 			"DoorOpenMs": 45000,

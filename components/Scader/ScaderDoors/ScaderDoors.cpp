@@ -29,6 +29,7 @@ ScaderDoors::ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, Con
 {
     // Clear strike pins to -1
     std::fill(_strikeControlPins, _strikeControlPins + DEFAULT_MAX_ELEMS, -1);
+    std::fill(_openSensePins, _openSensePins + DEFAULT_MAX_ELEMS, -1);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,14 +50,29 @@ void ScaderDoors::setup()
         
         // Configure GPIOs
         ConfigPinMap::PinDef gpioPins[] = {
-            ConfigPinMap::PinDef("STRIKE[0]", ConfigPinMap::GPIO_OUTPUT, &_strikeControlPins[0], 0),
-            ConfigPinMap::PinDef("STRIKE[1]", ConfigPinMap::GPIO_OUTPUT, &_strikeControlPins[1], 0),
+            ConfigPinMap::PinDef("doors[0]/strikePin", ConfigPinMap::GPIO_OUTPUT, &_strikeControlPins[0], 0),
+            ConfigPinMap::PinDef("doors[1]/strikePin", ConfigPinMap::GPIO_OUTPUT, &_strikeControlPins[1], 0),
+            ConfigPinMap::PinDef("doors[0]/openSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_openSensePins[0], 0),
+            ConfigPinMap::PinDef("doors[1]/openSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_openSensePins[1], 0),
+            ConfigPinMap::PinDef("doors[0]/closedSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_closedSensePins[0], 0),
+            ConfigPinMap::PinDef("doors[1]/closedSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_closedSensePins[1], 0),
+            ConfigPinMap::PinDef("bellSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_bellPressedPin, 0),
         };
         ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
 
-        // Clear states
-        _elemStates.resize(_maxElems);
-        std::fill(_elemStates.begin(), _elemStates.end(), false);
+        // Get sense level of strike pins
+        _strikePinLevel[0] = configGetLong("doors[0]/strikeOn", 0) != 0;
+        _strikePinLevel[1] = configGetLong("doors[1]/strikeOn", 0) != 0;
+        _strikeTimeSecs[0] = configGetLong("doors[0]/strikeTimeSecs", 1);
+        _strikeTimeSecs[1] = configGetLong("doors[1]/strikeTimeSecs", 1);
+        _openSensePinLevel[0] = configGetLong("doors[0]/senseLevel", 0) != 0;
+        _openSensePinLevel[1] = configGetLong("doors[1]/senseLevel", 0) != 0;
+
+        // Bell pressed pin sense
+        _bellPressedPinLevel = configGetLong("bellSensePress", 0) != 0;
+
+        // Master door index
+        _masterDoorIndex = configGetLong("masterDoorIdx", 0);
 
         // Name set in UI
         _scaderFriendlyName = configGetString("ScaderCommon/name", "Scader");
@@ -79,9 +95,26 @@ void ScaderDoors::setup()
             }
         }
 
+        // Setup door strikes
+        _doorStrikes.clear();
+        for (int i = 0; i < _maxElems; i++)
+        {
+            if (_strikeControlPins[i] >= 0)
+            {
+                DoorStrike doorStrike(_strikeControlPins[i], _strikePinLevel[i], _openSensePins[i], 
+                        _closedSensePins[i], _openSensePinLevel[i], _strikeTimeSecs[i]);
+                _doorStrikes.push_back(doorStrike);
+            }
+        }
+
         // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled maxDoors %d doorStrikePin[0] %d doorStrikePin[1] %d",
-                    _maxElems, _strikeControlPins[0], _strikeControlPins[1]);
+        for (int i = 0; i < _maxElems; i++)
+        {
+            LOG_I(MODULE_PREFIX, "setup enabled door %d strikePin %d strikeOn %d openSensePin %d openSenseLevel %d closedSensePin %d openForSecs %d", 
+                        i, _strikeControlPins[i], _strikePinLevel[i], _openSensePins[i], _openSensePinLevel[i], 
+                        _closedSensePins[i], _strikeTimeSecs[i]);
+        }
+        LOG_I(MODULE_PREFIX, "setup enabled bellSensePin %d", _bellPressedPin);
 
         // Debug show states
         debugShowCurrentState();
@@ -105,7 +138,6 @@ void ScaderDoors::setup()
 
         // HW Now initialised
         _isInitialised = true;
-        applyCurrentState();
     }
     else
     {
@@ -133,6 +165,12 @@ void ScaderDoors::service()
             saveMutableData();
             _mutableDataDirty = false;
         }
+    }
+
+    // Service strikes
+    for (int i = 0; i < _doorStrikes.size(); i++)
+    {
+        _doorStrikes[i].service();
     }
 }
 
@@ -191,10 +229,17 @@ void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISou
     {
         int elemIdx = elemNums[i] - 1;
         if (elemIdx >= 0 && elemIdx < _elemNames.size())
-    {
-        // Set state
-        _elemStates[elemIdx] = newState;
-        _mutableDataChangeLastMs = millis();
+        {
+            // Set state
+            if (newState)
+            {
+                _doorStrikes[elemIdx].unlockWithTimeout("API");
+            }
+            else
+            {
+                _doorStrikes[elemIdx].lock();
+            }
+            _mutableDataChangeLastMs = millis();
             numElemsSet++;
         }
     }
@@ -204,11 +249,7 @@ void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISou
     {
         // Set
         _mutableDataDirty = true;
-        applyCurrentState();
         rslt = true;
-        
-        // Debug
-        LOG_I(MODULE_PREFIX, "apiControl %d door strikes (of %d) turned %s", numElemsSet, _elemNames.size(), newState ? "on" : "off");
     }
     else
     {
@@ -273,10 +314,20 @@ String ScaderDoors::getStatusJSON()
     {
         if (i > 0)
             strncat(pJsonStr, ",", jsonLen);
-        snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"({"name":"%s","state":%s})", 
-                            _elemNames[i].c_str(), _elemStates[i] ? "1" : "0");
+        String jsonStatus = _doorStrikes[i].getStatusJson(false);
+        DoorStrike::DoorLockedEnum lockedEnum = DoorStrike::LockStateUnknown;
+        DoorStrike::DoorOpenSense openEnum = DoorStrike::DoorSenseUnknown;
+        int timeBeforeLockMs = 0;
+        _doorStrikes[i].getStatus(lockedEnum, openEnum, timeBeforeLockMs);
+
+        snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"({"name":"%s","locked":%s,"open":"%s","timeBeforeLockMs":%d})", 
+                            _elemNames[i].c_str(),
+                            _doorStrikes[i].getDoorLockedStr(lockedEnum), 
+                            _doorStrikes[i].getDoorOpenSenseStr(openEnum),
+                            timeBeforeLockMs);
     }
-    strncat(pJsonStr, "]}", jsonLen);
+    snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"(],"bell":"%s"})", 
+                _bellPressedPin >= 0 ? (digitalRead(_bellPressedPin) == _bellPressedPinLevel ? "1" : "0") : "X");
     String jsonStr = pJsonStr;
     delete[] pJsonStr;
     return jsonStr;
@@ -289,8 +340,8 @@ String ScaderDoors::getStatusJSON()
 void ScaderDoors::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     stateHash.clear();
-    for (bool state : _elemStates)
-        stateHash.push_back(state ? 1 : 0);
+    for (const DoorStrike& doorStrike : _doorStrikes)
+        doorStrike.getStatusHash(stateHash);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -302,35 +353,17 @@ void ScaderDoors::saveMutableData()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// applyCurrentState
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool ScaderDoors::applyCurrentState()
-{
-    if (!_isInitialised)
-        return false;
-
-    // Set strike pins
-    for (int i = 0; i < _maxElems; i++)
-    {
-        if ((_strikeControlPins[i] >= 0) && (i < _elemStates.size()))
-            digitalWrite(_strikeControlPins[i], _elemStates[i] ? HIGH : LOW);
-    }
-    return true;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // debug show relay states
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ScaderDoors::debugShowCurrentState()
 {
     String elemsStr;
-    for (uint32_t i = 0; i < _elemStates.size(); i++)
+    for (const DoorStrike& doorStrike : _doorStrikes)
     {
-        if (i > 0)
+        if (elemsStr.length() > 0)
             elemsStr += ",";
-        elemsStr += String(_elemStates[i]);
+        elemsStr += String(doorStrike.getDebugStr());
     }
     LOG_I(MODULE_PREFIX, "debugShowCurrentState %s", elemsStr.c_str());
 }

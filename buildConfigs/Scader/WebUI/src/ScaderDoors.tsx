@@ -83,7 +83,7 @@ function ScaderDoors(props:ScaderScreenProps) {
     let elemIndex = Number(event.currentTarget.id.split("-")[1]);
     let curState = false;
     if (state[stateElemsName] && state[stateElemsName][elemIndex] && state[stateElemsName][elemIndex].state) {
-      curState = state[stateElemsName][elemIndex].state != 0;
+      curState = state[stateElemsName][elemIndex].state !== 0;
     }
     scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/${curState ? "off" : "on"}`);
   };

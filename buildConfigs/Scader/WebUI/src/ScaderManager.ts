@@ -98,7 +98,7 @@ export class ScaderManager {
             ws.onopen = () => {
                 console.log(`ScaderManager init websocket opened to ${this._serverAddressPrefix}`);
                 // Subscribe to scader messages
-                for (const [key, elem] of Object.entries(this._scaderConfig)) {
+                for (const [key] of Object.entries(this._scaderConfig)) {
                     const subscribeName = key;
                     if (subscribeName !== "ScaderCommon") {
                         console.log(`ScaderManager init subscribing to ${subscribeName}`);
@@ -198,7 +198,9 @@ export class ScaderManager {
 
                     // Start with a base config
                     const configBase = new ScaderConfig();
-                    Object.assign(configBase, settings.nv);
+
+                    // Add in the non-volatile settings
+                    this.addNonVolatileSettings(configBase, settings.nv);
 
                     // Extract non-volatile settings
                     this._scaderConfig = configBase;
@@ -243,5 +245,18 @@ export class ScaderManager {
             console.log(`postAppSettings error ${error}`);
             return false;
         }
+    }
+
+    // Add non-volatile settings to the config
+    private addNonVolatileSettings(config:ScaderConfig, nv:ScaderConfig) {
+        if ("ScaderRelays" in nv) {
+            nv["ScaderRelays"] = Object.assign(config.ScaderRelays, nv["ScaderRelays"]);
+            const nvRelays = nv["ScaderRelays"];
+            if ("relays" in nvRelays && (nvRelays["relays"] instanceof Array)) {
+                nvRelays["elems"] = nvRelays["relays"];
+                delete nvRelays["relays"];
+            }
+        }
+        config = Object.assign(config, nv);
     }
 }

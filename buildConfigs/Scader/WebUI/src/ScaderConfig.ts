@@ -24,11 +24,12 @@ export class ScaderConfig {
         maxElems: number,
         name: string,
         elems: Array<RelayConfig>;
+        relays?: Array<RelayConfig>;
     } = {
         enable: false,
         maxElems: 24,
         name: "ScaderRelays",
-        elems: [],
+        elems: []
     }
     ScaderCat: {
         enable: boolean

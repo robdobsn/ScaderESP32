@@ -8,7 +8,7 @@ import ScaderShades from './ScaderShades';
 import ScaderDoors from './ScaderDoors';
 
 const testServerPath = "http://localhost:3123";
-// const testServerPath = "http://192.168.86.90";
+// const testServerPath = "http://192.168.86.80";
 
 const scaderManager = ScaderManager.getInstance();
 scaderManager.setTestServerPath(testServerPath);

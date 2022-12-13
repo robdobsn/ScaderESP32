@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <vector>
+
 class DoorStrike
 {
 public:
@@ -67,7 +69,7 @@ public:
     bool isLocked();
 
     // Get status of door open/closed/etc
-    DoorOpenSense getOpenStatus();
+    DoorOpenSense getOpenStatus() const;
 
     // Get all status info
     bool getStatus(DoorLockedEnum& lockedEnum, DoorOpenSense& openSense, int& timeBeforeRelock) const;

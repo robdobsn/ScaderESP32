@@ -24,12 +24,12 @@ void DoorStrike::service()
         if (!_isLocked)
         {
             // Check for re-lock conditions
-            if ((getOpenStatus() == DoorOpenSense::Open) && Utils::isTimeout(millis(), _unlockedTime, MIN_TIMEOUT_AFTER_UNLOCK_MS))
+            if ((getOpenStatus() == DoorOpenSense::Open) && Raft::isTimeout(millis(), _unlockedTime, MIN_TIMEOUT_AFTER_UNLOCK_MS))
             {
                 // Check if door is open and unlock occurred more than a minimum time ago
                 lock();
             }
-            else if (Utils::isTimeout(millis(), _unlockedTime, _mTimeOutOnUnlockMs))
+            else if (Raft::isTimeout(millis(), _unlockedTime, _mTimeOutOnUnlockMs))
             {
                 // Door unlocked max time
                 lock();
@@ -38,7 +38,7 @@ void DoorStrike::service()
     }
     else
     {
-        if (!_isLocked && Utils::isTimeout(millis(), _unlockedTime, _mTimeOutOnUnlockMs))
+        if (!_isLocked && Raft::isTimeout(millis(), _unlockedTime, _mTimeOutOnUnlockMs))
             lock();
     }
 }
@@ -56,7 +56,7 @@ bool DoorStrike::unlockWithTimeout(const char* unlockCause, int timeoutInSecs)
     _mTimeOutOnUnlockMs = (timeoutInSecs == -1 ? _defaultUnlockMs : timeoutInSecs * 1000);
     // Set timer to time how long to leave door unlocked
     _unlockedTime = millis();
-    Log.notice("%s%s %s pin %d, timeoutms %d\n", MODULE_PREFIX,
+    LOG_I(MODULE_PREFIX, "%s%s %s pin %d, timeoutms %d",
                 (_garageMode ? "Closing door toggle relay" : "Unlocking door"),
                 unlockCause,
                 _doorStrikePin, _mTimeOutOnUnlockMs);
@@ -69,7 +69,7 @@ bool DoorStrike::lock()
     digitalWrite(_doorStrikePin, !_doorStrikeOn);
     // Indicate now locked
     _isLocked = true;
-    Log.notice("%s%s pin %d\n", MODULE_PREFIX, (_garageMode ? "Opening relay" : "Locking door"), _doorStrikePin);
+    LOG_I(MODULE_PREFIX, "%s%s pin %d", (_garageMode ? "Opening relay" : "Locking door"), _doorStrikePin);
     return true;
 }
 
@@ -83,9 +83,9 @@ bool DoorStrike::isLocked()
 // Check if the door is open
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-DoorStrike::DoorOpenSense DoorStrike::getOpenStatus()
+DoorStrike::DoorOpenSense DoorStrike::getOpenStatus() const
 {
-    // Log.trace("DoorStrike: sensePin %d\n", _doorOpenSensePin);
+    // LOG_I(MODULE_PREFIX, "DoorStrike: sensePin %d", _doorOpenSensePin);
     if (_doorOpenSensePin == -1)
         return DoorOpenSense::DoorSenseUnknown;
 
@@ -94,7 +94,7 @@ DoorStrike::DoorOpenSense DoorStrike::getOpenStatus()
     if (_garageMode && _doorClosedSensePin) 
         doorClosed = (digitalRead(_doorClosedSensePin) == _senseWhenOpen);
 
-    // Log.trace("DoorStrike: doorOpen %d doorClosed %d garageMode %d\n", doorOpen, doorClosed, _garageMode);
+    // LOG_I(MODULE_PREFIX, "DoorStrike: doorOpen %d doorClosed %d garageMode %d", doorOpen, doorClosed, _garageMode);
     if (doorOpen)
         return DoorOpenSense::Open;
     if (_garageMode && !doorClosed)
@@ -122,7 +122,7 @@ bool DoorStrike::getStatus(DoorLockedEnum& lockedEnum, DoorOpenSense& openSense,
     {
         lockedEnum = _isLocked ? DoorLockedEnum::Locked : DoorLockedEnum::Unlocked;
     }
-    timeBeforeRelock = Utils::timeToTimeout(millis(), _unlockedTime, _mTimeOutOnUnlockMs);
+    timeBeforeRelock = Raft::timeToTimeout(millis(), _unlockedTime, _mTimeOutOnUnlockMs);
     return true;
 }
 
@@ -135,7 +135,7 @@ void DoorStrike::getStatusHash(std::vector<uint8_t>& stateHash) const
     stateHash.push_back(lockedEnum + (openSense << 4));
 }
 
-String DoorStrike::getStatusJson(bool incBraces)
+String DoorStrike::getStatusJson(bool incBraces) const
 {
     DoorLockedEnum lockedEnum = DoorLockedEnum::LockStateUnknown;
     DoorOpenSense openEnum = DoorOpenSense::DoorSenseUnknown;

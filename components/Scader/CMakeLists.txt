@@ -12,6 +12,7 @@ idf_component_register(
                   "ScaderRelays/ScaderRelays.cpp"
                   "ScaderShades/ScaderShades.cpp"
                   "ScaderDoors/ScaderDoors.cpp"
+                  "ScaderDoors/DoorStrike.cpp"
                   # "ScaderOpener/ScaderOpener.cpp"
                   # "ScaderLEDPixels/ScaderLEDPixels.cpp"
                   # "ScaderOpener/DoorOpener.cpp"

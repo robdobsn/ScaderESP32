@@ -3,7 +3,7 @@ import { RelayConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
 import { OffIcon, OnIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
-import { ScaderState } from './ScaderState';
+import { ScaderRelayStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
@@ -28,7 +28,7 @@ function ScaderRelays(props:ScaderScreenProps) {
       console.log(`${scaderName}onStateChange`);
       // Update state
       if (stateElemsName in newState) {
-        setState(newState);
+        setState(new ScaderRelayStates(newState));
       }
     });
   }, []);
@@ -132,22 +132,24 @@ function ScaderRelays(props:ScaderScreenProps) {
       // Display if enabled
       config.enable ?
         <div className="ScaderElem">
-          <header className="ScaderElem-header">
+          <div className="ScaderElem-header">
             {/* Grid of elements */}
             {config[configElemsName].map((elem, index) => (
               <button key={index} className="ScaderElem-button" 
                       onClick={handleElemClick}
                       id={`${configElemsName}-${index}`}>
-                  <div>{elem.name}</div>
+                  <div className="ScaderElem-button-text">{elem.name}</div>
                   {/* Display on icon if the state is on, else off icon */}
+                  <div className="ScaderElem-button-icon">
                   {state[stateElemsName] && 
                         state[stateElemsName][index] &&
                         state[stateElemsName][index].state ? 
                           <OnIcon fill="#ffffff" /> : 
                           <OffIcon fill="#000000"/>}
+                  </div>
               </button>
             ))}
-          </header>
+          </div>
         </div>
       : null
     )

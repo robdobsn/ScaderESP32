@@ -121,17 +121,17 @@ export class ScaderManager {
                 this._stateChangeCallbacks.forEach(callback => {
                     callback(data);
                 });
-                console.log(`ScaderManager init websocket message ${JSON.stringify(data)}`);
+                console.log(`ScaderManager websocket message ${JSON.stringify(data)}`);
             }
             ws.onclose = () => {
-                console.log(`ScaderManager init websocket closed`);
+                console.log(`ScaderManager websocket closed`);
             }
             ws.onerror = (error) => {
-                console.log(`ScaderManager init websocket error ${error}`);
+                console.log(`ScaderManager websocket error ${error}`);
             }
         }
         catch (error) {
-            console.log(`ScaderManager init websocket error ${error}`);
+            console.log(`ScaderManager websocket error ${error}`);
             return false;
         }
         return true;

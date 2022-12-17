@@ -25,36 +25,16 @@ public:
         Unlocked
     };
 
+    // Constructor
+    DoorStrike();
+
+    // Destructor
+    ~DoorStrike();
+
     // Setup strike
     // Garage mode if closedSensePin is defined
-    DoorStrike(int doorStrikePin, bool doorStrikeOn, int doorOpenSensePin, 
-                int doorClosedSensePin, bool senseWhenOpen, int defaultUnlockSecs = 10)
-    {
-        _defaultUnlockMs = defaultUnlockSecs * 1000;
-        _doorStrikePin = doorStrikePin;
-        _doorStrikeOn = doorStrikeOn;
-        _doorOpenSensePin = doorOpenSensePin;
-        _doorClosedSensePin = doorClosedSensePin;
-        _garageMode = (_doorClosedSensePin >= 0);
-        _senseWhenOpen = senseWhenOpen;
-        _unlockedTime = 0;
-        _isLocked = true;
-        _mTimeOutOnUnlockMs = 0;
-
-        digitalWrite(_doorStrikePin, !doorStrikeOn);
-        pinMode(_doorStrikePin, OUTPUT);
-        digitalWrite(_doorStrikePin, !doorStrikeOn);
-        if (_doorClosedSensePin >= 0)
-            pinMode(_doorClosedSensePin, INPUT);
-        if (_doorClosedSensePin >= 0)
-            pinMode(_doorClosedSensePin, INPUT_PULLUP);
-    }
-
-    // Restore
-    ~DoorStrike()
-    {
-        pinMode(_doorStrikePin, INPUT);
-    }
+    bool setup(int doorStrikePin, bool doorStrikeOn, int doorOpenSensePin, 
+                int doorClosedSensePin, bool senseWhenOpen, int defaultUnlockSecs = 10);
 
     // Service to handle timeouts, etc
     void service();
@@ -93,15 +73,15 @@ public:
     }
 
 private:
-    int _doorStrikePin;
-    bool _doorStrikeOn;
-    int _doorOpenSensePin;
-    int _doorClosedSensePin;
-    int _mTimeOutOnUnlockMs;
-    int _defaultUnlockMs;
-    bool _senseWhenOpen;
-    bool _isLocked;
-    unsigned long _unlockedTime;
+    int _doorStrikePin = -1;
+    bool _doorStrikeOn = false;
+    int _doorOpenSensePin = -1;
+    int _doorClosedSensePin = -1;
+    int _mTimeOutOnUnlockMs = 0;
+    int _defaultUnlockMs = 0;
+    bool _senseWhenOpen = false;
+    bool _isLocked = true;
+    unsigned long _unlockedTime = 0;
     const int MIN_TIMEOUT_AFTER_UNLOCK_MS = 1000;
-    bool _garageMode;    
+    bool _garageMode = false;
 };

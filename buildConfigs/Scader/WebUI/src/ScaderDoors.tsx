@@ -1,45 +1,46 @@
 import React, { useEffect } from 'react';
 import { DoorConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
-import { OffIcon, OnIcon } from './ScaderIcons';
+import { BellIcon, LockedIcon, OffIcon, OnIcon, UnlockedIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
-import { ScaderState } from './ScaderState';
+import { ScaderDoorStates, ScaderShadeStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
 function ScaderDoors(props:ScaderScreenProps) {
 
-  const scaderName = "ScaderDoors";
+  const scaderConfigName = "ScaderDoors";
+  const scaderStateName = "ScaderDoors";
   const configElemsName = "elems";
   const stateElemsName = "elems";
   const subElemsFriendly = "doors";
   const subElemsFriendlyCaps = "Door";
   const restCommandName = "door";
-  const [config, setConfig] = React.useState(props.config[scaderName]);
-  const [state, setState] = React.useState(new ScaderState()[scaderName]);
+  const [config, setConfig] = React.useState(props.config[scaderConfigName]);
+  const [state, setState] = React.useState(new ScaderState()[scaderStateName]);
 
   useEffect(() => {
     scaderManager.onConfigChange((newConfig) => {
-      console.log(`${scaderName}.onConfigChange`);
+      console.log(`${scaderConfigName}.onConfigChange`);
       // Update config
-      setConfig(newConfig[scaderName]);
+      setConfig(newConfig[scaderConfigName]);
     });
     scaderManager.onStateChange((newState) => {
-      console.log(`${scaderName}onStateChange`);
+      console.log(`${scaderStateName}onStateChange`);
       // Update state
       if (stateElemsName in newState) {
-        setState(newState);
+        setState(new ScaderDoorStates(newState));
       }
     });
   }, []);
 
   const updateMutableConfig = (newConfig: any) => {
     // Update ScaderManager
-    scaderManager.getMutableConfig()[scaderName] = newConfig;
+    scaderManager.getMutableConfig()[scaderConfigName] = newConfig;
   }
 
   const handleEnableChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(`${scaderName}.handleEnableChange`);
+    console.log(`${scaderConfigName}.handleEnableChange`);
     // Update config
     const newConfig = {...config, enable: event.target.checked};
     setConfig(newConfig);
@@ -47,12 +48,12 @@ function ScaderDoors(props:ScaderScreenProps) {
   };
 
   const handleNumElemsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(`${scaderName}.handleNumElemsChange ${event.target.value}`);
+    console.log(`${scaderConfigName}.handleNumElemsChange ${event.target.value}`);
     // Update config
     const newConfig = {...config};
     if (config[configElemsName].length < Number(event.target.value)) {
       // Add elements
-      console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
+      console.log(`${scaderConfigName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
       let newElems:Array<DoorConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
         newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`});
@@ -67,25 +68,21 @@ function ScaderDoors(props:ScaderScreenProps) {
   };
 
   const handleElemNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(`${scaderName}.handleElemNameChange ${event.target.id} = ${event.target.value}`);
+    console.log(`${scaderConfigName}.handleElemNameChange ${event.target.id} = ${event.target.value}`);
     // Update config
     const newConfig = {...config};
     let elemIndex = Number(event.target.id.split("-")[1]);
     newConfig[configElemsName][elemIndex].name = event.target.value;
     setConfig(newConfig);
     updateMutableConfig(newConfig);
-    console.log(`${scaderName}.handleElemNameChange ${JSON.stringify(newConfig)}`);
+    console.log(`${scaderConfigName}.handleElemNameChange ${JSON.stringify(newConfig)}`);
   };
 
   const handleElemClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(`${scaderName}.handleElemClick ${event.currentTarget.id}`);
+    console.log(`${scaderConfigName}.handleElemClick ${event.currentTarget.id}`);
     // Send command to change elem state
     let elemIndex = Number(event.currentTarget.id.split("-")[1]);
-    let curState = false;
-    if (state[stateElemsName] && state[stateElemsName][elemIndex] && state[stateElemsName][elemIndex].state) {
-      curState = state[stateElemsName][elemIndex].state !== 0;
-    }
-    scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/${curState ? "off" : "on"}`);
+    scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/unlock`);
   };
 
   const editModeScreen = () => {
@@ -97,7 +94,7 @@ function ScaderDoors(props:ScaderScreenProps) {
             <input className="ScaderElem-checkbox" type="checkbox" 
                   checked={config.enable} 
                   onChange={handleEnableChange} />
-            Enable {scaderName}
+            Enable {scaderConfigName}
           </label>
         </div>
         {config.enable && 
@@ -132,22 +129,30 @@ function ScaderDoors(props:ScaderScreenProps) {
       // Display if enabled
       config.enable ?
         <div className="ScaderElem">
-          <header className="ScaderElem-header">
+          <div className="ScaderElem-header">
             {/* Grid of elements */}
             {config[configElemsName].map((elem, index) => (
               <button key={index} className="ScaderElem-button" 
                       onClick={handleElemClick}
                       id={`${configElemsName}-${index}`}>
-                  <div>{elem.name}</div>
-                  {/* Display on icon if the state is on, else off icon */}
+                  <div className="ScaderElem-button-text">{elem.name}</div>
                   {state[stateElemsName] && 
                         state[stateElemsName][index] &&
-                        state[stateElemsName][index].state ? 
-                          <OnIcon fill="#ffffff" /> : 
-                          <OffIcon fill="#000000"/>}
+                        state[stateElemsName][index].open === 'Y' ?
+                        <div className="ScaderElem-isOpen">Open</div> : ""}
+                  {/* Display on icon if the state is on, else off icon */}
+                  <div className="ScaderElem-button-icon">
+                    {state[stateElemsName] && 
+                          state[stateElemsName][index] &&
+                          state[stateElemsName][index].locked === 'N' ? 
+                            <UnlockedIcon fill="red" /> : 
+                            <LockedIcon fill="white"/>}
+                  </div>
               </button>
             ))}
-          </header>
+            {/* Bell */}
+            {state["bell"] && state["bell"] === 'Y' ? <div className="ScaderElem-bell-text">Doorbell is Ringing</div> : null}
+          </div>
         </div>
       : null
     )

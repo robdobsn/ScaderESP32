@@ -13,6 +13,48 @@
 static const char* MODULE_PREFIX = "DoorStrike";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Constructor
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+DoorStrike::DoorStrike()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Destructor
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+DoorStrike::~DoorStrike()
+{
+    if (_doorStrikePin >= 0)
+    {
+        LOG_I(MODULE_PREFIX, "Restoring door strike pin %d", _doorStrikePin);
+        pinMode(_doorStrikePin, INPUT);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setup strike
+// Garage mode if closedSensePin is defined
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool DoorStrike::setup(int doorStrikePin, bool doorStrikeOn, int doorOpenSensePin, 
+            int doorClosedSensePin, bool senseWhenOpen, int defaultUnlockSecs)
+{
+    _defaultUnlockMs = defaultUnlockSecs * 1000;
+    _doorStrikePin = doorStrikePin;
+    _doorStrikeOn = doorStrikeOn;
+    _doorOpenSensePin = doorOpenSensePin;
+    _doorClosedSensePin = doorClosedSensePin;
+    _garageMode = (_doorClosedSensePin >= 0);
+    _senseWhenOpen = senseWhenOpen;
+    _unlockedTime = 0;
+    _isLocked = true;
+    _mTimeOutOnUnlockMs = 0;
+    return _doorStrikePin >= 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Service to handle timeouts, etc
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -49,6 +91,8 @@ void DoorStrike::service()
 
 bool DoorStrike::unlockWithTimeout(const char* unlockCause, int timeoutInSecs)
 {
+    if (_doorStrikePin < 0)
+        return false;
     // Allow door to open
     digitalWrite(_doorStrikePin, _doorStrikeOn);
     _isLocked = false;
@@ -56,10 +100,12 @@ bool DoorStrike::unlockWithTimeout(const char* unlockCause, int timeoutInSecs)
     _mTimeOutOnUnlockMs = (timeoutInSecs == -1 ? _defaultUnlockMs : timeoutInSecs * 1000);
     // Set timer to time how long to leave door unlocked
     _unlockedTime = millis();
-    LOG_I(MODULE_PREFIX, "%s%s %s pin %d, timeoutms %d",
+    LOG_I(MODULE_PREFIX, "%s from %s pin %d unlockLevel %d timeoutms %d",
                 (_garageMode ? "Closing door toggle relay" : "Unlocking door"),
                 unlockCause,
-                _doorStrikePin, _mTimeOutOnUnlockMs);
+                _doorStrikePin, 
+                _doorStrikeOn,
+                _mTimeOutOnUnlockMs);
     return true;
 }
 
@@ -69,7 +115,9 @@ bool DoorStrike::lock()
     digitalWrite(_doorStrikePin, !_doorStrikeOn);
     // Indicate now locked
     _isLocked = true;
-    LOG_I(MODULE_PREFIX, "%s%s pin %d", (_garageMode ? "Opening relay" : "Locking door"), _doorStrikePin);
+    LOG_I(MODULE_PREFIX, "%s pin %d level %d", (_garageMode ? "Opening relay" : "Locking door"), 
+            _doorStrikePin,
+            !_doorStrikeOn);
     return true;
 }
 
@@ -86,13 +134,13 @@ bool DoorStrike::isLocked()
 DoorStrike::DoorOpenSense DoorStrike::getOpenStatus() const
 {
     // LOG_I(MODULE_PREFIX, "DoorStrike: sensePin %d", _doorOpenSensePin);
-    if (_doorOpenSensePin == -1)
+    if (_doorOpenSensePin < 0)
         return DoorOpenSense::DoorSenseUnknown;
 
-    bool doorOpen = digitalRead(_doorOpenSensePin) == _senseWhenOpen;
+    bool doorOpen = (digitalRead(_doorOpenSensePin) != 0) == _senseWhenOpen;
     bool doorClosed = false;
-    if (_garageMode && _doorClosedSensePin) 
-        doorClosed = (digitalRead(_doorClosedSensePin) == _senseWhenOpen);
+    if (_garageMode && (_doorClosedSensePin >= 0))
+        doorClosed = (digitalRead(_doorClosedSensePin) != 0) == _senseWhenOpen;
 
     // LOG_I(MODULE_PREFIX, "DoorStrike: doorOpen %d doorClosed %d garageMode %d", doorOpen, doorClosed, _garageMode);
     if (doorOpen)
@@ -128,9 +176,9 @@ bool DoorStrike::getStatus(DoorLockedEnum& lockedEnum, DoorOpenSense& openSense,
 
 void DoorStrike::getStatusHash(std::vector<uint8_t>& stateHash) const
 {
-    DoorLockedEnum lockedEnum;
-    DoorOpenSense openSense;
-    int timeBeforeRelock;
+    DoorLockedEnum lockedEnum = DoorLockedEnum::LockStateUnknown;
+    DoorOpenSense openSense = DoorOpenSense::DoorSenseUnknown;
+    int timeBeforeRelock = 0;
     getStatus(lockedEnum, openSense, timeBeforeRelock);
     stateHash.push_back(lockedEnum + (openSense << 4));
 }
@@ -142,7 +190,7 @@ String DoorStrike::getStatusJson(bool incBraces) const
     int timeBeforeLockMs = 0;
     getStatus(lockedEnum, openEnum, timeBeforeLockMs);
     char statusStr[200];
-    snprintf(statusStr, sizeof(statusStr), R"(%s"locked":%s,"open":"%s","toLockMs":%d%s)",
+    snprintf(statusStr, sizeof(statusStr), R"(%s"locked":"%s","open":"%s","toLockMs":%d%s)",
                         incBraces ? "{" : "", 
                         getDoorLockedStr(lockedEnum), 
                         getDoorOpenSenseStr(openEnum),

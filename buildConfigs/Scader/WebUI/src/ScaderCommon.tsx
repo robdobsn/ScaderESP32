@@ -78,7 +78,9 @@ export const ScaderCommon = (props:ScaderHeaderProps) => {
                 null
             }
             <button className="ScaderHeader-hamburger" onClick={props.onClickHamburger}>
-                <MenuIcon fill="#ffffff"/>
+                <div className="ScaderHeader-hamburger-icon">
+                    <MenuIcon fill="#ffffff"/>
+                </div>
             </button>
         </div>
         {props.isEditMode ?

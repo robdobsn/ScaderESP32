@@ -7,6 +7,7 @@ from pathlib import Path
 import os
 import subprocess
 import gzip
+import sys
 
 logging.basicConfig(format="[%(asctime)s] %(levelname)s:%(name)s: %(message)s",
                     level=logging.INFO)
@@ -39,7 +40,10 @@ def generateWebUI(sourceFolder, destFolder, gzipContent):
     # Execute npm run build in the source folder
     # Copy the resulting files to the destination folder
     # If gzipContent is true, gzip the files
-    subprocess.run(["npm", "run", "build"], cwd=sourceFolder)
+    rslt = subprocess.run(["npm", "run", "build"], cwd=sourceFolder)
+    if rslt.returncode != 0:
+        _log.error("GenWebUI failed to build Web UI")
+        return rslt.returncode
     
     buildFolder = os.path.join(sourceFolder, "build")
     for fname in os.listdir(buildFolder):
@@ -56,31 +60,13 @@ def generateWebUI(sourceFolder, destFolder, gzipContent):
         else:
             os.rename(os.path.join(buildFolder, fname), os.path.join(destFolder, fname))
             # _log.info(f"GenWebUI created Web UI from {fname} to {fname}")
-
-    # file_loader = FileSystemLoader(sourceFolder)
-    # env = Environment(loader=file_loader)
-
-    # for fname in os.listdir(sourceFolder):
-    #     if fname.endswith('.jinja'):
-    #         template = env.get_template('index.jinja')
-
-    #         # output = template.render()
-    #         # print(output)
-
-    #         outname = os.path.splitext(os.path.basename(fname))[0] + ".html"
-    #         outname = os.path.join(destFolder, outname)
-    #         if gzipContent:
-    #             renderedStr = template.render().encode('utf-8')
-    #             with gzip.open(outname + '.gz', 'wb') as f:
-    #                 f.write(renderedStr)
-    #             _log.info(f"UITemplater JINJA created Web UI from {fname} to {outname}.gz")
-    #         else:
-    #             template.stream().dump(os.path.join(destFolder, outname))
-    #             _log.info(f"UITemplater JINJA created Web UI from {fname} to {outname}")
+    return 0
 
 def main():
     args = parseArgs()
-    generateWebUI(args.source, args.dest, args.gzipContent)
+    return generateWebUI(args.source, args.dest, args.gzipContent)
 
 if __name__ == '__main__':
-    main()
+    rslt = main()
+    sys.exit(rslt)
+    

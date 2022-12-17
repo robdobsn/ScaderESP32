@@ -45,8 +45,8 @@ private:
 
     // Door strike/sense pins
     int _strikeControlPins[DEFAULT_MAX_ELEMS] = { -1, -1 };
-    bool _strikePinLevel[DEFAULT_MAX_ELEMS] = { false, false };
-    uint32_t _strikeTimeSecs[DEFAULT_MAX_ELEMS] = { 0, 0 };
+    bool _strikePinUnlockLevel[DEFAULT_MAX_ELEMS] = { false, false };
+    uint32_t _unlockForSecs[DEFAULT_MAX_ELEMS] = { 1, 1 };
     int _openSensePins[DEFAULT_MAX_ELEMS] = { -1, -1 };
     bool _openSensePinLevel[DEFAULT_MAX_ELEMS] = { false, false };
     int _closedSensePins[DEFAULT_MAX_ELEMS] = { -1, -1 };

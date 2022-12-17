@@ -3,7 +3,7 @@ import { ShadesConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
 import { DownIcon, StopIcon, UpIcon, PlusIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
-import { ScaderState } from './ScaderState';
+import { ScaderShadeStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
@@ -30,7 +30,7 @@ function ScaderShades(props:ScaderScreenProps) {
       console.log(`${scaderName}onStateChange`);
       // Update state
       if (stateElemsName in newState) {
-        setState(newState);
+        setState(new ScaderShadeStates(newState));
       }
     });
   }, []);
@@ -149,58 +149,66 @@ function ScaderShades(props:ScaderScreenProps) {
       // Display if enabled
       config.enable ?
         <div className="ScaderElem">
-          <header className="ScaderElem-header">
+          <div className="ScaderElem-header">
             {/* Grid of elements */}
             <div className="ScaderElem-gridhoriz">
               {config[configElemsName].map((elem, index) => (
                 <div className="ScaderElem-shadegroup" key={index} >
                   <div className="ScaderElem-shadename">{elem.name}</div>
-                  <button key={index*50+10} className="ScaderElem-button" 
+                  <button key={index*50+10} className="ScaderElem-shade-button" 
                           onMouseDown={handleElemMouseDown}
                           onMouseUp={handleElemMouseUp}
                           id={`${subElemsFriendly}-${index}-up/`}>
-                      {<UpIcon fill="#ffffff" />}
+                      <div className="ScaderElem-button-big-icon">
+                        {<UpIcon fill="#ffffff" />}
+                      </div>
                   </button>
-                  <button key={index*50+11} className="ScaderElem-button" 
+                  <button key={index*50+11} className="ScaderElem-shade-button" 
                           onMouseDown={handleElemMouseDown}
                           onMouseUp={handleElemMouseUp}
                           id={`${subElemsFriendly}-${index}-stop/`}>
-                      {<StopIcon fill="#ffffff" />}
+                      <div className="ScaderElem-button-big-icon">
+                        {<StopIcon fill="#ffffff" />}
+                      </div>
                   </button>
-                  <button key={index*50+12} className="ScaderElem-button" 
+                  <button key={index*50+12} className="ScaderElem-shade-button" 
                           onMouseDown={handleElemMouseDown}
                           onMouseUp={handleElemMouseUp}
                           id={`${subElemsFriendly}-${index}-down/`}>
-                      {<DownIcon fill="#ffffff" />}
+                      <div className="ScaderElem-button-big-icon">
+                        {<DownIcon fill="#ffffff" />}
+                      </div>
                   </button>
-                  <button key={index*50+12} className="ScaderElem-button ScaderElem-button-small" 
+                  <button key={index*50+12} className="ScaderElem-shade-button ScaderElem-button-small" 
                           onClick={handleAdvancedClick}
                           id={`${subElemsFriendly}-${index}-plus`}>
-                      {<PlusIcon fill="#ffffff" />}
+                      <div className="ScaderElem-button-big-icon">
+                        {<PlusIcon fill="#ffffff" />}
+                      </div>
                   </button>
                   {advanced ?
                     <div className="ScaderElem-shadegroup">
-                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                      <button key={index*50+13} className="ScaderElem-shade-extra-button ScaderElem-button-border"
                               onClick={handleElemMouseDown}
                               id={`${subElemsFriendly}-${index}-resetmemory`}>
                           Clear motor memory
                       </button>
-                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                      <button key={index*50+13} className="ScaderElem-shade-extra-button ScaderElem-button-border"
                               onClick={handleElemMouseDown}
                               id={`${subElemsFriendly}-${index}-reversedirn`}>
                           Change motion direction
                       </button>
-                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                      <button key={index*50+13} className="ScaderElem-shade-extra-button ScaderElem-button-border"
                               onClick={handleElemMouseDown}
                               id={`${subElemsFriendly}-${index}-setuplimit`}>
                           Set Up Limit ...
                       </button>
-                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                      <button key={index*50+13} className="ScaderElem-shade-extra-button ScaderElem-button-border"
                               onClick={handleElemMouseDown}
                               id={`${subElemsFriendly}-${index}-setdownlimit`}>
                           ... Down Limit + Save
                       </button>
-                      <button key={index*50+13} className="ScaderElem-button ScaderElem-button-border"
+                      <button key={index*50+13} className="ScaderElem-shade-extra-button ScaderElem-button-border"
                               onClick={handleElemMouseDown}
                               id={`${subElemsFriendly}-${index}-setfavourite`}>
                           Set favourite position
@@ -210,7 +218,7 @@ function ScaderShades(props:ScaderScreenProps) {
                 </div>
               ))}
             </div>
-          </header>
+          </div>
         </div>
       : null
     )

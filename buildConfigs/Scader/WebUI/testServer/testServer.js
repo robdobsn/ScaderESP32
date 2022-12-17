@@ -62,7 +62,7 @@ let curSettings = {
   "ScaderDoors": {
     "enable": false,
     "name": "Door Control",
-    "doors": [
+    "elems": [
       { "name": "Door 1" },
       { "name": "Door 2" }
     ]
@@ -87,9 +87,9 @@ const updateStatesFromConfig = () => {
         states[key].elems.push({name:elem.name, state:0});
       }
     } else if (key == 'ScaderDoors') {
-      states[key] = {doors:[]};
-      for (const door of curSettings[key].doors) {
-        states[key].doors.push({name:door.name, state:0});
+      states[key] = {elems:[], bell:"N"};
+      for (const elem of curSettings[key].elems) {
+        states[key].elems.push({name:elem.name, locked:"Y", open:"N"});
       }
     } else {
       states[key] = {};
@@ -170,8 +170,36 @@ async function run() {
     res.json({"rslt":"ok"})
   });
 
-  app.get('/api/door/:doorIds/:action/:userNum/:userPin', async function(req, res) {
+  app.get('/api/door/:doorIds/:action', async function(req, res) {
     console.log('Door', req.params);
+    const doorIdx = parseInt(req.params.doorIds) - 1;
+    if (req.params.doorIds && doorIdx >= 0 && doorIdx < curSettings.ScaderDoors.elems.length) {
+      if (req.params.action) {
+        states.ScaderDoors.elems[doorIdx].locked = req.params.action == 'unlock' ? "N" : "Y";
+        publishesPending.push("ScaderDoors");
+        setTimeout(() => {
+          states.ScaderDoors.elems[doorIdx].locked = "Y";
+          states.ScaderDoors.elems[doorIdx].open = "N";
+          publishesPending.push("ScaderDoors");
+        }, 5000);
+        setTimeout(() => {
+          states.ScaderDoors.elems[doorIdx].open = "Y";
+          publishesPending.push("ScaderDoors");
+        }, 2000);
+        setTimeout(() => {
+          states.ScaderDoors.bell = "Y";
+          publishesPending.push("ScaderDoors");
+          setTimeout(() => {
+            states.ScaderDoors.bell = "N";
+            publishesPending.push("ScaderDoors");
+          }, 2000);
+        }, 6000);
+      } else {
+        console.log(`Invalid action: ${req.params.action}`);
+      }
+    } else {
+      console.log(`Invalid door number ${req.params.doorIds}`);
+    }
     res.json({"rslt":"ok"})
   });
 

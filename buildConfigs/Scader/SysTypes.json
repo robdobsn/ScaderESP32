@@ -192,35 +192,35 @@
 		},
 		"ScaderShades": {
 			"maxElems": 5,
-			"HC959_SER": 32,
+			"HC959_SER": 16,
 			"HC595_SCK": 4,
 			"HC595_LATCH": 14,
 			"HC595_RST": 13,
 			"LED_OP": -1,
 			"LED_ACT": 15,
-			"LIGHTLVLPINS": [34, 39, -1]
+			"LIGHTLVLPINS": [-1, -1, -1]
 		},
 		"ScaderDoors": {
 			"maxElems": 2,
 			"doors": [
 				{
-					"strikePin": 1,
+					"strikePin": 33,
 					"strikeOn": 1,
-					"openSensePin": 2,
-					"senseLevel": 1,
+					"openSensePin": 34,
+					"openSenseLevel": 0,
 					"unlockForSecs": 10
 				},
 				{
-					"strikePin": 16,
+					"strikePin": 32,
 					"strikeOn": 1,
 					"openSensePin": -1,
-					"senseLevel": 1,
+					"openSenseLevel": 0,
 					"unlockForSecs": 30
 				}
 			],
 			"masterDoorIdx": 0,
-			"bellSensePin": 3,
-			"bellSensePress": 0
+			"bellSensePin": 39,
+			"bellSenseLevel": 1
 		},
 		"ScaderOpener": {
 			"DoorOpenMs": 45000,

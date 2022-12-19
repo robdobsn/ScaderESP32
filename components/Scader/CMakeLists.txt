@@ -8,7 +8,7 @@
 
 idf_component_register(
                 SRCS 
-                  "ScaderCommon/ScaderCommon.cpp"
+                  # "ScaderCommon/ScaderCommon.cpp"
                   "ScaderRelays/ScaderRelays.cpp"
                   "ScaderShades/ScaderShades.cpp"
                   "ScaderDoors/ScaderDoors.cpp"
@@ -24,7 +24,7 @@ idf_component_register(
                   # "ScaderWaterer/MoistureSensors.cpp"
                   # "ScaderWaterer/PumpControl.cpp"
                 INCLUDE_DIRS
-                  "ScaderCommon"
+                  # "ScaderCommon"
                   "ScaderRelays"
                   "ScaderShades"
                   "ScaderDoors"

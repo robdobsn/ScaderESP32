@@ -13,6 +13,7 @@
 #include <RaftUtils.h>
 #include <RestAPIEndpointManager.h>
 #include <SysManager.h>
+#include <NetworkSystem.h>
 #include <JSONParams.h>
 #include <ESPUtils.h>
 #include <time.h>
@@ -74,12 +75,19 @@ void ScaderDoors::setup()
         _masterDoorIndex = configGetLong("masterDoorIdx", 0);
 
         // Name set in UI
-        _scaderFriendlyName = configGetString("ScaderCommon/name", "Scader");
-        LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderFriendlyName.c_str());
+        _scaderFriendlyName = configGetString("/ScaderCommon/name", "Scader");
+
+        // Hostname
+        String hostname = configGetString("/ScaderCommon/hostname", "scader");
+        if (hostname.length() != 0)
+            networkSystem.setHostname(hostname.c_str());
+
+        // Debug
+        LOG_I(MODULE_PREFIX, "setup scaderUIName %s hostname %s", _scaderFriendlyName.c_str(), hostname.c_str());
 
         // Element names
         std::vector<String> elemInfos;
-        if (configGetArrayElems("ScaderDoors/elems", elemInfos))
+        if (configGetArrayElems("elems", elemInfos))
         {
             // Names array
             uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();

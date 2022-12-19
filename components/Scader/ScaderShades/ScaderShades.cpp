@@ -15,6 +15,7 @@
 #include <SysManager.h>
 #include <JSONParams.h>
 #include <ESPUtils.h>
+#include <NetworkSystem.h>
 
 static const char *MODULE_PREFIX = "ScaderShades";
 
@@ -38,6 +39,7 @@ void ScaderShades::setup()
     _maxElems = configGetLong("maxElems", DEFAULT_MAX_ELEMS);
     if (_maxElems > DEFAULT_MAX_ELEMS)
         _maxElems = DEFAULT_MAX_ELEMS;
+    _lightLevelsEnabled = configGetLong("enableLightLevels", false) != 0;
         
     // Check enabled
     if (_isEnabled)
@@ -62,8 +64,23 @@ void ScaderShades::setup()
             return;
         }
 
-        // Set the pin value of the reset pin to inactive (high)
+        // Set the pin value of the HC595 reset pin to inactive (high)
         digitalWrite(_hc595_RST, 1);
+
+        // Check if light-levels are used - only want to do this if door control is not used as they share a pin currrently
+        if (_lightLevelsEnabled)
+        {
+            // Configure GPIOs
+            ConfigPinMap::PinDef lightLevelPins[] = {
+                ConfigPinMap::PinDef("LIGHTLVLPINS[0]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[0]),
+                ConfigPinMap::PinDef("LIGHTLVLPINS[1]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[1]),
+                ConfigPinMap::PinDef("LIGHTLVLPINS[2]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[2])
+            };
+            ConfigPinMap::configMultiple(configGetConfig(), lightLevelPins, sizeof(lightLevelPins) / sizeof(lightLevelPins[0]));
+
+            // Debug
+            LOG_I(MODULE_PREFIX, "setup light-level pins %d %d %d", _lightLevelPins[0], _lightLevelPins[1], _lightLevelPins[2]);
+        }
 
         // HW Now initialised
         _isInitialised = true;
@@ -97,12 +114,19 @@ void ScaderShades::setup()
         }
 
         // Name set in UI
-        _scaderFriendlyName = configGetString("ScaderCommon/name", "Scader");
-        LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderFriendlyName.c_str());
+        _scaderFriendlyName = configGetString("/ScaderCommon/name", "Scader");
+
+        // Hostname
+        String hostname = configGetString("/ScaderCommon/hostname", "scader");
+        if (hostname.length() != 0)
+            networkSystem.setHostname(hostname.c_str());
+
+        // Debug
+        LOG_I(MODULE_PREFIX, "setup scaderUIName %s hostname %s", _scaderFriendlyName.c_str(), hostname.c_str());
 
         // Element names
         std::vector<String> elemInfos;
-        if (configGetArrayElems("ScaderShades/elems", elemInfos))
+        if (configGetArrayElems("elems", elemInfos))
         {
             // Names array
             uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();
@@ -118,8 +142,8 @@ void ScaderShades::setup()
         }
 
         // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d LIGHTLVL_1 %d LIGHTLVL_2 %d LIGHTLVL_3 %d",
-                    _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST, _lightLevelPins[0], _lightLevelPins[1], _lightLevelPins[2]);
+        LOG_I(MODULE_PREFIX, "setup enabled HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
+                    _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
     }
     else
     {
@@ -368,10 +392,13 @@ bool ScaderShades::doCommand(int shadeIdx, String &cmdStr, String &durationStr)
 
 void ScaderShades::getLightLevels(int lightLevels[], int numLevels)
 {
+    // Read light levels
     for (int i = 0; i < numLevels; i++)
     {
-        if (_lightLevelPins[i] >= 0)
+        if (_lightLevelsEnabled && (_lightLevelPins[i] >= 0))
             lightLevels[i] = analogRead(_lightLevelPins[i]);
+        else
+            lightLevels[i] = 0;
     }
 }
 
@@ -415,11 +442,18 @@ String ScaderShades::getStatusJSON()
         ipAddress = networkJson.getString("IP", "");
     }
 
-    int lightLevels[NUM_LIGHT_LEVELS];
-    getLightLevels(lightLevels, NUM_LIGHT_LEVELS);
-    char llStr[100];
-    snprintf(llStr, sizeof(llStr), R"({"lux0":%d,"lux1":%d,"lux2":%d})", lightLevels[0], lightLevels[1], lightLevels[2]);
-    return llStr;
+    String lightLevelsStr;
+    if (_lightLevelsEnabled)
+    {
+        int lightLevels[NUM_LIGHT_LEVELS];
+        getLightLevels(lightLevels, NUM_LIGHT_LEVELS);
+        for (int i = 0; i < NUM_LIGHT_LEVELS; i++)
+        {
+            lightLevelsStr += String(lightLevels[i]);
+            if (i < (NUM_LIGHT_LEVELS - 1))
+                lightLevelsStr += ",";
+        }
+    }
 
     // Create JSON string
     char* pJsonStr = new char[jsonLen];
@@ -438,9 +472,17 @@ String ScaderShades::getStatusJSON()
         snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"({"name":"%s","state":%s})", 
                             _elemNames[i].c_str(), isBusy(i) ? "1" : "0");
     }
-    strncat(pJsonStr, "]}", jsonLen);
+    strncat(pJsonStr, "]", jsonLen);
     String jsonStr = pJsonStr;
     delete[] pJsonStr;
+
+    // Append light levels
+    if (lightLevelsStr.length() > 0)
+        jsonStr += String(",\"lux\":[" + lightLevelsStr + "]");
+    jsonStr += "}";
+
+    // LOG_I(MODULE_PREFIX, "getStatusJSON jsonStr %s", jsonStr.c_str());
+
     return jsonStr;
 }
 

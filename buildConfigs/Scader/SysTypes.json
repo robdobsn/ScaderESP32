@@ -198,7 +198,8 @@
 			"HC595_RST": 13,
 			"LED_OP": -1,
 			"LED_ACT": 15,
-			"LIGHTLVLPINS": [-1, -1, -1]
+			"enableLightLevels": 0,
+			"LIGHTLVLPINS": [34, 39, -1]
 		},
 		"ScaderDoors": {
 			"maxElems": 2,

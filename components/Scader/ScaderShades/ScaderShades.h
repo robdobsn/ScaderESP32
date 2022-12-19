@@ -113,6 +113,7 @@ private:
     // Enabled and initalised flags
     bool _isEnabled = false;
     bool _isInitialised = false;
+    bool _lightLevelsEnabled = false;
 
     // Settings
     uint32_t _maxElems = DEFAULT_MAX_ELEMS;

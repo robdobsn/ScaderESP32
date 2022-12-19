@@ -48,6 +48,14 @@ function ScaderShades(props:ScaderScreenProps) {
     updateMutableConfig(newConfig);
   };
 
+  const handleLightLevelsEnabledChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(`${scaderName}.handleLightLevelsEnabledChange`);
+    // Update config
+    const newConfig = {...config, enableLightLevels: event.target.checked};
+    setConfig(newConfig);
+    updateMutableConfig(newConfig);
+  };
+
   const handleNumElemsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log(`${scaderName}.handleNumElemsChange ${event.target.value}`);
     // Update config
@@ -109,7 +117,7 @@ function ScaderShades(props:ScaderScreenProps) {
     return (
       <div className="ScaderElem">
         <div className="ScaderElem-header">
-          {/* Checkbox for enable with label */}
+          {/* Checkbox for enable shades */}
           <label>
             <input className="ScaderElem-checkbox" type="checkbox" 
                   checked={config.enable} 
@@ -138,6 +146,13 @@ function ScaderShades(props:ScaderScreenProps) {
                 </label>
               </div>
             ))}
+            {/* Checkbox for light levels enabled */}
+            <label>
+              <input className="ScaderElem-checkbox" type="checkbox"
+                    checked={config.enableLightLevels}
+                    onChange={handleLightLevelsEnabledChange} />
+              Enable light levels
+            </label>
           </div>
         }
       </div>

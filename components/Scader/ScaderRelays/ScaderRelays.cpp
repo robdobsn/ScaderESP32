@@ -13,12 +13,15 @@
 #include <RaftUtils.h>
 #include <RestAPIEndpointManager.h>
 #include <SysManager.h>
+#include <NetworkSystem.h>
 #include <JSONParams.h>
 #include <ESPUtils.h>
 #include <time.h>
 #include <driver/gpio.h>
 
 static const char *MODULE_PREFIX = "ScaderRelays";
+
+// #define CHECK_RUNNING_ON_APPROPRIATE_HW
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -44,29 +47,31 @@ void ScaderRelays::setup()
     // Check enabled
     if (_isEnabled)
     {
-        // // Check that SPI_MISO pin is driven by external hardware - this indicates that the hardware
-        // // is valid - otherwise setting pin 16/17 (used by SPIRAM) should not be done as it causes 
-        // // ESP32 to crash
-        // int spiMisoPin = configGetLong("SPI_MISO", -1);
-        // if (spiMisoPin < 0)
-        // {
-        //     LOG_E(MODULE_PREFIX, "setup FAILED SPI_MISO pin %d invalid", spiMisoPin);
-        //     return;
-        // }
-        // // Set to input pullup
-        // pinMode(spiMisoPin, INPUT_PULLUP);
-        // // Get level
-        // bool spiMisoLevel = digitalRead(spiMisoPin);
-        // // Set to output pulldown
-        // pinMode(spiMisoPin, INPUT_PULLDOWN);
-        // // Check level
-        // if (spiMisoLevel && !digitalRead(spiMisoPin))
-        // {
-        //     LOG_E(MODULE_PREFIX, "setup FAILED SPI_MISO pin %d is not driven by external hardware", 
-        //             spiMisoPin, spiMisoLevel);
-        //     return;
-        // }
-        
+#ifdef CHECK_RUNNING_ON_APPROPRIATE_HW
+        // Check that SPI_MISO pin is driven by external hardware - this indicates that the hardware
+        // is valid - otherwise setting pin 16/17 (used by SPIRAM) should not be done as it causes 
+        // ESP32 to crash
+        int spiMisoPin = configGetLong("SPI_MISO", -1);
+        if (spiMisoPin < 0)
+        {
+            LOG_E(MODULE_PREFIX, "setup FAILED SPI_MISO pin %d invalid", spiMisoPin);
+            return;
+        }
+        // Set to input pullup
+        pinMode(spiMisoPin, INPUT_PULLUP);
+        // Get level
+        bool spiMisoLevel = digitalRead(spiMisoPin);
+        // Set to output pulldown
+        pinMode(spiMisoPin, INPUT_PULLDOWN);
+        // Check level
+        if (spiMisoLevel && !digitalRead(spiMisoPin))
+        {
+            LOG_E(MODULE_PREFIX, "setup FAILED SPI_MISO pin %d is not driven by external hardware", 
+                    spiMisoPin, spiMisoLevel);
+            return;
+        }
+#endif
+
         // Configure GPIOs
         ConfigPinMap::PinDef gpioPins[] = {
             ConfigPinMap::PinDef("SPI_MOSI", ConfigPinMap::GPIO_INPUT, &_spiMosi),
@@ -167,12 +172,19 @@ void ScaderRelays::setup()
         }
 
         // Name set in UI
-        _scaderFriendlyName = configGetString("ScaderCommon/name", "Scader");
-        LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderFriendlyName.c_str());
+        _scaderFriendlyName = configGetString("/ScaderCommon/name", "Scader");
+
+        // Hostname
+        String hostname = configGetString("/ScaderCommon/hostname", "scader");
+        if (hostname.length() != 0)
+            networkSystem.setHostname(hostname.c_str());
+
+        // Debug
+        LOG_I(MODULE_PREFIX, "setup scaderUIName %s hostname %s", _scaderFriendlyName.c_str(), hostname.c_str());
 
         // Element names
         std::vector<String> elemInfos;
-        if (configGetArrayElems("ScaderRelays/elems", elemInfos))
+        if (configGetArrayElems("elems", elemInfos))
         {
             // Names array
             uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();

@@ -48,11 +48,13 @@ export class ScaderConfig {
     }
     ScaderShades: {
         enable: boolean,
+        enableLightLevels: boolean,
         maxElems: number,
         name: string,
         elems: Array<ShadesConfig>
     } = {
         enable: false,
+        enableLightLevels: false,
         maxElems: 5,
         name: "ScaderShades",
         elems: [],

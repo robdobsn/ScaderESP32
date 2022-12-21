@@ -14,7 +14,7 @@ idf_component_register(
                   "ScaderDoors/ScaderDoors.cpp"
                   "ScaderDoors/DoorStrike.cpp"
                   # "ScaderOpener/ScaderOpener.cpp"
-                  # "ScaderLEDPixels/ScaderLEDPixels.cpp"
+                  "ScaderLEDPixels/ScaderLEDPixels.cpp"
                   # "ScaderOpener/DoorOpener.cpp"
                   # "ScaderCat/ScaderCat.cpp"
                   # "TinyPICO/TinyPICO.cpp"
@@ -30,7 +30,7 @@ idf_component_register(
                   "ScaderDoors"
                   # "ScaderOpener"
                   # "ScaderCat"
-                  # "ScaderLEDPixels"
+                  "ScaderLEDPixels"
                   # "TinyPICO"
                   # "HWElemINA219"
                   # ${FASTLED_DIR}
@@ -40,5 +40,6 @@ idf_component_register(
                   raftcore-src
                   comms
                   system
+                  FastLED-idf
                 )
 

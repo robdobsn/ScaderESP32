@@ -461,10 +461,11 @@ String ScaderShades::getStatusJSON()
         return "{}";
 
     // Format JSON
-    snprintf(pJsonStr, jsonLen, R"({"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","elems":[)", 
+    snprintf(pJsonStr, jsonLen, R"({"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","upMs":%lld,"elems":[)", 
                 _scaderFriendlyName.c_str(), 
                 getSysManager()->getSystemVersion().c_str(),
-                hostname.c_str(), ipAddress.c_str(), macAddress.c_str());
+                hostname.c_str(), ipAddress.c_str(), macAddress.c_str(),
+                esp_timer_get_time() / 1000ULL);
     for (int i = 0; i < _elemNames.size(); i++)
     {
         if (i > 0)

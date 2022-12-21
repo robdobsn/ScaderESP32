@@ -6,6 +6,7 @@ import ScaderRelays from './ScaderRelays';
 import { ScaderScreenProps } from './ScaderCommon';
 import ScaderShades from './ScaderShades';
 import ScaderDoors from './ScaderDoors';
+import ScaderLEDPix from './ScaderLEDPix';
 
 // const testServerPath = "http://localhost:3123";
 const testServerPath = "http://192.168.86.90";
@@ -62,6 +63,7 @@ function ScaderApp() {
       {<ScaderRelays {...screenProps} />}  
       {<ScaderShades {...screenProps} />}
       {<ScaderDoors {...screenProps} />}
+      {<ScaderLEDPix {...screenProps} />}
     </div>
   </div>
   );

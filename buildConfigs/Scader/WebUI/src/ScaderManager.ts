@@ -1,5 +1,5 @@
 import { ScaderConfig } from "./ScaderConfig";
-import { ScaderRelayStates, ScaderShadeStates, ScaderDoorStates, ScaderState } from "./ScaderState";
+import { ScaderState, ScaderStateType } from "./ScaderState";
 
 export class ScaderManager {
 
@@ -28,7 +28,7 @@ export class ScaderManager {
     private _configChangeCallbacks: Array<(config: ScaderConfig) => void> = [];
 
     // State change callbacks
-    private _stateChangeCallbacks: Array<(config: ScaderRelayStates | ScaderShadeStates | ScaderDoorStates) => void> = [];
+    private _stateChangeCallbacks: Array<(state: ScaderStateType) => void> = [];
 
     // Get instance
     public static getInstance(): ScaderManager {
@@ -177,7 +177,7 @@ export class ScaderManager {
     }
 
     // Register a state change callback
-    public onStateChange(callback: (state:ScaderRelayStates | ScaderShadeStates | ScaderDoorStates) => void): void {
+    public onStateChange(callback: (state: ScaderStateType) => void): void {
         // Add the callback
         this._stateChangeCallbacks.push(callback);
     }

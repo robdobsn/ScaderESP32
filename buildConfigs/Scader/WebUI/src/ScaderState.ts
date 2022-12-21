@@ -27,6 +27,9 @@ export class ScaderShadeStates {
     }
 }
 
+export class ScaderLEDPixStates {
+}
+
 export class ScaderDoorState {
     name: string = "";
     locked: string = 'K';
@@ -49,4 +52,9 @@ export class ScaderState {
     ScaderRelays: ScaderRelayStates = {} as ScaderRelayStates;
     ScaderShades: ScaderShadeStates = {} as ScaderShadeStates;
     ScaderDoors: ScaderDoorStates = {} as ScaderDoorStates;
+    ScaderLEDPix: ScaderLEDPixStates = {} as ScaderLEDPixStates;
 }
+
+export type ScaderStateType = 
+    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates;
+    

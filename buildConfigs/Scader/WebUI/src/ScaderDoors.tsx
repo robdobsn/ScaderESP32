@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { DoorConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
-import { BellIcon, LockedIcon, OffIcon, OnIcon, UnlockedIcon } from './ScaderIcons';
+import { LockedIcon, UnlockedIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
-import { ScaderDoorStates, ScaderShadeStates, ScaderState } from './ScaderState';
+import { ScaderDoorStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 

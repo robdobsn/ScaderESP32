@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.3.2"
+#define SYSTEM_VERSION "5.3.3"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -159,7 +159,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include "ScaderDoors.h"
 // #include "ScaderOpener.h"
 // #include "ScaderCat.h"
-// #include "ScaderLEDPixels.h"
+#include "ScaderLEDPixels.h"
 // #include "ScaderWaterer.h"
 #endif
 
@@ -388,7 +388,7 @@ void mainTask(void *pvParameters)
     // // ScaderOpener _scaderOpener("ScaderOpener", cfg, nullptr, &_scaderMutableConfig);
     // // _scaderOpener.setup();
     // // ScaderCat _scaderCat("ScaderCat", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    // ScaderLEDPixels _scaderLEDPixels("ScaderLEDPix", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
+    ScaderLEDPixels _scaderLEDPixels("ScaderLEDPix", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
     // ScaderWaterer _scaderWaterer("ScaderWaterer", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
 #endif
 

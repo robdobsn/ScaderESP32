@@ -346,7 +346,7 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
 String ScaderRelays::getStatusJSON()
 {
     // Get length of JSON
-    uint32_t jsonLen = 200 + _scaderFriendlyName.length();
+    uint32_t jsonLen = 300 + _scaderFriendlyName.length();
     for (int i = 0; i < _elemNames.size(); i++)
         jsonLen += 30 + _elemNames[i].length();
     static const uint32_t MAX_JSON_STR_LEN = 4500;
@@ -385,10 +385,11 @@ String ScaderRelays::getStatusJSON()
         return "{}";
 
     // Format JSON
-    snprintf(pJsonStr, jsonLen, R"({"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","elems":[)", 
+    snprintf(pJsonStr, jsonLen, R"({"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","upMs":%lld,"elems":[)", 
                 _scaderFriendlyName.c_str(), 
                 getSysManager()->getSystemVersion().c_str(),
-                hostname.c_str(), ipAddress.c_str(), macAddress.c_str());
+                hostname.c_str(), ipAddress.c_str(), macAddress.c_str(),
+                esp_timer_get_time() / 1000ULL);
     for (int i = 0; i < _elemNames.size(); i++)
     {
         if (i > 0)

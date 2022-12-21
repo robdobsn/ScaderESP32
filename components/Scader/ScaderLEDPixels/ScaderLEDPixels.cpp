@@ -100,7 +100,8 @@ void ScaderLEDPixels::setup()
         }
 
         // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled with %d strips total LEDs %d", stripInfos.size(), totalNumPix);
+        LOG_I(MODULE_PREFIX, "setup enabled with %d strips total LEDs %d brightness %d", 
+                    stripInfos.size(), totalNumPix, defaultBrightness);
 
         // HW Now initialised
         _isInitialised = true;

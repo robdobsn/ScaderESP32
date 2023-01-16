@@ -18,7 +18,9 @@
 // Debug
 // #define DEBUG_PUBLISHING_HANDLE
 // #define DEBUG_PUBLISHING_MESSAGE
-// #define DEBUG_ONLY_THIS_MSG_ID "ScaderWaterer"
+// #define DEBUG_PUBLISHING_HASH
+// #define DEBUG_ONLY_THIS_MSG_ID "ScaderOpener"
+// #define DEBUG_SHOW_ONLY_FIRST_N_BYTES_OF_MSG 16
 // #define DEBUG_API_SUBSCRIPTION
 // #define DEBUG_STATE_PUBLISHER_SETUP
 // #define DEBUG_REDUCED_PUBLISHING_RATE_WHEN_BUSY
@@ -163,12 +165,37 @@ void StatePublisher::service()
         if (pubRec._stateDetectFn)
         {
             // Check for the mimimum time between publications
-            if (Raft::isTimeout(millis(), pubRec._lastPublishMs, MIN_MS_BETWEEN_STATE_CHANGE_PUBLISHES))
+#ifdef DEBUG_PUBLISHING_HASH
+            if (Raft::isTimeout(millis(), pubRec._lastHashCheckMs, MIN_MS_BETWEEN_STATE_CHANGE_PUBLISHES*10))
+#else
+            if (Raft::isTimeout(millis(), pubRec._lastHashCheckMs, MIN_MS_BETWEEN_STATE_CHANGE_PUBLISHES))
+#endif
             {
+                // Last hash check time
+                pubRec._lastHashCheckMs = millis();
+
                 // Callback function generates a hash in the form of a std::vector<uint8_t>
                 // If this is not identical to previously returned hash then force message generation
                 std::vector<uint8_t> newStateHash;
                 pubRec._stateDetectFn(pubRec._msgIDStr.c_str(), newStateHash);
+
+#ifdef DEBUG_PUBLISHING_HASH
+#ifdef DEBUG_ONLY_THIS_MSG_ID
+                if (pubRec._msgIDStr.equals(DEBUG_ONLY_THIS_MSG_ID))
+                {
+#endif
+                    String curHashStr;
+                    Raft::getHexStrFromBytes(pubRec._stateHash.data(), pubRec._stateHash.size(), curHashStr);
+                    String newHashStr;
+                    Raft::getHexStrFromBytes(newStateHash.data(), newStateHash.size(), newHashStr);
+                    LOG_I(MODULE_PREFIX, "service check hash for %s curHash %s newHash %s", 
+                                    pubRec._name.c_str(), curHashStr.c_str(), newHashStr.c_str());
+#ifdef DEBUG_ONLY_THIS_MSG_ID
+                }
+#endif
+#endif
+
+                // Check hash value
                 if(pubRec._stateHash != newStateHash)
                 {
                     forceMsgGeneration = true;
@@ -182,10 +209,12 @@ void StatePublisher::service()
         for (InterfaceRateRec& rateRec : pubRec._interfaceRates)
         {
             // Check for time to publish
-            if (forceMsgGeneration || ((rateRec._rateHz != 0) && (Raft::isTimeout(millis(), rateRec._lastPublishMs, 
-                        reducePublishingRate ? REDUCED_PUB_RATE_WHEN_BUSY_MS : rateRec._betweenPubsMs))))
+            if (forceMsgGeneration || rateRec._forceMsgGen ||
+                        ((rateRec._rateHz != 0) && (Raft::isTimeout(millis(), rateRec._lastPublishMs, 
+                                    reducePublishingRate ? REDUCED_PUB_RATE_WHEN_BUSY_MS : rateRec._betweenPubsMs))))
             {
-                rateRec._lastPublishMs = pubRec._lastPublishMs = millis();
+                rateRec._lastPublishMs = millis();
+                rateRec._forceMsgGen = false;
 
                 // Check if channelID is defined
                 if (rateRec._channelID == PUBLISHING_HANDLE_UNDEFINED)
@@ -276,6 +305,7 @@ String StatePublisher::getDebugJSON()
 void StatePublisher::receiveMsgGenCB(const char* msgGenID, SysMod_publishMsgGenFn msgGenCB, SysMod_stateDetectCB stateDetectCB)
 {
     // Search for publication records using this msgGenID
+    bool found = false;
     for (PubRec& pubRec : _publicationRecs)
     {
         // Check ID
@@ -284,8 +314,15 @@ void StatePublisher::receiveMsgGenCB(const char* msgGenID, SysMod_publishMsgGenF
             LOG_I(MODULE_PREFIX, "receiveMsgGenCB registered msgGenFn for msgID %s", msgGenID);
             pubRec._msgGenFn = msgGenCB;
             pubRec._stateDetectFn = stateDetectCB;
+            found = true;
             break;
         }
+    }
+
+    // Not found?
+    if (!found)
+    {
+        LOG_W(MODULE_PREFIX, "receiveMsgGenCB msgGenFn not registered for msgID %s", msgGenID);
     }
 }
 
@@ -321,8 +358,14 @@ bool StatePublisher::publishData(StatePublisher::PubRec& pubRec, InterfaceRateRe
     {
         // Debug
         String outStr;
+#ifdef DEBUG_SHOW_ONLY_FIRST_N_BYTES_OF_MSG
+        Raft::getHexStrFromBytes(endpointMsg.getBuf(), 
+                    endpointMsg.getBufLen() > DEBUG_SHOW_ONLY_FIRST_N_BYTES_OF_MSG ? DEBUG_SHOW_ONLY_FIRST_N_BYTES_OF_MSG : endpointMsg.getBufLen(), outStr);
+        outStr += "...";
+#else
         Raft::getHexStrFromBytes(endpointMsg.getBuf(), endpointMsg.getBufLen(), outStr);
-        LOG_I(MODULE_PREFIX, "sendPublishMsg payloadLen %d payload %s", endpointMsg.getBufLen(), outStr.c_str());
+#endif
+        LOG_I(MODULE_PREFIX, "sendPublishMsg if %s channelID %d payloadLen %d payload %s", rateRec._interface.c_str(), rateRec._channelID, endpointMsg.getBufLen(), outStr.c_str());
     }
 #endif
 
@@ -427,6 +470,7 @@ void StatePublisher::apiSubscription(String &reqStr, String& respStr, const APIS
                     {
                         interfaceRateFound = true;
                         rateRec.setRateHz(pubRateHz);
+                        rateRec._forceMsgGen = true;
 #ifdef DEBUG_API_SUBSCRIPTION
                         LOG_I(MODULE_PREFIX, "apiSubscription updated rateRec channelID %d rateHz %.2f", channelID, pubRateHz);
 #endif
@@ -441,6 +485,7 @@ void StatePublisher::apiSubscription(String &reqStr, String& respStr, const APIS
                     ifRateRec._channelID = channelID;
                     ifRateRec.setRateHz(pubRateHz);
                     ifRateRec._lastPublishMs = millis();
+                    ifRateRec._forceMsgGen = true;
                     pubRec._interfaceRates.push_back(ifRateRec);
 #ifdef DEBUG_API_SUBSCRIPTION
                     LOG_I(MODULE_PREFIX, "apiSubscription created rateRec channelID %d rateHz %.2f", channelID, pubRateHz);

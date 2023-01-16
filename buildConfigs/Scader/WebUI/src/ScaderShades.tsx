@@ -7,7 +7,7 @@ import { ScaderShadeStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
-function ScaderShades(props:ScaderScreenProps) {
+export default function ScaderShades(props:ScaderScreenProps) {
 
   const scaderName = "ScaderShades";
   const configElemsName = "elems";
@@ -26,8 +26,8 @@ function ScaderShades(props:ScaderScreenProps) {
       // Update config
       setConfig(newConfig[scaderName]);
     });
-    scaderManager.onStateChange((newState) => {
-      console.log(`${scaderName}onStateChange newState ${JSON.stringify(newState)} prevState ${JSON.stringify(state)}`);
+    scaderManager.onStateChange(scaderName, (newState) => {
+      console.log(`${scaderName} onStateChange newState ${JSON.stringify(newState)}`);
       // Update state
       if (stateElemsName in newState) {
         setState(new ScaderShadeStates(newState));
@@ -115,7 +115,7 @@ function ScaderShades(props:ScaderScreenProps) {
 
   const editModeScreen = () => {
     return (
-      <div className="ScaderElem">
+      <div className="ScaderElem=edit">
         <div className="ScaderElem-header">
           {/* Checkbox for enable shades */}
           <label>
@@ -233,6 +233,13 @@ function ScaderShades(props:ScaderScreenProps) {
                 </div>
               ))}
             </div>
+            {/* Light levels */}
+            {config.enableLightLevels ?
+              <div className="ScaderElem-lightlevels">
+                <div className="ScaderElem-lightlevels-header">Light levels</div>
+                <div>{JSON.stringify(state)}</div>
+              </div>
+            : null}                    
           </div>
         </div>
       : null
@@ -244,5 +251,3 @@ function ScaderShades(props:ScaderScreenProps) {
     props.isEditingMode ? editModeScreen() : normalModeScreen()
   );
 }
-
-export default ScaderShades;

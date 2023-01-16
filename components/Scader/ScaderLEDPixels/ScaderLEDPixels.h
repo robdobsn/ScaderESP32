@@ -10,6 +10,7 @@
 
 #include <SysModBase.h>
 #include <ConfigBase.h>
+#include <ScaderCommon.h>
 #include <RaftUtils.h>
 #include <FastLED.h>
 
@@ -35,9 +36,12 @@ protected:
     virtual String getStatusJSON() override final;
     
 private:
-    // Enabled and initalised flags
-    bool _isEnabled;
-    bool _isInitialised;
+
+    // Common
+    ScaderCommon _scaderCommon;
+
+    // Tnitalised flag
+    bool _isInitialised = false;
 
     // WS2812 strips
     std::vector<CRGB> _ledPixels;
@@ -46,14 +50,19 @@ private:
     enum LedStripPattern
     {
         PATTERN_NONE,
-        PATTERN_LOCATE
+        PATTERN_LOCATE,
+        PATTERN_SNAKE
     };
-    LedStripPattern _pattern;
+    LedStripPattern _pattern = PATTERN_NONE;
 
     // Pattern parameters
-    uint32_t _patternLEDIdx;
-    uint32_t _patternSeqIdx;
-    uint32_t _patternLastTime;
+    uint32_t _patternLEDIdx = 0;
+    uint32_t _patternSeqIdx = 0;
+    uint32_t _patternSnakeLen = 0;
+    uint32_t _patternSnakeSpeed = 0;
+    int _patternDirection = 1;
+    uint32_t _patternLastTime = 0;
+    uint32_t _patternLen = 0;
 
     // Helper functions
     void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
@@ -66,4 +75,6 @@ private:
     static const uint32_t PATTERN_LOCATE_LEDS_BETWEEN_SYNCS = 10;
     void patternLocate_start();
     void patternLocate_service();
+    void patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed);
+    void patternSnake_service();
 };

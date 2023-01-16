@@ -42,7 +42,8 @@ set(FS_IMAGE_PATH "${BUILD_CONFIG_DIR}/FSImage")
 
 # Web UI
 set(UI_SOURCE_PATH "${BUILD_CONFIG_DIR}/WebUI")
-# set(WEB_UI_GEN_FLAGS --nogzip)
+set(WEB_UI_GEN_FLAGS --deletefirst)
+# set(WEB_UI_GEN_FLAGS --deletefirst --nogzip)
 
 # Firmware image name
 set(FW_IMAGE_NAME "ScaderFW")

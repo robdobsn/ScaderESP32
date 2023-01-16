@@ -26,8 +26,44 @@ body {
   color: white;
 }
 
+.ScaderApp-bodyeditmode {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  font-size: 1rem;
+  color: white;
+  text-align: left;
+  padding: 0 20px;
+}
+
 .ScaderApp-link {
   color: #61dafb;
+}
+
+.ScaderElem {
+  margin: 7px;
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.ScaderElem-edit {
+  background-color: #505050;
+  margin: 7px;
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.ScaderElem-edit-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.ScaderElem-edit-line {
+  display: flex;
+  flex-direction: row;
+  padding: 5px;
 }
 
 .ScaderElem-button {
@@ -64,6 +100,14 @@ body {
   padding-top: 3rem;
   position: absolute;
   text-align: center;
+}
+
+.ScaderElem-button-editmode {
+  width: auto;
+  height: 2rem;
+  margin-left: 10px;
+  border-radius: 8px;
+  border: none;
 }
 
 .ScaderElem-shade-button {
@@ -105,7 +149,13 @@ body {
 }
 
 .ScaderElem-input {
-  font-size: calc(10px + 2vmin);
+  font-size: calc(10px + 1vmin);
+  margin-left: 10px;
+}
+
+.ScaderElem-input-small {
+  width: 5rem;
+  font-size: 1.5rem;
   margin-left: 10px;
 }
 
@@ -118,6 +168,21 @@ body {
   height: 1.5rem;
   margin-left: 10px;
   margin-right: 10px;
+}
+
+.ScaderElem-status {
+  font-size: calc(8px + 2vmin);
+  margin-left: 10px;
+  margin-right: 10px;
+  background-color: #303030;
+  display: flex;
+  margin: 7px;
+  padding: 7px;
+  border-radius: 5px;
+}
+
+.ScaderElem-status div {
+  flex: auto;
 }
 
 .ScaderElem-isOpen {
@@ -151,13 +216,19 @@ body {
   justify-content: space-between;
 }
 
+.ScaderHeader-bareditmode {
+  padding: 1% 2%;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+}
+
 .ScaderHeader-button-bar {
   /* display: flex; */
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
-  flex: 10;
-  margin-top: 15px;
+  flex: 60;
 }
 
 .ScaderHeader-title {
@@ -178,11 +249,10 @@ body {
 
 .ScaderHeader-button {
   flex: auto;
-  height: 3rem;
-  width: auto;
   padding: 10px 20px;
   font-size: 1.4rem;
-  margin: 10px;
+  margin: 6px;
+  border-radius: 8px;
 }
 
 .ScaderHeader-hamburger {

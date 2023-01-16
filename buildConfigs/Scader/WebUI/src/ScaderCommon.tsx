@@ -46,8 +46,7 @@ export const ScaderCommon = (props:ScaderHeaderProps) => {
     };
 
     const onHostnameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        console.log(`ScaderCommon.onTitleChange ${event.target.value}`);
-        // Update state
+        console.log(`ScaderCommon.onHostnameChange ${event.target.value}`);
         const newConfig = {name: config.name, hostname: event.target.value};
         setConfig(newConfig);
         updateMutableConfig(newConfig);
@@ -59,9 +58,10 @@ export const ScaderCommon = (props:ScaderHeaderProps) => {
 
     console.log(`ScaderCommon.render ${props.config.ScaderCommon && props.config.ScaderCommon.name ? props.config.ScaderCommon.name : "no name"}`);
 
+    const headerClassName = props.isEditMode ? "ScaderHeader-bareditmode" : "ScaderHeader-bar";
     return (
         <div className="ScaderHeader">
-        <div className="ScaderHeader-bar">
+        <div className={headerClassName}>
             {props.isEditMode ? 
                 <div className="ScaderHeader-title">Edit Mode</div> :
                 <div className="ScaderHeader-title">{config.name ? config.name : "Scader"}</div>

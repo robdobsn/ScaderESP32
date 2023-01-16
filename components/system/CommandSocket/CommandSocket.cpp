@@ -119,7 +119,7 @@ void CommandSocket::applySetup()
 void CommandSocket::service()
 {
     // Check if WiFi is connected and begin if so
-    if ((!_begun) && networkSystem.isTCPIPConnected())
+    if ((!_begun) && networkSystem.isIPConnected())
     {
         begin();
     }

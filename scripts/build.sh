@@ -1,6 +1,6 @@
 BUILDCONF=${1:-Scader}
 SERIALPORT=${2:-COM3}
-BUILD_IDF_VERS=${3:-esp-idf-v4.4.2}
+BUILD_IDF_VERS=${3:-esp-idf-v4.4.3}
 IPORHOSTNAME=${4:-}
 FW_IMAGE_NAME=${BUILDCONF}FW.bin
 echo "Building for ${BUILDCONF} FW image is ${FW_IMAGE_NAME}"

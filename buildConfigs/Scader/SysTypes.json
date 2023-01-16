@@ -17,6 +17,13 @@
 		},
 		"LogManager": {
 			"logDests": [
+				{
+					"enable": 1,
+					"type": "Papertrail",
+					"host": "logs2.papertrailapp.com",
+					"port": 48992,
+					"sysName": "Scader"
+				}
 			]
 		},
 		"ProtExchg": {
@@ -177,6 +184,19 @@
 							"rateHz": 0.1
 						}
 					]
+				},
+				{
+					"type": "HW",
+					"name": "ScaderOpener",
+					"trigger": "Time",
+					"msgID": "ScaderOpener",
+					"rates": [
+						{
+							"if": "scaderOut",
+							"protocol": "RICJSON",
+							"rateHz": 0.1
+						}
+					]
 				}
 			]
 		},
@@ -224,7 +244,9 @@
 			"bellSenseLevel": 1
 		},
 		"ScaderOpener": {
-			"DoorOpenMs": 45000,
+			"DoorOpenTimeSecs": 45,
+			"DoorOpenAngle": 30,
+			"MotorOnTimeAfterMoveSecs": 1,
 			"DoorMoveTimeMs": 20000,
 			"LED_OUT_EN_PIN": 21,
 			"LED_IN_EN_PIN": 22,
@@ -256,7 +278,7 @@
 				},
 				"ramp": {
 					"rampTimerEn": 1,
-					"rampTimerUs": 20,
+					"rampTimerUs": 100,
 					"pipelineLen": 100
 				},
 				"motorEn": {
@@ -268,11 +290,10 @@
 					{
 						"name": "X",
 						"params": {
-							"maxSpeed": 10,
-							"maxAcc": 2,
-							"maxRPM": 120,
-							"stepsPerRot": 1000,
-							"maxVal": 200
+							"unitsPerRot": 360,
+							"stepsPerRot": 3600,
+							"maxSpeed": 50,
+							"maxAcc": 50
 						},
 						"driver": {
 							"driver": "TMC2209",
@@ -280,14 +301,14 @@
 							"addr": 0,
 							"stepPin": "15",
 							"dirnPin": "12",
-							"invDirn": 0,
+							"invDirn": 1,
 							"writeOnly": 0,
 							"extSenseOhms": 0.15,
 							"extVRef": 0,
 							"extMStep": 0,
 							"intpol": 1,
 							"microsteps": 1,
-							"rmsAmps": 0.5,
+							"rmsAmps": 0.01,
 							"holdModeOrFactor": 0.5,
 							"holdDelay": 1,
 							"pwmFreqKHz": 35

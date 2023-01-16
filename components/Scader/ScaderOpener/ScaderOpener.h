@@ -10,6 +10,7 @@
 
 #include <ArduinoOrAlt.h>
 #include <ConfigBase.h>
+#include <ScaderCommon.h>
 #include <RaftUtils.h>
 #include <SysModBase.h>
 #include <DoorOpener.h>
@@ -35,14 +36,21 @@ protected:
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;
 
+    // Status
+    virtual String getStatusJSON() override final;
+
 private:
 
-    // Enabled and initalised flags
-    bool _isEnabled;
-    bool _isInitialised;
+    // Common
+    ScaderCommon _scaderCommon;
+
+    // Initalised flag
+    bool _isInitialised = false;
 
     // Opener hardware
     DoorOpener _doorOpener;
 
     void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+    void getStatusHash(std::vector<uint8_t>& stateHash);
+    // void saveMutableData();
 };

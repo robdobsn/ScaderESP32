@@ -24,7 +24,8 @@ static const char *MODULE_PREFIX = "ScaderShades";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderShades::ScaderShades(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
+    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig),
+          _scaderCommon(*this, pModuleName)
 {
 }
 
@@ -34,121 +35,115 @@ ScaderShades::ScaderShades(const char *pModuleName, ConfigBase &defaultConfig, C
 
 void ScaderShades::setup()
 {
+    // Common setup
+    _scaderCommon.setup();
+
     // Get settings
-    _isEnabled = configGetLong("enable", false) != 0;
     _maxElems = configGetLong("maxElems", DEFAULT_MAX_ELEMS);
     if (_maxElems > DEFAULT_MAX_ELEMS)
         _maxElems = DEFAULT_MAX_ELEMS;
     _lightLevelsEnabled = configGetLong("enableLightLevels", false) != 0;
         
     // Check enabled
-    if (_isEnabled)
+    if (!_scaderCommon.isEnabled())
+    {
+        LOG_I(MODULE_PREFIX, "setup disabled");
+        return;
+    }
+
+    // Configure GPIOs
+    ConfigPinMap::PinDef gpioPins[] = {
+        ConfigPinMap::PinDef("HC959_SER", ConfigPinMap::GPIO_OUTPUT, &_hc595_SER),
+        ConfigPinMap::PinDef("HC595_SCK", ConfigPinMap::GPIO_OUTPUT, &_hc595_SCK),
+        ConfigPinMap::PinDef("HC595_LATCH", ConfigPinMap::GPIO_OUTPUT, &_hc595_LATCH),
+        ConfigPinMap::PinDef("HC595_RST", ConfigPinMap::GPIO_OUTPUT, &_hc595_RST),
+        ConfigPinMap::PinDef("LIGHTLVLPINS[0]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[0]),
+        ConfigPinMap::PinDef("LIGHTLVLPINS[1]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[1]),
+        ConfigPinMap::PinDef("LIGHTLVLPINS[2]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[2])
+    };
+    ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
+
+    // Check valid
+    if ((_hc595_RST < 0) || (_hc595_LATCH < 0) || (_hc595_SCK < 0) || (_hc595_SER < 0))
+    {
+        LOG_W(MODULE_PREFIX, "setup invalid parameters for HC595 pins HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
+                    _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
+        return;
+    }
+
+    // Set the pin value of the HC595 reset pin to inactive (high)
+    digitalWrite(_hc595_RST, 1);
+
+    // Check if light-levels are used - only want to do this if door control is not used as they share a pin currrently
+    if (_lightLevelsEnabled)
     {
         // Configure GPIOs
-        ConfigPinMap::PinDef gpioPins[] = {
-            ConfigPinMap::PinDef("HC959_SER", ConfigPinMap::GPIO_OUTPUT, &_hc595_SER),
-            ConfigPinMap::PinDef("HC595_SCK", ConfigPinMap::GPIO_OUTPUT, &_hc595_SCK),
-            ConfigPinMap::PinDef("HC595_LATCH", ConfigPinMap::GPIO_OUTPUT, &_hc595_LATCH),
-            ConfigPinMap::PinDef("HC595_RST", ConfigPinMap::GPIO_OUTPUT, &_hc595_RST),
+        ConfigPinMap::PinDef lightLevelPins[] = {
             ConfigPinMap::PinDef("LIGHTLVLPINS[0]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[0]),
             ConfigPinMap::PinDef("LIGHTLVLPINS[1]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[1]),
             ConfigPinMap::PinDef("LIGHTLVLPINS[2]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[2])
         };
-        ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
-
-        // Check valid
-        if ((_hc595_RST < 0) || (_hc595_LATCH < 0) || (_hc595_SCK < 0) || (_hc595_SER < 0))
-        {
-            LOG_W(MODULE_PREFIX, "setup invalid parameters for HC595 pins HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
-                        _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
-            return;
-        }
-
-        // Set the pin value of the HC595 reset pin to inactive (high)
-        digitalWrite(_hc595_RST, 1);
-
-        // Check if light-levels are used - only want to do this if door control is not used as they share a pin currrently
-        if (_lightLevelsEnabled)
-        {
-            // Configure GPIOs
-            ConfigPinMap::PinDef lightLevelPins[] = {
-                ConfigPinMap::PinDef("LIGHTLVLPINS[0]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[0]),
-                ConfigPinMap::PinDef("LIGHTLVLPINS[1]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[1]),
-                ConfigPinMap::PinDef("LIGHTLVLPINS[2]", ConfigPinMap::GPIO_INPUT, &_lightLevelPins[2])
-            };
-            ConfigPinMap::configMultiple(configGetConfig(), lightLevelPins, sizeof(lightLevelPins) / sizeof(lightLevelPins[0]));
-
-            // Debug
-            LOG_I(MODULE_PREFIX, "setup light-level pins %d %d %d", _lightLevelPins[0], _lightLevelPins[1], _lightLevelPins[2]);
-        }
-
-        // HW Now initialised
-        _isInitialised = true;
-
-        // Reset the shades parameters
-        for (int i = 0; i < DEFAULT_MAX_ELEMS; i++)
-        {
-            _msTimeouts[i] = 0;
-            _tickCounts[i] = 0;
-        }
-        _curShadeCtrlBits = 0;
-
-        // Send to shift register
-        sendBitsToShiftRegister();
-
-        // Setup publisher with callback functions
-        SysManager* pSysManager = getSysManager();
-        if (pSysManager)
-        {
-            // Register publish message generator
-            pSysManager->sendMsgGenCB("Publish", "ScaderShades", 
-                [this](const char* messageName, CommsChannelMsg& msg) {
-                    String statusStr = getStatusJSON();
-                    msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
-                    return true;
-                },
-                nullptr
-                // [this](const char* messageName, std::vector<uint8_t>& stateHash) {
-                // }
-                );
-        }
-
-        // Name set in UI
-        _scaderFriendlyName = configGetString("/ScaderCommon/name", "Scader");
-
-        // Hostname
-        String hostname = configGetString("/ScaderCommon/hostname", "scader");
-        if (hostname.length() != 0)
-            networkSystem.setHostname(hostname.c_str());
+        ConfigPinMap::configMultiple(configGetConfig(), lightLevelPins, sizeof(lightLevelPins) / sizeof(lightLevelPins[0]));
 
         // Debug
-        LOG_I(MODULE_PREFIX, "setup scaderUIName %s hostname %s", _scaderFriendlyName.c_str(), hostname.c_str());
-
-        // Element names
-        std::vector<String> elemInfos;
-        if (configGetArrayElems("elems", elemInfos))
-        {
-            // Names array
-            uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();
-            _elemNames.resize(numNames);
-
-            // Set names
-            for (int i = 0; i < numNames; i++)
-            {
-                JSONParams elemInfo = elemInfos[i];
-                _elemNames[i] = elemInfo.getString("name", ("Shade " + String(i+1)).c_str());
-                LOG_I(MODULE_PREFIX, "Shade %d name %s", i+1, _elemNames[i].c_str());
-            }
-        }
-
-        // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
-                    _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
+        LOG_I(MODULE_PREFIX, "setup light-level pins %d %d %d", _lightLevelPins[0], _lightLevelPins[1], _lightLevelPins[2]);
     }
-    else
+
+    // HW Now initialised
+    _isInitialised = true;
+
+    // Reset the shades parameters
+    for (int i = 0; i < DEFAULT_MAX_ELEMS; i++)
     {
-        LOG_I(MODULE_PREFIX, "setup disabled");
+        _msTimeouts[i] = 0;
+        _tickCounts[i] = 0;
     }
+    _curShadeCtrlBits = 0;
+
+    // Send to shift register
+    sendBitsToShiftRegister();
+
+    // Setup publisher with callback functions
+    SysManager* pSysManager = getSysManager();
+    if (pSysManager)
+    {
+        // Register publish message generator
+        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+            [this](const char* messageName, CommsChannelMsg& msg) {
+                String statusStr = getStatusJSON();
+                msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
+                return true;
+            },
+            nullptr
+            // [this](const char* messageName, std::vector<uint8_t>& stateHash) {
+            // }
+            );
+    }
+
+    // Debug
+    LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderCommon.getFriendlyName().c_str());
+
+    // Element names
+    std::vector<String> elemInfos;
+    if (configGetArrayElems("elems", elemInfos))
+    {
+        // Names array
+        uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();
+        _elemNames.resize(numNames);
+
+        // Set names
+        for (int i = 0; i < numNames; i++)
+        {
+            JSONParams elemInfo = elemInfos[i];
+            _elemNames[i] = elemInfo.getString("name", ("Shade " + String(i+1)).c_str());
+            LOG_I(MODULE_PREFIX, "Shade %d name %s", i+1, _elemNames[i].c_str());
+        }
+    }
+
+    // Debug
+    LOG_I(MODULE_PREFIX, "setup enabled name %s HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
+                _scaderCommon.getFriendlyName().c_str(),
+                _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -408,40 +403,6 @@ void ScaderShades::getLightLevels(int lightLevels[], int numLevels)
 
 String ScaderShades::getStatusJSON()
 {
-    // Get length of JSON
-    uint32_t jsonLen = 200 + _scaderFriendlyName.length();
-    for (int i = 0; i < _elemNames.size(); i++)
-        jsonLen += 30 + _elemNames[i].length();
-    static const uint32_t MAX_JSON_STR_LEN = 4500;
-    if (jsonLen > MAX_JSON_STR_LEN)
-    {
-        LOG_E(MODULE_PREFIX, "getStatusJSON jsonLen %d > MAX_JSON_STR_LEN %d", jsonLen, MAX_JSON_STR_LEN);
-        return "{}";
-    }
-
-    // Get network information
-    JSONParams networkJson = sysModGetStatusJSON("NetMan");
-
-    // Extract hostname
-    String hostname = networkJson.getString("Hostname", "");
-
-    // Check if ethernet connected
-    bool ethConnected = networkJson.getLong("ethConn", false) != 0;
-
-    // Extract MAC address
-    String macAddress;
-    String ipAddress;
-    if (ethConnected)
-    {
-        macAddress = getSystemMACAddressStr(ESP_MAC_ETH, ":").c_str(),
-        ipAddress = networkJson.getString("ethIP", "");
-    }
-    else
-    {
-        macAddress = getSystemMACAddressStr(ESP_MAC_WIFI_STA, ":").c_str(),
-        ipAddress = networkJson.getString("IP", "");
-    }
-
     String lightLevelsStr;
     if (_lightLevelsEnabled)
     {
@@ -455,36 +416,17 @@ String ScaderShades::getStatusJSON()
         }
     }
 
-    // Create JSON string
-    char* pJsonStr = new char[jsonLen];
-    if (!pJsonStr)
-        return "{}";
-
-    // Format JSON
-    snprintf(pJsonStr, jsonLen, R"({"name":"%s","version":"%s","hostname":"%s","IP":"%s","MAC":"%s","upMs":%lld,"elems":[)", 
-                _scaderFriendlyName.c_str(), 
-                getSysManager()->getSystemVersion().c_str(),
-                hostname.c_str(), ipAddress.c_str(), macAddress.c_str(),
-                esp_timer_get_time() / 1000ULL);
+    // Get status
+    String elemStatus;
     for (int i = 0; i < _elemNames.size(); i++)
     {
         if (i > 0)
-            strncat(pJsonStr, ",", jsonLen);
-        snprintf(pJsonStr + strlen(pJsonStr), jsonLen - strlen(pJsonStr), R"({"name":"%s","state":%s})", 
-                            _elemNames[i].c_str(), isBusy(i) ? "1" : "0");
+            elemStatus += ",";
+        elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(isBusy(i) ? "1" : "0") + "}";
     }
-    strncat(pJsonStr, "]", jsonLen);
-    String jsonStr = pJsonStr;
-    delete[] pJsonStr;
 
-    // Append light levels
-    if (lightLevelsStr.length() > 0)
-        jsonStr += String(",\"lux\":[" + lightLevelsStr + "]");
-    jsonStr += "}";
-
-    // LOG_I(MODULE_PREFIX, "getStatusJSON jsonStr %s", jsonStr.c_str());
-
-    return jsonStr;
+    // Add base JSON
+    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elemStatus + "],\"lux\":[" + lightLevelsStr + "]}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

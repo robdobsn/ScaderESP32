@@ -12,6 +12,7 @@
 #include <ArduinoOrAlt.h>
 #include <RaftUtils.h>
 #include <ConfigBase.h>
+#include <ScaderCommon.h>
 #include <SysModBase.h>
 
 class APISourceInfo;
@@ -110,9 +111,13 @@ protected:
     
 private:
 
-    // Enabled and initalised flags
-    bool _isEnabled = false;
+    // Common
+    ScaderCommon _scaderCommon;
+
+    // Initialised flag
     bool _isInitialised = false;
+
+    // Light levels
     bool _lightLevelsEnabled = false;
 
     // Settings
@@ -131,9 +136,6 @@ private:
     // Timing
     uint32_t _msTimeouts[DEFAULT_MAX_ELEMS] = {};
     int _tickCounts[DEFAULT_MAX_ELEMS] = {};
-
-    // Name set in Scader UI
-    String _scaderFriendlyName;
 
     // Names of control elements
     std::vector<String> _elemNames;

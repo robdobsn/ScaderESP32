@@ -28,7 +28,7 @@ export class ScaderManager {
     private _configChangeCallbacks: Array<(config: ScaderConfig) => void> = [];
 
     // State change callbacks
-    private _stateChangeCallbacks: Array<(state: ScaderStateType) => void> = [];
+    private _stateChangeCallbacks: { [key: string]: (state: ScaderStateType) => void } = {};
 
     // Get instance
     public static getInstance(): ScaderManager {
@@ -115,13 +115,20 @@ export class ScaderManager {
                 }            
             }
             ws.onmessage = (event) => {
-                console.log(`ScaderManager init websocket message`);
-                const data = JSON.parse(event.data);
-                // Use the state callbacks to update the state
-                this._stateChangeCallbacks.forEach(callback => {
-                    callback(data);
-                });
+                const data = JSON.parse(event.data) as ScaderStateType;
                 console.log(`ScaderManager websocket message ${JSON.stringify(data)}`);
+                // Check module in message
+                if (!data.module) {
+                    console.log(`ScaderManager init websocket message no type`);
+                    return;
+                }
+                // Check module callback is registered
+                if (!this._stateChangeCallbacks[data.module]) {
+                    console.log(`ScaderManager init websocket message no callback for ${data.module}`);
+                    return;
+                }
+                // Use the callback to update the state
+                this._stateChangeCallbacks[data.module](data);
             }
             ws.onclose = () => {
                 console.log(`ScaderManager websocket closed`);
@@ -161,6 +168,11 @@ export class ScaderManager {
 
     // Persist configuration
     public persistConfig(): void {
+        // Check if ScaderCommon/hostname is changed
+        if (this._mutableConfig.ScaderCommon.hostname !== this._scaderConfig.ScaderCommon.hostname) {
+            // Send the new hostname to the server
+            this.setFriendlyName(this._mutableConfig.ScaderCommon.hostname);
+        }
         this._scaderConfig = JSON.parse(JSON.stringify(this._mutableConfig));
         this.postAppSettings();
     }
@@ -177,9 +189,9 @@ export class ScaderManager {
     }
 
     // Register a state change callback
-    public onStateChange(callback: (state: ScaderStateType) => void): void {
+    public onStateChange(moduleName: string, callback: (state: ScaderStateType) => void): void {
         // Add the callback
-        this._stateChangeCallbacks.push(callback);
+        this._stateChangeCallbacks[moduleName] = callback;
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -227,7 +239,7 @@ export class ScaderManager {
     // Post applicaton settings
     async postAppSettings(): Promise<boolean> {
         try {
-            const postSettingsURI = this._serverAddressPrefix + this._urlPrefix + "/postsettings";
+            const postSettingsURI = this._serverAddressPrefix + this._urlPrefix + "/postsettings/reboot";
             const postSettingsResponse = await fetch(postSettingsURI, 
                 {
                     method: "POST",
@@ -258,5 +270,14 @@ export class ScaderManager {
             }
         }
         config = Object.assign(config, nv);
+    }
+
+    // Set the friendly name for the device
+    public async setFriendlyName(friendlyName:string): Promise<void> {
+        try {
+            await fetch(this._serverAddressPrefix + this._urlPrefix + "/friendlyname/" + friendlyName);
+        } catch (error) {
+            console.log(`ScaderManager setFriendlyName ${error}`);
+        }
     }
 }

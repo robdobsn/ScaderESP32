@@ -53,8 +53,8 @@ void NetworkManager::applySetup()
     bool isWiFiAPModeEnabled = (configGetLong("WiFiAPModeEn", 0) != 0);
     bool isWiFiSTAModeEnabled = (configGetLong("WiFiSTAModeEn", 1) != 0);
     bool isEthWiFiBrided = (configGetLong("EthWiFiBridge", 0) != 0);
-    String hostname = configGetString("defaultHostname", _defaultHostname.c_str());
-    networkSystem.setup(isWiFiEnabled, isEthEnabled, hostname.c_str(), 
+    String defaultHostname = configGetString("defaultHostname", _defaultHostname.c_str());
+    networkSystem.setup(isWiFiEnabled, isEthEnabled, defaultHostname.c_str(), 
                 isWiFiSTAModeEnabled, isWiFiAPModeEnabled, isEthWiFiBrided);
 
     // Get SSID and password
@@ -62,11 +62,12 @@ void NetworkManager::applySetup()
     String password = configGetString("WiFiPass", "");
     String apSSID = configGetString("WiFiAPSSID", "");
     String apPassword = configGetString("WiFiAPPass", "");
-        // Set WiFi credentials
-    networkSystem.configureWiFi(ssid, password, hostname, apSSID, apPassword);
+
+    // Set WiFi credentials
+    networkSystem.configureWiFi(ssid, password, "", apSSID, apPassword);
 
     // Debug
-    LOG_D(MODULE_PREFIX, "setup isEnabled %s hostname %s ", isWiFiEnabled ? "YES" : "NO", hostname.c_str(), 
+    LOG_D(MODULE_PREFIX, "setup isEnabled %s defaultHostname %s ", isWiFiEnabled ? "YES" : "NO", defaultHostname.c_str(), 
             ssid.c_str(), password.c_str());
 }
 
@@ -127,6 +128,7 @@ String NetworkManager::getDebugJSON()
     // WiFi
     if (networkSystem.isWiFiStaConnectedWithIP())
         debugStr += R"("s":"conn","SSID":")" + networkSystem.getSSID() + 
+                    R"(","hostname":")" + networkSystem.getHostname() + 
                     R"(","IP":")" + networkSystem.getWiFiIPV4AddrStr() + 
                     R"(","rssi":)" + networkSystem.getRSSI(isValid) + 
                     R"()";
@@ -210,6 +212,13 @@ void NetworkManager::apiWifiSet(const String &reqStr, String &respStr, const API
 
     // Configure WiFi
     bool rslt = networkSystem.configureWiFi(ssid, pw, hostname, apSSID, apPassword);
+
+    // Set hostname as System friendly name (note that this can also clear the hostname if it is empty)
+    if (rslt)
+    {
+        String errorStr;
+        getSysManager()->setFriendlyName(hostname, false, errorStr);
+    }
     Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
 }
 

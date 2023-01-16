@@ -5,7 +5,7 @@ import { ScaderManager } from './ScaderManager';
 
 const scaderManager = ScaderManager.getInstance();
 
-function ScaderLEDPix(props:ScaderScreenProps) {
+export default function ScaderLEDPix(props:ScaderScreenProps) {
 
   const scaderName = "ScaderLEDPix";
   // const configElemsName = "elems";
@@ -24,8 +24,9 @@ function ScaderLEDPix(props:ScaderScreenProps) {
       // Update config
       setConfig(newConfig[scaderName]);
     });
-    scaderManager.onStateChange((newState) => {
-      console.log(`${scaderName}onStateChange`);
+    scaderManager.onStateChange(scaderName, (newState) => {
+      console.log(`${scaderName} onStateChange ${JSON.stringify(newState)}`);
+
       // Update state
       // if (stateElemsName in newState) {
       //   setState(new ScaderLEDPixStates(newState));
@@ -113,7 +114,7 @@ function ScaderLEDPix(props:ScaderScreenProps) {
 
   const editModeScreen = () => {
     return (
-      <div className="ScaderElem">
+      <div className="ScaderElem-edit">
         <div className="ScaderElem-header">
           {/* Checkbox for enable shades */}
           <label>
@@ -243,5 +244,3 @@ function ScaderLEDPix(props:ScaderScreenProps) {
     props.isEditingMode ? editModeScreen() : normalModeScreen()
   );
 }
-
-export default ScaderLEDPix;

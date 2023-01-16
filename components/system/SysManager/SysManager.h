@@ -56,6 +56,7 @@ public:
     // Get friendly name
     String getFriendlyName();
     bool getFriendlyNameIsSet();
+    bool setFriendlyName(const String& friendlyName, bool setHostname, String& respStr);
 
     // Set system unique string
     void setSystemUniqueString(const char* sysUniqueStr)
@@ -158,7 +159,7 @@ private:
 
     // Service loop supervisor
     void supervisorSetup();
-    bool _supervisorDirty;
+    bool _supervisorDirty = false;
 
     // Service loop
     std::vector<SysModBase*> _sysModServiceVector;
@@ -171,32 +172,32 @@ private:
     std::list<SysModBase*> _sysModuleList;
 
     // Stress test loop delay
-    uint32_t _stressTestLoopDelayMs;
-    uint32_t _stressTestLoopSkipCount;
-    uint32_t _stressTestCurSkipCount;
+    uint32_t _stressTestLoopDelayMs = 0;
+    uint32_t _stressTestLoopSkipCount = 0;
+    uint32_t _stressTestCurSkipCount = 0;
 
     // Supervisor statistics
     SupervisorStats _supervisorStats;
 
     // Threshold of time for SysMod service considered too slow
     static const uint32_t SLOW_SYS_MOD_THRESHOLD_MS_DEFAULT = 50;
-    uint32_t _slowSysModThresholdUs;
+    uint32_t _slowSysModThresholdUs = SLOW_SYS_MOD_THRESHOLD_MS_DEFAULT * 1000;
 
     // Monitor timer and period
-    unsigned long _monitorPeriodMs;
-    unsigned long _monitorTimerMs;
-    bool _monitorTimerStarted;
+    unsigned long _monitorPeriodMs = 0;
+    unsigned long _monitorTimerMs = 0;
+    bool _monitorTimerStarted = false;
     std::vector<String> _monitorReportList;
 
     // Stats available callback
-    SysManager_statsCB _statsCB;
+    SysManager_statsCB _statsCB = nullptr;
 
     // Stats
     void statsShow();
 
     // SysManager also handles system restarts
-    bool _systemRestartPending;
-    unsigned long _systemRestartMs;
+    bool _systemRestartPending = false;
+    unsigned long _systemRestartMs = 0;
     static const int SYSTEM_RESTART_DELAY_MS = 1000;
 
     // System name and version
@@ -207,29 +208,29 @@ private:
     ConfigBase _sysModManConfig;
 
     // Mutable config
-    ConfigBase* _pMutableConfig;
+    ConfigBase* _pMutableConfig = nullptr;
     String _defaultFriendlyName;
-    bool _defaultFriendlyNameIsSet;
+    bool _defaultFriendlyNameIsSet = false;
     String _friendlyNameStored;
-    bool _friendlyNameIsSet;
+    bool _friendlyNameIsSet = false;
     String _ricSerialNoStoredStr;
 
     // Unique string for this system
     String _systemUniqueString;
 
     // File/stream activity
-    bool _isSystemMainFWUpdate;
-    bool _isSystemFileTransferring;
-    bool _isSystemStreaming;
+    bool _isSystemMainFWUpdate = false;
+    bool _isSystemFileTransferring = false;
+    bool _isSystemStreaming = false;
     
     // Friendly name max len
     static const uint32_t MAX_FRIENDLY_NAME_LENGTH = 60;
 
     // Endpoints
-    RestAPIEndpointManager* _pRestAPIEndpointManager;
+    RestAPIEndpointManager* _pRestAPIEndpointManager = nullptr;
 
     // Comms channels
-    CommsChannelManager* _pCommsChannelManager;
+    CommsChannelManager* _pCommsChannelManager = nullptr;
 
     // API to reset system
     void apiReset(const String &reqStr, String& respStr, const APISourceInfo& sourceInfo);

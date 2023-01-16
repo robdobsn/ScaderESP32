@@ -67,10 +67,6 @@ private:
     public:
         InterfaceRateRec()
         {
-            _rateHz = 1.0;
-            _betweenPubsMs = 0;
-            _lastPublishMs = 0;
-            _channelID = PUBLISHING_HANDLE_UNDEFINED;
         }
         void setRateHz(double rateHz)
         {
@@ -85,10 +81,11 @@ private:
         }
         String _interface;
         String _protocol;
-        double _rateHz;
-        uint32_t _betweenPubsMs;
-        uint32_t _lastPublishMs;
-        int32_t _channelID;
+        double _rateHz = 1.0;
+        uint32_t _betweenPubsMs = 0;
+        uint32_t _lastPublishMs = 0;
+        int32_t _channelID = PUBLISHING_HANDLE_UNDEFINED;
+        bool _forceMsgGen = false;
     };
 
     // Publication records
@@ -101,7 +98,7 @@ private:
         SysMod_publishMsgGenFn _msgGenFn = nullptr;
         SysMod_stateDetectCB _stateDetectFn = nullptr;;
         std::list<InterfaceRateRec> _interfaceRates;
-        uint32_t _lastPublishMs = 0;
+        uint32_t _lastHashCheckMs = 0;
 
         // This is used by _stateDetectFn callback for state change
         // detection information - the state change is detected by

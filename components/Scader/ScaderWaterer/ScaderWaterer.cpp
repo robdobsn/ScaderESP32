@@ -48,7 +48,7 @@ void ScaderWaterer::setup()
         if (pSysManager)
         {
             // Register publish message generator
-            pSysManager->sendMsgGenCB("Publish", "ScaderWaterer", 
+            pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
                 [this](const char* messageName, CommsChannelMsg& msg) {
                     String statusStr = getStatusJSON();
                     msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());

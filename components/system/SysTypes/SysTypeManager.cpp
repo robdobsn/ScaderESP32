@@ -17,7 +17,7 @@ static const char* MODULE_PREFIX = "SysTypeManager";
 
 // #define DEBUG_SYS_TYPE_CONFIG
 // #define DEBUG_SYS_TYPE_CONFIG_DETAIL
-#define DEBUG_GET_POST_SETTINGS
+// #define DEBUG_GET_POST_SETTINGS
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -204,7 +204,7 @@ void SysTypeManager::addRestAPIEndpoints(RestAPIEndpointManager& endpointManager
                             RestAPIEndpoint::ENDPOINT_CALLBACK, 
                             RestAPIEndpoint::ENDPOINT_POST,
                             std::bind(&SysTypeManager::apiSysTypePostSettings, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "Set settings for system",
+                            "Set settings for system add /reboot to restart after settings the value",
                             "application/json", 
                             NULL,
                             RestAPIEndpoint::ENDPOINT_CACHE_NEVER,

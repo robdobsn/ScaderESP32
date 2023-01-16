@@ -8,6 +8,7 @@
 
 #include "ScaderOpener.h"
 #include <ArduinoOrAlt.h>
+#include <ScaderCommon.h>
 #include <RaftUtils.h>
 #include <ConfigPinMap.h>
 #include <RestAPIEndpointManager.h>
@@ -22,11 +23,9 @@ static const char *MODULE_PREFIX = "ScaderOpener";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderOpener::ScaderOpener(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
+    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig),
+          _scaderCommon(*this, pModuleName)
 {
-    // Init
-    _isEnabled = false;
-    _isInitialised = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,24 +34,40 @@ ScaderOpener::ScaderOpener(const char *pModuleName, ConfigBase &defaultConfig, C
 
 void ScaderOpener::setup()
 {
-    // Get settings
-    _isEnabled = configGetLong("enable", false) != 0;
+    // Common setup
+    _scaderCommon.setup();
 
     // Check enabled
-    if (_isEnabled)
-    {
-        // Configure
-        _doorOpener.setup(configGetConfig());
-
-        // HW Now initialised
-        _isInitialised = true;
-
-        // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled");
-    }
-    else
+    if (!_scaderCommon.isEnabled())
     {
         LOG_I(MODULE_PREFIX, "setup disabled");
+        return;
+    }
+
+    // Configure
+    _doorOpener.setup(configGetConfig());
+
+    // HW Now initialised
+    _isInitialised = true;
+
+    // Debug
+    LOG_I(MODULE_PREFIX, "setup enabled name %s", _scaderCommon.getFriendlyName().c_str());
+
+    // Setup publisher with callback functions
+    SysManager* pSysManager = getSysManager();
+    if (pSysManager)
+    {
+        // Register publish message generator
+        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+            [this](const char* messageName, CommsChannelMsg& msg) {
+                String statusStr = getStatusJSON();
+                msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
+                return true;
+            },
+            [this](const char* messageName, std::vector<uint8_t>& stateHash) {
+                return getStatusHash(stateHash);
+            }
+        );
     }
 }
 
@@ -85,7 +100,7 @@ void ScaderOpener::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
     // Control shade
     endpointManager.addEndpoint("opener", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderOpener::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "Control Opener - /open or /close or /mode/in or /mode/out or /mode/both or /mode/none or mode/open");
+                            "Control Opener - /open or /close or /mode/in or /mode/out or /mode/both or /mode/none or mode/open - /setmotorontime/<secs>, /setopenpos, /setclosedpos - /test/motoron, /testmotoroff, /test/turnto/<degrees>");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,6 +175,84 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
                 rslt = false;
             }
         }
+        // else if (params[1] == "setopenangle")
+        // {
+        //     // Get value passed in
+        //     uint32_t openPos = DoorOpener::DEFAULT_DOOR_OPEN_ANGLE;
+        //     if (params.size() > 2)
+        //     {
+        //         openPos = params[2].toInt();
+        //     }
+
+        //     // Send to opener
+        //     _doorOpener.setOpenAngleDegrees(openPos);
+            
+        // }
+        // else if (params[1] == "setmotorontime")
+        // {
+        //     // Get value passed in
+        //     uint32_t motorOnTime = DoorOpener::DEFAULT_MOTOR_ON_TIME_SECS;
+        //     if (params.size() > 2)
+        //     {
+        //         motorOnTime = params[2].toInt();
+        //     }
+
+        //     // Send to opener
+        //     _doorOpener.setMotorOnTimeAfterMoveSecs(motorOnTime);
+        // }
+        // else if (params[1] == "setdooropentime")
+        // {
+        //     // Get value passed in
+        //     uint32_t doorOpenTime = DoorOpener::DEFAULT_DOOR_OPEN_TIME_SECS;
+        //     if (params.size() > 2)
+        //     {
+        //         doorOpenTime = params[2].toInt();
+        //     }
+
+        //     // Send to opener
+        //     _doorOpener.setDoorOpenTimeSecs(doorOpenTime);
+        // }
+        // Test
+        else if (params[1] == "test")
+        {
+            if (params.size() > 1)
+            {
+                if (params[2] == "motoron")
+                {
+                    _doorOpener.testMotorEnable(true);
+                    rsltStr = "Motor on";
+                }
+                else if (params[2] == "motoroff")
+                {
+                    _doorOpener.testMotorEnable(false);
+                    rsltStr = "Motor off";
+                }
+                else if (params[2] == "turnto")
+                {
+                    if (params.size() > 2)
+                    {
+                        int degrees = params[3].toInt();
+                        _doorOpener.testMotorTurnTo(degrees);
+                        rsltStr = "Turned " + String(degrees) + " degrees";
+                    }
+                    else
+                    {
+                        rsltStr = "Degrees not specified";
+                        rslt = false;
+                    }
+                }
+                else
+                {
+                    rsltStr = "Invalid test command";
+                    rslt = false;
+                }
+            }
+            else
+            {
+                rsltStr = "Test command not specified";
+                rslt = false;
+            }
+        }
         // Unknown
         else
         {
@@ -185,3 +278,39 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
         LOG_E(MODULE_PREFIX, "apiControl: FAILED reqStr %s rslt %s", reqStr.c_str(), rsltStr.c_str());
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Get JSON status
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderOpener::getStatusJSON()
+{
+    // Add base JSON
+    return "{" + _scaderCommon.getStatusJSON() + ",\"status\":{" + _doorOpener.getStatusJSON(false) + "}}";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Check status change
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ScaderOpener::getStatusHash(std::vector<uint8_t>& stateHash)
+{
+    _doorOpener.getStatusHash(stateHash);
+}
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// // Write the mutable config
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// void ScaderOpener::saveMutableData()
+// {
+//     // Save relay states
+//     String jsonConfig = "\"DoorOpenAngle\":" + String(_doorOpener.getOpenAngleDegrees());
+//     jsonConfig += ",\"MotorOnTimeAfterMoveSecs\":" + String(_doorOpener.getMotorOnTimeAfterMoveSecs());
+//     jsonConfig += ",\"DoorOpenTimeSecs\":" + String(_doorOpener.getDoorOpenTimeSecs());
+
+//     // Add outer brackets
+//     jsonConfig = "{" + jsonConfig + "}";
+//     LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
+//     SysModBase::configSaveData(jsonConfig);
+// }

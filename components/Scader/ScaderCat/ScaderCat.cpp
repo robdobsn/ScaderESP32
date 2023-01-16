@@ -22,9 +22,6 @@ static const char *MODULE_PREFIX = "ScaderCat";
 ScaderCat::ScaderCat(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
     : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
 {
-    // Init
-    _isEnabled = false;
-    _isInitialised = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,65 +30,64 @@ ScaderCat::ScaderCat(const char *pModuleName, ConfigBase &defaultConfig, ConfigB
 
 void ScaderCat::setup()
 {
+    // Common setup
+    _scaderCommon.setup();
+
     // Deinit
     deinit();
 
-    // Get settings
-    _isEnabled = configGetLong("enable", false) != 0;
-
     // Check enabled
-    if (_isEnabled)
-    {
-        // Prepare timed outputs
-        const char* timedOutputNames[] = {"light", "squirt", "fet1", "fet2"};
-        const int numTimedOutputs = sizeof(timedOutputNames)/sizeof(timedOutputNames[0]);
-        int pinVars[] = {0,0,0,0};
-        bool onLevels[] = {true, true, true, true};
-
-        // Configure GPIOs
-        ConfigPinMap::PinDef gpioPins[] = {
-            ConfigPinMap::PinDef("LIGHT_CTRL", ConfigPinMap::GPIO_OUTPUT, &pinVars[0]),
-            ConfigPinMap::PinDef("VALVE_CTRL", ConfigPinMap::GPIO_OUTPUT, &pinVars[1]),
-            ConfigPinMap::PinDef("FET_1", ConfigPinMap::GPIO_OUTPUT, &pinVars[2]),
-            ConfigPinMap::PinDef("FET_2", ConfigPinMap::GPIO_OUTPUT, &pinVars[3])
-        };
-        ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
-
-        // Add to the timed outputs
-        for (uint32_t i = 0; i < numTimedOutputs; i++)
-        {
-            TimedOutput timedOutput(timedOutputNames[i], pinVars[i], onLevels[i]);
-            _timedOutputs.push_back(timedOutput);
-        }
-
-        // Setup publisher with callback functions
-        SysManager* pSysManager = getSysManager();
-        if (pSysManager)
-        {
-            // Register publish message generator
-            pSysManager->sendMsgGenCB("Publish", "ScaderCat", 
-                [this](const char* messageName, CommsChannelMsg& msg) {
-                    String statusStr = getStatusJSON();
-                    msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
-                    return true;
-                },
-                [this](const char* messageName, std::vector<uint8_t>& stateHash) {
-                    return getStatusHash(stateHash);
-                }
-                );
-        }
-
-        // HW Now initialised
-        _isInitialised = true;
-
-        // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled squirtPin %d lightPin %d fet1 %d fet2 %d",
-                    pinVars[0], pinVars[1], pinVars[2], pinVars[3]);
-    }
-    else
+    if (!_isEnabled)
     {
         LOG_I(MODULE_PREFIX, "setup disabled");
+        return;
     }
+
+    // Prepare timed outputs
+    const char* timedOutputNames[] = {"light", "squirt", "fet1", "fet2"};
+    const int numTimedOutputs = sizeof(timedOutputNames)/sizeof(timedOutputNames[0]);
+    int pinVars[] = {0,0,0,0};
+    bool onLevels[] = {true, true, true, true};
+
+    // Configure GPIOs
+    ConfigPinMap::PinDef gpioPins[] = {
+        ConfigPinMap::PinDef("LIGHT_CTRL", ConfigPinMap::GPIO_OUTPUT, &pinVars[0]),
+        ConfigPinMap::PinDef("VALVE_CTRL", ConfigPinMap::GPIO_OUTPUT, &pinVars[1]),
+        ConfigPinMap::PinDef("FET_1", ConfigPinMap::GPIO_OUTPUT, &pinVars[2]),
+        ConfigPinMap::PinDef("FET_2", ConfigPinMap::GPIO_OUTPUT, &pinVars[3])
+    };
+    ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
+
+    // Add to the timed outputs
+    for (uint32_t i = 0; i < numTimedOutputs; i++)
+    {
+        TimedOutput timedOutput(timedOutputNames[i], pinVars[i], onLevels[i]);
+        _timedOutputs.push_back(timedOutput);
+    }
+
+    // Setup publisher with callback functions
+    SysManager* pSysManager = getSysManager();
+    if (pSysManager)
+    {
+        // Register publish message generator
+        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+            [this](const char* messageName, CommsChannelMsg& msg) {
+                String statusStr = getStatusJSON();
+                msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
+                return true;
+            },
+            [this](const char* messageName, std::vector<uint8_t>& stateHash) {
+                return getStatusHash(stateHash);
+            }
+            );
+    }
+
+    // HW Now initialised
+    _isInitialised = true;
+
+    // Debug
+    LOG_I(MODULE_PREFIX, "setup enabled squirtPin %d lightPin %d fet1 %d fet2 %d",
+                pinVars[0], pinVars[1], pinVars[2], pinVars[3]);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,8 +158,8 @@ void ScaderCat::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 
 void ScaderCat::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
-    // Check enabled
-    if (!_isEnabled)
+    // Check initialised
+    if (!_isInitialised)
     {
         LOG_I(MODULE_PREFIX, "apiControl disabled");
         Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
@@ -202,7 +198,8 @@ String ScaderCat::getStatusJSON()
     String statusStr;
     for (TimedOutput& timedOutput : _timedOutputs)
         statusStr += (statusStr.length() > 0 ? "," : "") + timedOutput.getStatusStrJSON();
-    return "{" + statusStr + "}";
+
+    return "{" + _scaderCommon.getStatusJSON() + ",\"status\":{" + statusStr + "}}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

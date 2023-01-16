@@ -5,6 +5,7 @@ export class ScaderRelayState {
 }
 
 export class ScaderRelayStates {
+    module: string = "";
     elems: Array<ScaderRelayState> = [];
     constructor(obj: any) {
         if (obj) {
@@ -19,6 +20,7 @@ export class ScaderShadeState {
 }
 
 export class ScaderShadeStates {
+    module: string = "";
     elems: Array<ScaderShadeState> = [];
     constructor(obj: any) {
         if (obj) {
@@ -28,6 +30,7 @@ export class ScaderShadeStates {
 }
 
 export class ScaderLEDPixStates {
+    module: string = "";
 }
 
 export class ScaderDoorState {
@@ -39,6 +42,7 @@ export class ScaderDoorState {
 }
 
 export class ScaderDoorStates {
+    module: string = "";
     elems: Array<ScaderDoorState> = [];
     bell: string = 'K';
     constructor(obj: any) {
@@ -48,13 +52,35 @@ export class ScaderDoorStates {
         }
     }
 }
+
+export class ScaderOpenStatus {
+    isOpen: boolean = false;
+    inEnabled: boolean = false;
+    outEnabled: boolean = false;
+    isOverCurrent: boolean = false;
+    kitchenButtonState: number = 0;
+    consButtonPressed: boolean = false;
+    pirSenseInActive: boolean = false;
+    pirSenseOutActive: boolean = false;
+    avgCurrent: number = 0;
+}
+export class ScaderOpenerStates {
+    module: string = "";
+    status: ScaderOpenStatus = {} as ScaderOpenStatus;
+    constructor(obj: any) {
+        if (obj) {
+            this.status = obj.status;
+        }
+    }
+}
 export class ScaderState {
     ScaderRelays: ScaderRelayStates = {} as ScaderRelayStates;
     ScaderShades: ScaderShadeStates = {} as ScaderShadeStates;
     ScaderDoors: ScaderDoorStates = {} as ScaderDoorStates;
     ScaderLEDPix: ScaderLEDPixStates = {} as ScaderLEDPixStates;
+    ScaderOpener: ScaderOpenerStates = {} as ScaderOpenerStates;
 }
 
 export type ScaderStateType = 
-    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates;
+    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates | ScaderOpenerStates;
     

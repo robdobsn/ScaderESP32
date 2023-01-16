@@ -10,38 +10,12 @@
 #include "ConfigPinMap.h"
 #include <HWElemSteppers.h>
 #include <BusSerial.h>
-#include <HWElemBase.h>
+#include <HWElemConsts.h>
 
 static const char* MODULE_PREFIX = "DoorOpener";
 
 DoorOpener::DoorOpener()
 {
-    _pBusSerial = nullptr;
-    _pStepper = nullptr;
-    _isOpen = false;
-    _inEnabled = false;
-    _outEnabled = true;
-    _kitchenButtonState = KITCHEN_BUTTON_STATE_IDLE;
-    _buttonPressTimeMs = 0;
-    _pirSenseInActive = false;
-    _pirSenseInLast = false;
-    _pirSenseOutActive = false;
-    _pirSenseOutLast = false;
-    _doorOpenedTimeMs = 0;
-    // _hBridgeEn = 0;
-    // _hBridgePhase = 0;
-    // _hBridgeVissen = 0;
-    _kitchenButtonPin = 0;
-    _conservatoryButtonPin = 0;
-    _ledOutEnPin = 0;
-    _ledInEnPin = 0;
-    _pirSenseInPin = 0;
-    _pirSenseOutPin = 0;
-    _debugLastDisplayMs = 0;
-    _currentLastSampleMs = 0;
-    _isOverCurrent = false;
-    _overCurrentStartTimeMs = 0;
-
     // Init INA219 current sensor
     // esp_err_t initOk = ina219_init_desc(&_ina219, INA219_ADDR_VS_GND, (i2c_port_t)0, (gpio_num_t)21, (gpio_num_t)22);
     // if (initOk == ESP_OK)
@@ -59,19 +33,27 @@ DoorOpener::DoorOpener()
 DoorOpener::~DoorOpener()
 {
     // ina219_deinit(&_ina219);
+    clear();
+}
+
+void DoorOpener::clear()
+{
     if (_pStepper)
         delete _pStepper;
+    _pStepper = nullptr;
     if (_pBusSerial)
         delete _pBusSerial;
+    _pBusSerial = nullptr;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Setup
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void DoorOpener::setup(ConfigBase& config)
 {
     // Clear
-    if (_pStepper)
-        delete _pStepper;
-    if (_pBusSerial)
-        delete _pBusSerial;
+    clear();
 
     // Configure serial bus for stepper
     _pBusSerial = new BusSerial(nullptr, nullptr);
@@ -121,18 +103,37 @@ void DoorOpener::setup(ConfigBase& config)
 
     // Move and open times
     _doorMoveTimeMs = config.getLong("DoorMoveTimeMs", DOOR_MOVE_TIME_MS);
-    _doorOpenTimeMs = config.getLong("DoorOpenMs", DOOR_REMAIN_OPEN_MS);
+    _doorOpenTimeSecs = config.getLong("DoorOpenTimeSecs", DEFAULT_DOOR_OPEN_TIME_SECS);
     
+    // Get door open angle from config
+    _doorOpenAngleDegrees = config.getLong("DoorOpenAngle", 0);
+
+    // Get motor on time after move (secs)
+    _motorOnTimeAfterMoveSecs = config.getLong("MotorOnTimeAfterMoveSecs", 0);
+    if (_pStepper)
+        _pStepper->setMotorOnTimeAfterMoveSecs(_motorOnTimeAfterMoveSecs);
+
     // Debug
     // LOG_I(MODULE_PREFIX, "setup HBridgeEn=%d HBridgePhase=%d HBridgeVissen=%d", _hBridgeEn, _hBridgePhase, _hBridgeVissen);
-    LOG_I(MODULE_PREFIX, "setup KitchenButtonPin=%d ConservatoryButtonPin=%d", _kitchenButtonPin, _conservatoryButtonPin);
-    LOG_I(MODULE_PREFIX, "setup LedDownPin=%d LedUpPin=%d", _ledOutEnPin, _ledInEnPin);
-    LOG_I(MODULE_PREFIX, "setup PirSenseInPin=%d PirSenseOutPin=%d", _pirSenseInPin, _pirSenseOutPin);
-    LOG_I(MODULE_PREFIX, "setup DoorMoveTimeMs=%d DoorOpenTimeMs=%d", _doorMoveTimeMs, _doorOpenTimeMs);
+    LOG_I(MODULE_PREFIX, "setup KitchenButtonPin=%d ConservatoryButtonPin=%d",                 
+                _kitchenButtonPin, _conservatoryButtonPin);
+    LOG_I(MODULE_PREFIX, "setup LedDownPin=%d LedUpPin=%d", 
+                _ledOutEnPin, _ledInEnPin);
+    LOG_I(MODULE_PREFIX, "setup PirSenseInPin=%d PirSenseOutPin=%d", 
+                _pirSenseInPin, _pirSenseOutPin);
+    LOG_I(MODULE_PREFIX, "setup DoorMoveTimeMs=%d DoorOpenTimeSecs=%d", 
+                _doorMoveTimeMs, _doorOpenTimeSecs);
+    LOG_I(MODULE_PREFIX, "setup DoorOpenAngle=%d MotorOnTimeAfterMoveSecs=%d", 
+                _doorOpenAngleDegrees, _motorOnTimeAfterMoveSecs);
 
     // LED state
     setLEDs();
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// service
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void DoorOpener::service()
 {
     // Service the stepper
@@ -163,10 +164,11 @@ void DoorOpener::service()
     servicePIR("OUT", _pirSenseOutPin, _pirSenseOutActive, _pirSenseOutActiveMs, _pirSenseOutLast, _outEnabled);
 
     // Handle closing
-    if (_isOpen && Raft::isTimeout(millis(), _doorOpenedTimeMs, _doorOpenTimeMs) && (_inEnabled || _outEnabled))
+    if (_isOpen && Raft::isTimeout(millis(), _doorOpenedTimeMs, _doorOpenTimeSecs*1000) && (_inEnabled || _outEnabled))
     {
-        LOG_I(MODULE_PREFIX, "service was open for %d ms - closing", _doorOpenTimeMs);
+        LOG_I(MODULE_PREFIX, "service was open for %d secs - closing", _doorOpenTimeSecs);
         moveDoor(false);
+        _doorOpenedTimeMs = 0;
     }
 
     // Handle warning LED
@@ -195,7 +197,7 @@ void DoorOpener::service()
     {
         _currentLastSampleMs = millis();
         // TODO 2022 average current
-        uint16_t avgCurrent = _avgCurrent(0);
+        uint16_t avgCurrent = _avgCurrent.getAverage();
 
         // Check for overcurrent
         if (avgCurrent > CURRENT_OVERCURRENT_THRESHOLD)
@@ -216,15 +218,20 @@ void DoorOpener::service()
     if (Raft::isTimeout(millis(), _debugLastDisplayMs, 1000))
     {
         _debugLastDisplayMs = millis();
-        LOG_I(MODULE_PREFIX, "service %savg current=%d inPIR: btn=%d actv=%d last=%d en=%d outPIR: btn=%d actv=%d last=%d en=%d", 
+        LOG_I(MODULE_PREFIX, "svc %savg I=%d iPIR: v=%d actv=%d lst=%d en=%d oPIR: v=%d actv=%d lst=%d en=%d kitBut=%d conBut=%d timeOpenMs=%lld doorOpenTimeSecs=%d",
             _isOpen ? "OPEN " : "CLOSED ", 
-            _avgCurrent.cur(),
+            _avgCurrent.getAverage(),
             digitalRead(_pirSenseInPin), _pirSenseInActive, _pirSenseInLast, _inEnabled, 
-            digitalRead(_pirSenseOutPin), _pirSenseOutActive, _pirSenseOutLast, _outEnabled);
-        if (_pStepper)
-        {
-            LOG_I(MODULE_PREFIX, "service stepper %s", _pStepper->getDataJSON().c_str());
-        }
+            digitalRead(_pirSenseOutPin), _pirSenseOutActive, _pirSenseOutLast, _outEnabled,
+            _kitchenButtonState,
+            _conservatoryButtonState,
+            _doorOpenedTimeMs != 0 ? Raft::timeElapsed(millis(), _doorOpenedTimeMs) : 0,
+            _doorOpenTimeSecs
+            );
+        // if (_pStepper)
+        // {
+        //     LOG_I(MODULE_PREFIX, "service stepper %s", _pStepper->getDataJSON().c_str());
+        // }
     }
 }
 void DoorOpener::moveDoor(bool openDoor)
@@ -262,6 +269,7 @@ void DoorOpener::onKitchenButtonPressed(int val)
 }
 void DoorOpener::onConservatoryButtonPressed(int val)
 {
+    _conservatoryButtonState = val == 0 ? 0 : 1;
     _isOverCurrent = false;
     LOG_I(MODULE_PREFIX, "onConservatoryButtonPressed %d", val);
     moveDoor(true);
@@ -333,7 +341,8 @@ void DoorOpener::motorControl(bool isEn, bool dirn)
     {
         if (dirn)
         {
-            String moveCmd = R"({"rel":0,"nosplit":1,"pos":[{"a":0,"p":0.33}]})";
+            String moveCmd = R"({"rel":0,"nosplit":1,"pos":[{"a":0,"p":__POS__}]})";
+            moveCmd.replace("__POS__", String(_doorOpenAngleDegrees));
             if (_pStepper)
                 _pStepper->sendCmdJSON(moveCmd.c_str());
         }
@@ -344,4 +353,60 @@ void DoorOpener::motorControl(bool isEn, bool dirn)
                 _pStepper->sendCmdJSON(moveCmd.c_str());
         }
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Get JSON status
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String DoorOpener::getStatusJSON(bool includeBraces)
+{
+    String json = "";
+    json += "\"isOpen\":" + String(_isOpen ? 1 : 0);
+    json += ",\"inEnabled\":" + String(_inEnabled ? 1 : 0);
+    json += ",\"outEnabled\":" + String(_outEnabled ? 1 : 0);
+    json += ",\"isOverCurrent\":" + String(_isOverCurrent ? 1 : 0);
+    json += ",\"kitchenButtonState\":" + String(_kitchenButtonState);
+    json += ",\"consButtonPressed\":" + String(_conservatoryButtonState);
+    json += ",\"pirSenseInActive\":" + String(_pirSenseInActive ? 1 : 0);
+    json += ",\"pirSenseOutActive\":" + String(_pirSenseOutActive ? 1 : 0);
+    json += ",\"avgCurrent\":" + String(_avgCurrent.getAverage());
+    if (includeBraces)
+        json = "{" + json + "}";
+    return json;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Check status change
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
+{
+    // Add state
+    stateHash.push_back(_isOpen ? 1 : 0);
+    stateHash.push_back(_inEnabled ? 1 : 0);
+    stateHash.push_back(_outEnabled ? 1 : 0);
+    stateHash.push_back(_isOverCurrent ? 1 : 0);
+    stateHash.push_back(_kitchenButtonState);
+    stateHash.push_back(_conservatoryButtonState);
+    stateHash.push_back(_pirSenseInActive ? 1 : 0);
+    stateHash.push_back(_pirSenseOutActive ? 1 : 0);
+    stateHash.push_back(_avgCurrent.getAverage());
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Tests
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void DoorOpener::testMotorEnable(bool en)
+{
+
+}
+
+void DoorOpener::testMotorTurnTo(double degrees)
+{
+    String moveCmd = R"({"rel":0,"nosplit":1,"speed":10,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
+    moveCmd.replace("__POS__", String(degrees));
+    if (_pStepper)
+        _pStepper->sendCmdJSON(moveCmd.c_str());
 }

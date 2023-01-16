@@ -12,6 +12,7 @@
 #include <RaftUtils.h>
 #include <ConfigBase.h>
 #include <SysModBase.h>
+#include <ScaderCommon.h>
 #include <driver/spi_master.h>
 
 class APISourceInfo;
@@ -39,8 +40,11 @@ protected:
     virtual String getStatusJSON() override final;
     
 private:
-    // Enabled and initalised flags
-    bool _isEnabled = false;
+
+    // Common
+    ScaderCommon _scaderCommon;
+
+    // Initialised flag
     bool _isInitialised = false;
 
     // Settings
@@ -57,9 +61,6 @@ private:
 
     // On/Off Key
     int _onOffKey = -1;
-
-    // Name set in Scader UI
-    String _scaderFriendlyName;
 
     // Names of control elements
     std::vector<String> _elemNames;

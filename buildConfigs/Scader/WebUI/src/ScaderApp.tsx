@@ -7,9 +7,10 @@ import { ScaderScreenProps } from './ScaderCommon';
 import ScaderShades from './ScaderShades';
 import ScaderDoors from './ScaderDoors';
 import ScaderLEDPix from './ScaderLEDPix';
+import ScaderOpener from './ScaderOpener';
 
 // const testServerPath = "http://localhost:3123";
-const testServerPath = "http://192.168.86.90";
+const testServerPath = "http://192.168.86.105";
 
 const scaderManager = ScaderManager.getInstance();
 scaderManager.setTestServerPath(testServerPath);
@@ -50,9 +51,10 @@ function ScaderApp() {
 
   const screenProps = new ScaderScreenProps(isEditingMode, scaderManager.getConfig());
 
+  const bodyClasses = isEditingMode ? "ScaderApp-bodyeditmode" : "ScaderApp-body";
   return (
     <div className="ScaderApp">
-    <div className="ScaderApp-body">
+    <div className={bodyClasses}>
       {/* Header */}
       <ScaderCommon config={screenProps.config} 
             onClickHamburger={handleMenuClick}
@@ -64,6 +66,7 @@ function ScaderApp() {
       {<ScaderShades {...screenProps} />}
       {<ScaderDoors {...screenProps} />}
       {<ScaderLEDPix {...screenProps} />}
+      {<ScaderOpener {...screenProps} />}
     </div>
   </div>
   );

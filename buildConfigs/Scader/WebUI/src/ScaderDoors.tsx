@@ -7,7 +7,7 @@ import { ScaderDoorStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
-function ScaderDoors(props:ScaderScreenProps) {
+export default function ScaderDoors(props:ScaderScreenProps) {
 
   const scaderConfigName = "ScaderDoors";
   const scaderStateName = "ScaderDoors";
@@ -25,8 +25,8 @@ function ScaderDoors(props:ScaderScreenProps) {
       // Update config
       setConfig(newConfig[scaderConfigName]);
     });
-    scaderManager.onStateChange((newState) => {
-      console.log(`${scaderStateName}onStateChange`);
+    scaderManager.onStateChange(scaderStateName, (newState) => {
+      console.log(`${scaderStateName} onStateChange ${JSON.stringify(newState)}`);
       // Update state
       if (stateElemsName in newState) {
         setState(new ScaderDoorStates(newState));
@@ -87,7 +87,7 @@ function ScaderDoors(props:ScaderScreenProps) {
 
   const editModeScreen = () => {
     return (
-      <div className="ScaderElem">
+      <div className="ScaderElem-edit">
         <div className="ScaderElem-header">
           {/* Checkbox for enable with label */}
           <label>
@@ -163,5 +163,3 @@ function ScaderDoors(props:ScaderScreenProps) {
     props.isEditingMode ? editModeScreen() : normalModeScreen()
   );
 }
-
-export default ScaderDoors;

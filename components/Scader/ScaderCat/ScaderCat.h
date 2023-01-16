@@ -10,6 +10,7 @@
 
 #include <ArduinoOrAlt.h>
 #include <ConfigBase.h>
+#include <ScaderCommon.h>
 #include <RaftUtils.h>
 #include <SysModBase.h>
 
@@ -39,9 +40,11 @@ protected:
 
 private:
 
-    // Enabled and initalised flags
-    bool _isEnabled;
-    bool _isInitialised;
+    // Common
+    ScaderCommon _scaderCommon;
+
+    // Initialised flag
+    bool _isInitialised = false;
 
     // Timed output control
     class TimedOutput

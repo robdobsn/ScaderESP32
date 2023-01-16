@@ -1,0 +1,22 @@
+idf_component_register(
+                SRCS 
+                  "HWElemSteppers/HWElemSteppers.cpp"
+                  "HWElemSteppers/Axes/AxisValues.cpp"
+                  "HWElemSteppers/Controller/MotionArgs.cpp"
+                  "HWElemSteppers/Controller/MotionController.cpp"
+                  "HWElemSteppers/Controller/MotionBlockManager.cpp"
+                  "HWElemSteppers/Controller/MotionPlanner.cpp"
+                  "HWElemSteppers/StepDrivers/StepDriverBase.cpp"
+                  "HWElemSteppers/StepDrivers/StepDriverTMC2209.cpp"
+                  "HWElemSteppers/EndStops/EndStops.cpp"
+                  "HWElemSteppers/RampGenerator/RampGenTimer.cpp"
+                  "HWElemSteppers/RampGenerator/RampGenerator.cpp"
+                  "HWElemSteppers/RampGenerator/MotionBlock.cpp"
+                  "HWElemSteppers/Geometries/AxisGeomXYZ.cpp"
+                INCLUDE_DIRS
+                  "HWElemSteppers"
+                REQUIRES 
+                  raftcore-src
+                  system
+                  hardware
+)

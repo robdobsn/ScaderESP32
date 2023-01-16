@@ -11,6 +11,7 @@
 #include <RaftUtils.h>
 #include <ConfigBase.h>
 #include <SysModBase.h>
+#include <ScaderCommon.h>
 #include <DoorStrike.h>
 
 class APISourceInfo;
@@ -36,8 +37,10 @@ protected:
     virtual String getStatusJSON() override final;
     
 private:
-    // Enabled and initalised flags
-    bool _isEnabled = false;
+    // Common
+    ScaderCommon _scaderCommon;
+
+    // Initialised flag
     bool _isInitialised = false;
 
     // Settings
@@ -57,9 +60,6 @@ private:
 
     // Master door index
     uint32_t _masterDoorIndex = 0;
-
-    // Name set in Scader UI
-    String _scaderFriendlyName;
 
     // Names of control elements
     std::vector<String> _elemNames;

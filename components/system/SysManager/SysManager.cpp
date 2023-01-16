@@ -50,32 +50,14 @@ SysManager::SysManager(const char* pModuleName, ConfigBase& defaultConfig, Confi
     // Store mutable config
     _pMutableConfig = pMutableConfig;
 
-    // No endpoints yet
-    _pRestAPIEndpointManager = nullptr;
-
-    // No comms channels
-    _pCommsChannelManager = nullptr;
-
     // Register this manager to all objects derived from SysModBase
     SysModBase::setSysManager(this);
 
     // Module name
     _moduleName = pModuleName;
 
-    // Status change callback
-    _statsCB = nullptr;
-
-    // Supervisor vector needs an update
-    _supervisorDirty = false;
-    _serviceLoopCurModIdx = 0;
-
     // Slow SysMod threshold
     _slowSysModThresholdUs = _sysModManConfig.getLong("slowSysModMs", SLOW_SYS_MOD_THRESHOLD_MS_DEFAULT) * 1000;
-
-    // Stress test
-    _stressTestLoopDelayMs = 0;
-    _stressTestLoopSkipCount = 0;
-    _stressTestCurSkipCount = 0;
 
     // Extract info from config
     _sysModManConfig = pGlobalConfig ? 
@@ -90,10 +72,8 @@ SysManager::SysManager(const char* pModuleName, ConfigBase& defaultConfig, Confi
     _monitorPeriodMs = _sysModManConfig.getLong("monitorPeriodMs", 10000);
     _monitorTimerMs = millis();
     _sysModManConfig.getArrayElems("reportList", _monitorReportList);
-    _monitorTimerStarted = false;
 
     // System restart flag
-    _systemRestartPending = false;
     _systemRestartMs = millis();
 
     // System friendly name
@@ -104,7 +84,6 @@ SysManager::SysManager(const char* pModuleName, ConfigBase& defaultConfig, Confi
     _systemUniqueString = getSystemMACAddressStr(ESP_MAC_BT, "");
 
     // Get mutable config info
-    _friendlyNameIsSet = false;
     if (_pMutableConfig)
     {
         _friendlyNameStored = _pMutableConfig->getString("friendlyName", "");
@@ -116,14 +95,11 @@ SysManager::SysManager(const char* pModuleName, ConfigBase& defaultConfig, Confi
             networkSystem.setHostname(_friendlyNameStored.c_str());
     }
 
-    // File stream activity
-    _isSystemMainFWUpdate = false;
-    _isSystemFileTransferring = false;
-    _isSystemStreaming = false;
-
     // Debug
-    LOG_I(MODULE_PREFIX, "friendlyNameStored %s, friendlyNameIsSet %s, defaultFriendlyName %s defaultFriendlyNameIsSet %d",
-                 _friendlyNameStored.c_str(), _friendlyNameIsSet ? "Y" : "N", _defaultFriendlyName.c_str(), _defaultFriendlyNameIsSet);
+    LOG_I(MODULE_PREFIX, "friendlyName %s, defaultFriendlyName %s (isSet %s)",
+                _friendlyNameIsSet ? _friendlyNameStored.c_str() : "Not-Set", 
+                _defaultFriendlyName.c_str(),
+                _defaultFriendlyNameIsSet ? "Y" : "N");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -577,36 +553,13 @@ void SysManager::apiFriendlyName(const String &reqStr, String& respStr, const AP
     if (RestAPIEndpointManager::getNumArgs(reqStr.c_str()) > 1)
     {
         // Set name
-        bool nameIsSet = false;
         String friendlyName = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
-        friendlyName.trim();
-        if (friendlyName.length() > MAX_FRIENDLY_NAME_LENGTH)
+        String errorStr;
+        bool rslt = setFriendlyName(friendlyName.c_str(), true, errorStr);
+        if (!rslt)
         {
-            Raft::setJsonErrorResult(reqStr.c_str(), respStr, "nameTooLong");
+            Raft::setJsonErrorResult(reqStr.c_str(), respStr, errorStr.c_str());
             return;
-        }
-        else if (friendlyName.length() == 0)
-        {
-            // Return to default friendly name
-            LOG_I(MODULE_PREFIX, "apiFriendlyName set friendlyName blank -> default");
-        }
-        else
-        {
-            LOG_I(MODULE_PREFIX, "apiFriendlyName set friendlyName %s", friendlyName.c_str());
-            nameIsSet = true;
-        }
-        _friendlyNameStored = friendlyName;
-        _friendlyNameIsSet = nameIsSet;
-
-        // Setup network system hostname
-        if (_friendlyNameIsSet)
-            networkSystem.setHostname(_friendlyNameStored.c_str());
-
-        // Store the new name (even if it is blank)
-        String jsonConfig = getMutableConfigJson();
-        if (_pMutableConfig)
-        {
-            _pMutableConfig->writeConfig(jsonConfig);
         }
     }
 
@@ -829,6 +782,41 @@ bool SysManager::getFriendlyNameIsSet()
 {
     if (_pMutableConfig)
         return _pMutableConfig->getLong("nameSet", 0);
+    return true;
+}
+
+bool SysManager::setFriendlyName(const String& friendlyName, bool setHostname, String& errorStr)
+{
+    String tmpName = friendlyName;
+    tmpName.trim();
+    if (tmpName.length() > MAX_FRIENDLY_NAME_LENGTH)
+    {
+        errorStr = "nameTooLong";
+        return false;
+    }
+    else if (tmpName.length() == 0)
+    {
+        // Return to default friendly name
+        LOG_I(MODULE_PREFIX, "apiFriendlyName set friendlyName blank -> default");
+        _friendlyNameIsSet = false;
+    }
+    else
+    {
+        LOG_I(MODULE_PREFIX, "apiFriendlyName set friendlyName %s", tmpName.c_str());
+        _friendlyNameIsSet = true;
+    }
+    _friendlyNameStored = tmpName;
+
+    // Setup network system hostname
+    if (_friendlyNameIsSet && setHostname)
+        networkSystem.setHostname(_friendlyNameStored.c_str());
+
+    // Store the new name (even if it is blank)
+    String jsonConfig = getMutableConfigJson();
+    if (_pMutableConfig)
+    {
+        _pMutableConfig->writeConfig(jsonConfig);
+    }
     return true;
 }
 

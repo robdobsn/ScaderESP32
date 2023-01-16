@@ -13,9 +13,9 @@ idf_component_register(
                   "ScaderShades/ScaderShades.cpp"
                   "ScaderDoors/ScaderDoors.cpp"
                   "ScaderDoors/DoorStrike.cpp"
-                  # "ScaderOpener/ScaderOpener.cpp"
+                  "ScaderOpener/ScaderOpener.cpp"
                   "ScaderLEDPixels/ScaderLEDPixels.cpp"
-                  # "ScaderOpener/DoorOpener.cpp"
+                  "ScaderOpener/DoorOpener.cpp"
                   # "ScaderCat/ScaderCat.cpp"
                   # "TinyPICO/TinyPICO.cpp"
                   # "HWElemINA219/HWElemINA219.cpp"
@@ -24,11 +24,11 @@ idf_component_register(
                   # "ScaderWaterer/MoistureSensors.cpp"
                   # "ScaderWaterer/PumpControl.cpp"
                 INCLUDE_DIRS
-                  # "ScaderCommon"
+                  "ScaderCommon"
                   "ScaderRelays"
                   "ScaderShades"
                   "ScaderDoors"
-                  # "ScaderOpener"
+                  "ScaderOpener"
                   # "ScaderCat"
                   "ScaderLEDPixels"
                   # "TinyPICO"
@@ -41,5 +41,7 @@ idf_component_register(
                   comms
                   system
                   FastLED-idf
+                  HWSteppers
+                  hardware
                 )
 

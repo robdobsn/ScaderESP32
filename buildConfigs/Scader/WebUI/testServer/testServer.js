@@ -39,7 +39,11 @@ let curSettings = {
     "enable":false
   },
   "ScaderOpener": {
-    "enable":false
+    "enable":false,
+    "DoorOpenMs": 45000,
+    "DoorMoveTimeMs": 20000,
+    "MotorMaxCurrent": 0.3,
+    "MotorTimeoutSecs": 60
   },
   "ScaderLEDPix": { 
     "enable":false
@@ -69,7 +73,18 @@ let curSettings = {
   }
 };
 
+const startTime = Date.now();
 let publishesPending = [];
+const publishTimer = setInterval(() => {
+  if (publishesPending.length == 0) {
+    // Publish each key in states
+    const publishingTypes = Object.keys(states);
+    // console.log(`Added ${publishingTypes} types to publish queue`);
+    for (let pubType of publishingTypes) {
+      publishesPending.push(pubType);
+    }
+  }
+}, 10000);
 
 const states = {
 }
@@ -91,6 +106,9 @@ const updateStatesFromConfig = () => {
       for (const elem of curSettings[key].elems) {
         states[key].elems.push({name:elem.name, locked:"Y", open:"N"});
       }
+    } else if (key == 'ScaderOpener') {
+      states[key] = {status: {isOpen: false, inEnabled: false, outEnabled: false, isOverCurrent: false, 
+                kitchenButtonState: 0, consButtonPressed: false, pirSenseInActive: false, pirSenseOutActive: false, avgCurrent: 0.1}};
     } else {
       states[key] = {};
     }
@@ -120,7 +138,7 @@ async function run() {
     res.json({"req":"getsettings/nv","sysType":"Scader","nv": curSettings,"rslt":"ok"});
   });
 
-  app.post('/api/postsettings', async function (req, res) {
+  app.post('/api/postsettings/:roboot?', async function (req, res) {
     console.log("postsettings", req.body)
     if ("body" in req) {
       curSettings = req.body;
@@ -259,10 +277,26 @@ async function run() {
     });
 
     const intervalTimer = setInterval(() => {
+      if (wss.clients.size == 0) {
+        return;
+      }
       // Go through pending publishes and send them
       for (const key of publishesPending) {
-        console.log(`Publishing to ${wss.clients} clients ${JSON.stringify(states[key])}`);
-        webSocketClient.send(JSON.stringify(states[key]));
+        if (Object.keys(states[key]).length == 0) {
+          // console.log(`No state for ${key}`)
+          continue;
+        }
+        const stdPubInfo = {
+          "name": "ScaderTest",
+          "version": "5.3.4",
+          "hostname": "scadertest",
+          "IP": "192.168.86.105",
+          "MAC": "3c:61:05:4a:51:c8",
+          "upMs": (Date.now() - startTime).toFixed(0),
+        };
+        const pubMsg = JSON.stringify({module: key, ...stdPubInfo, ...states[key]});
+        webSocketClient.send(pubMsg);
+        console.log(`Publishing ${pubMsg}`);
       }
       publishesPending = [];
     }, 100);

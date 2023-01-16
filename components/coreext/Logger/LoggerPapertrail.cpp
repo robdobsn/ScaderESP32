@@ -20,15 +20,15 @@ LoggerPapertrail::LoggerPapertrail(const ConfigBase& logDestConfig)
 {
     // Get config
     _host = logDestConfig.getString("host", "");
-    _port = logDestConfig.getString("port", "");
     memset(&_hostAddrInfo, 0, sizeof(struct addrinfo));
     _dnsLookupDone = false;
     _port = logDestConfig.getLong("port", 0);
     _sysName = logDestConfig.getString("sysName", "");
-    _sysName += "_" + getSystemMACAddressStr(ESP_MAC_WIFI_STA, ":");
+    _sysName += "_" + getSystemMACAddressStr(ESP_MAC_WIFI_STA, "");
 
     // Debug
-    ESP_LOGI(MODULE_PREFIX, "host %s port %s level %s sysName %s", _host.c_str(), _port.c_str(), getLevelStr(), _sysName.c_str());
+    ESP_LOGI(MODULE_PREFIX, "host %s port %s level %s sysName %s", 
+                        _host.c_str(), _port.c_str(), getLevelStr(), _sysName.c_str());
 }
 
 LoggerPapertrail::~LoggerPapertrail()
@@ -40,7 +40,7 @@ void IRAM_ATTR LoggerPapertrail::log(esp_log_level_t level, const char *tag, con
     if (level <= _level)
     {
         // Check if we're connected
-        if (networkSystem.isWiFiStaConnectedWithIP())
+        if (networkSystem.isIPConnected())
         {
             // Check if DNS lookup done
             if (!_dnsLookupDone)

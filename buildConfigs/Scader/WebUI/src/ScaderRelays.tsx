@@ -7,7 +7,7 @@ import { ScaderRelayStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
-function ScaderRelays(props:ScaderScreenProps) {
+export default function ScaderRelays(props:ScaderScreenProps) {
 
   const scaderName = "ScaderRelays";
   const configElemsName = "elems";
@@ -24,8 +24,9 @@ function ScaderRelays(props:ScaderScreenProps) {
       // Update config
       setConfig(newConfig[scaderName]);
     });
-    scaderManager.onStateChange((newState) => {
-      console.log(`${scaderName}onStateChange`);
+    scaderManager.onStateChange(scaderName, (newState) => {
+      console.log(`${scaderName} onStateChange ${JSON.stringify(newState)}`);
+
       // Update state
       if (stateElemsName in newState) {
         setState(new ScaderRelayStates(newState));
@@ -78,19 +79,20 @@ function ScaderRelays(props:ScaderScreenProps) {
   };
 
   const handleElemClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(`${scaderName}.handleElemClick ${event.currentTarget.id}`);
     // Send command to change elem state
     let elemIndex = Number(event.currentTarget.id.split("-")[1]);
     let curState = false;
     if (state[stateElemsName] && state[stateElemsName][elemIndex] && state[stateElemsName][elemIndex].state) {
       curState = state[stateElemsName][elemIndex].state !== 0;
     }
-    scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/${curState ? "off" : "on"}`);
+    const apiCmd = `/${restCommandName}/${elemIndex+1}/${curState ? "off" : "on"}`;
+    scaderManager.sendCommand(apiCmd);
+    console.log(`${scaderName}.handleElemClick ${event.currentTarget.id} cmd ${apiCmd}`);
   };
 
   const editModeScreen = () => {
     return (
-      <div className="ScaderElem">
+      <div className="ScaderElem-edit">
         <div className="ScaderElem-header">
           {/* Checkbox for enable with label */}
           <label>
@@ -160,5 +162,3 @@ function ScaderRelays(props:ScaderScreenProps) {
     props.isEditingMode ? editModeScreen() : normalModeScreen()
   );
 }
-
-export default ScaderRelays;

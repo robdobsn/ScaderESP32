@@ -41,11 +41,9 @@ static const char *MODULE_PREFIX = "ScaderLEDPixels";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
+    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig),
+          _scaderCommon(*this, pModuleName)
 {
-    // Init
-    _isEnabled = false;
-    _isInitialised = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,62 +52,64 @@ ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, ConfigBase &defaultCon
 
 void ScaderLEDPixels::setup()
 {
+    // Common
+    _scaderCommon.setup();
+
     // Get settings
-    _isEnabled = configGetLong("enable", false) != 0;
     uint8_t defaultBrightness = configGetLong("brightness", 96);
  
     // Check enabled
-    if (_isEnabled)
-    {
-        // Clear the strips
-        _ledPixels.clear();
-
-        // Get string definition arrays
-        std::vector<String> stripInfos;
-        uint32_t totalNumPix = 0;
-        if (configGetArrayElems("strips", stripInfos))
-        {
-            // Create LED info (one for all strips)
-            for (const JSONParams& stripInfo : stripInfos)
-            {
-                totalNumPix += stripInfo.getLong("numPix", 0);
-            }
-            _ledPixels.resize(totalNumPix);
-
-            // Loop over strips
-            uint32_t curPixPos = 0;
-            for (size_t i = 0; i < stripInfos.size(); i++)
-            {
-                // Get strip info
-                JSONParams stripInfo = stripInfos[i];
-
-                // Extract pin and number of pixels
-                uint8_t pixPin = stripInfo.getLong("pixPin", 0);
-                uint32_t numPixels = stripInfo.getLong("numPix", 0);
-
-                // Add to FastLED library
-                if (pixPin == 32)
-                    FastLED.addLeds<WS2811, 32, GRB>(_ledPixels.data(), curPixPos, numPixels).setCorrection(TypicalPixelString);
-                else if (pixPin == 33)
-                    FastLED.addLeds<WS2811, 33, GRB>(_ledPixels.data(), curPixPos, numPixels).setCorrection(TypicalPixelString);
-                curPixPos += numPixels;
-            }
-
-            // set master brightness control
-            FastLED.setBrightness(defaultBrightness);
-        }
-
-        // Debug
-        LOG_I(MODULE_PREFIX, "setup enabled with %d strips total LEDs %d brightness %d", 
-                    stripInfos.size(), totalNumPix, defaultBrightness);
-
-        // HW Now initialised
-        _isInitialised = true;
-    }
-    else
+    if (!_scaderCommon.isEnabled())
     {
         LOG_I(MODULE_PREFIX, "setup disabled");
+        return;
     }
+
+    // Clear the strips
+    _ledPixels.clear();
+
+    // Get string definition arrays
+    std::vector<String> stripInfos;
+    uint32_t totalNumPix = 0;
+    if (configGetArrayElems("strips", stripInfos))
+    {
+        // Create LED info (one for all strips)
+        for (const JSONParams& stripInfo : stripInfos)
+        {
+            totalNumPix += stripInfo.getLong("numPix", 0);
+        }
+        _ledPixels.resize(totalNumPix);
+
+        // Loop over strips
+        uint32_t curPixPos = 0;
+        for (size_t i = 0; i < stripInfos.size(); i++)
+        {
+            // Get strip info
+            JSONParams stripInfo = stripInfos[i];
+
+            // Extract pin and number of pixels
+            uint8_t pixPin = stripInfo.getLong("pixPin", 0);
+            uint32_t numPixels = stripInfo.getLong("numPix", 0);
+
+            // Add to FastLED library
+            if (pixPin == 32)
+                FastLED.addLeds<WS2811, 32, GRB>(_ledPixels.data(), curPixPos, numPixels).setCorrection(TypicalPixelString);
+            else if (pixPin == 33)
+                FastLED.addLeds<WS2811, 33, GRB>(_ledPixels.data(), curPixPos, numPixels).setCorrection(TypicalPixelString);
+            curPixPos += numPixels;
+        }
+
+        // set master brightness control
+        FastLED.setBrightness(defaultBrightness);
+    }
+
+    // Debug
+    LOG_I(MODULE_PREFIX, "setup enabled name %s with %d strips total LEDs %d brightness %d", 
+                _scaderCommon.getFriendlyName().c_str(),
+                stripInfos.size(), totalNumPix, defaultBrightness);
+
+    // HW Now initialised
+    _isInitialised = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ void ScaderLEDPixels::service()
 //   }
 
     // Check enabled
-    if (!_isEnabled)
+    if (!_isInitialised)
         return;
 
     // Handle patterns
@@ -153,6 +153,9 @@ void ScaderLEDPixels::service()
             break;
         case PATTERN_LOCATE:
             patternLocate_service();
+            break;
+        case PATTERN_SNAKE:
+            patternSnake_service();
             break;
     }
 }
@@ -176,8 +179,8 @@ void ScaderLEDPixels::addRestAPIEndpoints(RestAPIEndpointManager &endpointManage
 
 void ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
-    // Check enabled
-    if (!_isEnabled)
+    // Check init
+    if (!_isInitialised)
     {
         LOG_I(MODULE_PREFIX, "apiControl disabled");
         Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
@@ -244,6 +247,21 @@ void ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const AP
         {
             patternLocate_start();
         }
+        else if (patternName.equalsIgnoreCase("snake"))
+        {
+            // Snake length
+            uint32_t patternLen = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3).toInt();
+
+            // Speed
+            uint32_t speed = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 4).toInt();
+
+            patternSnake_start(patternLen, speed);
+        }
+        else
+        {
+            rslt = false;
+            reasonStr = "\"reason\":\"invalidPatternName\"";
+        }
     }
 
     // Set result
@@ -252,7 +270,7 @@ void ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const AP
 
 String ScaderLEDPixels::getStatusJSON()
 {
-    return "{}";
+    return "{" + _scaderCommon.getStatusJSON() + "}"; 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -364,3 +382,76 @@ void ScaderLEDPixels::patternLocate_service()
         FastLED.show();
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Pattern Snake
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ScaderLEDPixels::patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed)
+{
+    // Initialise pattern
+    _pattern = PATTERN_SNAKE;
+
+    // Clear first
+    setAllPixels(CRGB::Black);
+
+    // Store pattern values
+    _patternLEDIdx = 0;
+    _patternDirection = 0;
+    _patternSnakeLen = snakeLen == 0 ? 40 : snakeLen;
+    _patternSnakeSpeed = snakeSpeed;
+
+    _patternLen = _ledPixels.size();
+
+    // Pattern timing
+    _patternLastTime = millis();
+
+}
+
+void ScaderLEDPixels::patternSnake_service()
+{
+    // Check time
+    if (Raft::isTimeout(millis(), _patternLastTime, _patternSnakeSpeed))
+    {
+        // Update time
+        _patternLastTime = millis();
+
+        // Check LED index
+        if (_patternLEDIdx >= _patternLen - _patternSnakeLen)
+        {
+            // Change direction
+            _patternDirection = -1;
+
+            // Debug
+            LOG_I(MODULE_PREFIX, "patternSnake_service CHANGE DIRECTION LEDIdx", _patternLEDIdx);
+        }
+        else if (_patternLEDIdx == 0)
+        {
+            // Change direction
+            _patternDirection = 1;
+
+            // Debug
+            LOG_I(MODULE_PREFIX, "patternSnake_service CHANGE DIRECTION LEDIdx", _patternLEDIdx);
+        }
+
+        // Clear all pixels
+        for (uint32_t i = 0; i < _ledPixels.size(); i++)
+        {
+            _ledPixels[i] = CRGB::Black;
+        }
+
+        // Set a rainbow sequence of colours into the next batch of pixels
+        for (uint32_t i = 0; i < _patternSnakeLen; i++)
+        {
+            // Set colour
+            _ledPixels[_patternLEDIdx + i] = CHSV(i * 255 / _patternSnakeLen, 255, 255);
+        }
+
+        // Update LED index
+        _patternLEDIdx += _patternDirection;
+
+        // Show LEDs
+        FastLED.show();
+    }
+}
+

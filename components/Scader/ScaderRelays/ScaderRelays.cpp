@@ -23,6 +23,8 @@
 static const char *MODULE_PREFIX = "ScaderRelays";
 
 // #define CHECK_RUNNING_ON_APPROPRIATE_HW
+// #define DEBUG_RELAYS_MUTABLE_DATA
+#define DEBUG_RELAYS_API
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -324,11 +326,16 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
         rslt = true;
         
         // Debug
+#ifdef DEBUG_RELAYS_API
         LOG_I(MODULE_PREFIX, "apiControl %d relays (of %d) turned %s", numElemsSet, _elemNames.size(), newState ? "on" : "off");
+#endif
     }
     else
     {
+        // Debug
+#ifdef DEBUG_RELAYS_API        
         LOG_I(MODULE_PREFIX, "apiControl no valid relays specified");
+#endif
     }
 
     // Set result
@@ -383,7 +390,9 @@ void ScaderRelays::saveMutableData()
 
     // Add outer brackets
     jsonConfig = "{" + jsonConfig + "}";
+#ifdef DEBUG_RELAYS_MUTABLE_DATA
     LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
+#endif
     SysModBase::configSaveData(jsonConfig);
 }
 

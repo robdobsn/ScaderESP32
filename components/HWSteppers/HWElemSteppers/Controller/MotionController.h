@@ -80,6 +80,9 @@ public:
         _motorEnabler.setMotorOnTimeAfterMoveSecs(motorOnTimeAfterMoveSecs);
     }
 
+    // Set max motor current (amps)
+    void setMaxMotorCurrentAmps(uint32_t axisIdx, float maxMotorCurrent);
+
 private:
     // Ramp generation
     static RampGenTimer _rampGenTimer;

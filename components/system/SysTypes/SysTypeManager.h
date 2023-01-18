@@ -69,4 +69,5 @@ private:
     void apiSysTypePostSettings(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void apiSysTypePostSettingsBody(const String& reqStr, const uint8_t *pData, size_t len, 
                         size_t index, size_t total, const APISourceInfo& sourceInfo);
+    void apiSysTypeClearSettings(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
 };

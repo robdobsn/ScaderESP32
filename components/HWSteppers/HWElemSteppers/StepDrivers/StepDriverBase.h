@@ -49,35 +49,41 @@ public:
         return "None";
     }
 
+    virtual void setMaxMotorCurrentAmps(float maxMotorCurrentAmps)
+    {
+    }
+
 protected:
     class DriverRegisterMap
     {
     public:
-        DriverRegisterMap(uint8_t addr, uint32_t initVal)
+        DriverRegisterMap(const char* pRegName, uint8_t addr, uint32_t initVal)
         {
+            regName = pRegName;
             regAddr = addr;
             regValCur = initVal;
-            regInitVal = initVal;
+            regWriteVal = initVal;
             writeBitsMask = 0;
             writeOrValue = 0;
-            initRequired = false;
+            writeRequired = false;
             readPending = false;
             readInProgress = false;
             writePending = false;
         }
+        String regName;
         uint8_t regAddr;
         uint32_t regValCur;
-        uint32_t regInitVal;
+        uint32_t regWriteVal;
         uint32_t writeBitsMask;
         uint32_t writeOrValue;
-        bool initRequired : 1;
+        bool writeRequired : 1;
         bool readPending : 1;
         bool readInProgress : 1;
         bool writePending : 1;
     };    
 
     // Write register in Trinamics driver
-    void writeTrinamicsRegister(uint8_t regAddr, uint32_t data);
+    void writeTrinamicsRegister(const char* pRegName, uint8_t regAddr, uint32_t data);
 
     // Start a read from Trinamics register
     void startReadTrinamicsRegister(uint32_t readRegisterIdx);

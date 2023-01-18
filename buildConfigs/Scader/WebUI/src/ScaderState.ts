@@ -9,6 +9,8 @@ export class ScaderRelayStates {
     elems: Array<ScaderRelayState> = [];
     constructor(obj: any) {
         if (obj) {
+            if (obj.module)
+                this.module = obj.module;
             this.elems = obj.elems;
         }
     }
@@ -22,9 +24,14 @@ export class ScaderShadeState {
 export class ScaderShadeStates {
     module: string = "";
     elems: Array<ScaderShadeState> = [];
+    lux: Array<number> = [];
     constructor(obj: any) {
         if (obj) {
+            if (obj.module)
+                this.module = obj.module;
             this.elems = obj.elems;
+            if (obj.lux)
+                this.lux = obj.lux;
         }
     }
 }
@@ -47,6 +54,8 @@ export class ScaderDoorStates {
     bell: string = 'K';
     constructor(obj: any) {
         if (obj) {
+            if (obj.module)
+                this.module = obj.module;
             this.elems = obj.elems;
             this.bell = obj.bell;
         }
@@ -58,17 +67,23 @@ export class ScaderOpenStatus {
     inEnabled: boolean = false;
     outEnabled: boolean = false;
     isOverCurrent: boolean = false;
-    kitchenButtonState: number = 0;
+    inOutMode: string = "";
+    kitButtonPressed: boolean = false;
     consButtonPressed: boolean = false;
     pirSenseInActive: boolean = false;
+    pirSenseInTriggered: boolean = false;
     pirSenseOutActive: boolean = false;
+    pirSenseOutTriggered: boolean = false;
     avgCurrent: number = 0;
+    timeBeforeCloseSecs: number = 0;
 }
 export class ScaderOpenerStates {
     module: string = "";
     status: ScaderOpenStatus = {} as ScaderOpenStatus;
     constructor(obj: any) {
         if (obj) {
+            if (obj.module)
+                this.module = obj.module;
             this.status = obj.status;
         }
     }

@@ -41,7 +41,6 @@ let curSettings = {
   "ScaderOpener": {
     "enable":false,
     "DoorOpenMs": 45000,
-    "DoorMoveTimeMs": 20000,
     "MotorMaxCurrent": 0.3,
     "MotorTimeoutSecs": 60
   },
@@ -108,7 +107,7 @@ const updateStatesFromConfig = () => {
       }
     } else if (key == 'ScaderOpener') {
       states[key] = {status: {isOpen: false, inEnabled: false, outEnabled: false, isOverCurrent: false, 
-                kitchenButtonState: 0, consButtonPressed: false, pirSenseInActive: false, pirSenseOutActive: false, avgCurrent: 0.1}};
+                OpenerInOutMode_t: 0, consButtonPressed: false, pirSenseInActive: false, pirSenseOutActive: false, avgCurrent: 0.1}};
     } else {
       states[key] = {};
     }

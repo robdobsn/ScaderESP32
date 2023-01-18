@@ -78,6 +78,7 @@ void IRAM_ATTR LoggerPapertrail::log(esp_log_level_t level, const char *tag, con
             int ret = sendto(socketFileDesc, logMsg.c_str(), logMsg.length(), 0, _hostAddrInfo.ai_addr, _hostAddrInfo.ai_addrlen);
             if (ret < 0)
             {
+                close(socketFileDesc);
                 ESP_LOGE(MODULE_PREFIX, "log failed: %d", ret);
                 return;
             }

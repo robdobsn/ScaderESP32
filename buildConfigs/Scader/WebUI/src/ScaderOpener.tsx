@@ -66,20 +66,37 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.isOpen ? <div>OPEN</div> : <div>CLOSED</div>}
               {state.status.inEnabled ? <div>INEn</div> : null}
               {state.status.outEnabled ? <div>OUTEn</div> : null}
+              <div>{state.status.inOutMode}</div>
               {state.status.isOverCurrent ? <div>OverCurrent</div> : null}
-              <div>ButSt: {state.status.kitchenButtonState.toString()}</div>
+              {state.status.kitButtonPressed ? <div>KitBut</div> : null}
               {state.status.consButtonPressed ? <div>CONSBut</div> : null}
               {state.status.pirSenseInActive ? <div>PIR_IN</div> : null}
               {state.status.pirSenseOutActive ? <div>PIR_OUT</div> : null}
               <div>AvgI: {state.status.avgCurrent.toString()}</div>
             </div>
-
+          </div>
+        }
+        {config.enable &&
+          <div className="ScaderElem-editmode">
             <div className="ScaderElem-edit-group">
               <div className="ScaderElem-edit-line">
+                {/* Button to set open position */}
+                <label>
+                  Open Angle (Degrees):
+                  <input id="scader-motor-open-angle" className="ScaderElem-input-small" type="number" defaultValue={config.DoorOpenAngle} />
+                </label>
+                <button className="ScaderElem-button-editmode" onClick={
+                      () => {
+                        const inputElem = document.getElementById("scader-motor-open-angle") as HTMLInputElement | null;
+                        const numDegrees = inputElem ? inputElem.value : 0;
+                        updateConfigValue("DoorOpenAngle", numDegrees);
+                      }}>
+                  Set
+                </button>
                 {/* Numeric input box and label for number of degrees to turn to */}
                 <label>
                   Angle (Degrees):
-                  <input id="scader-motor-num-degrees" className="ScaderElem-input-small" type="number" />
+                  <input id="scader-motor-num-degrees" className="ScaderElem-input-small" type="number" defaultValue="30" />
                 </label>
                 {/* Button to turn motor getting degrees from input */}
                 <button className="ScaderElem-button-editmode" onClick={
@@ -91,23 +108,30 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                       }>
                   Turn Motor to Angle
                 </button>
-                {/* Button to set current position as open */}
+              </div>
+
+              <div className="ScaderElem-edit-line">
+                {/* Numeric input box and label for time for door to move to open/closed */}
+                <label>
+                  Time to open (secs):
+                  <input id="scader-door-time-to-open-secs" className="ScaderElem-input-small" type="number" defaultValue={config.DoorTimeToOpenSecs} />
+                </label>
                 <button className="ScaderElem-button-editmode" onClick={
                       () => {
-                        const inputElem = document.getElementById("scader-motor-num-degrees") as HTMLInputElement | null;
-                        const numDegrees = inputElem ? inputElem.value : 0;
-                        updateConfigValue("DoorOpenAngle", numDegrees);
-                        // scaderManager.sendCommand(`/${restCommandName}/setopenangle/${numDegrees}`);
-                      }}>
-                  Set Open Position
+                        const inputElem = document.getElementById("scader-door-time-to-open-secs") as HTMLInputElement | null;
+                        const numSecs = inputElem ? inputElem.value : 0;
+                        updateConfigValue("DoorTimeToOpenSecs", numSecs);
+                      }
+                      }>
+                  Set
                 </button>
-              </div>
+              </div>              
 
               <div className="ScaderElem-edit-line">
                 {/* Numeric input box and label for time for motor to remain on after movement */}
                 <label>
                   Motor on time after move (secs):
-                  <input id="scader-motor-on-time-secs" className="ScaderElem-input-small" type="number" />
+                  <input id="scader-motor-on-time-secs" className="ScaderElem-input-small" type="number" defaultValue={config.MotorOnTimeAfterMoveSecs} />
                 </label>
                 {/* Button to turn motor getting degrees from input */}
                 <button className="ScaderElem-button-editmode" onClick={
@@ -115,7 +139,6 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                         const inputElem = document.getElementById("scader-motor-on-time-secs") as HTMLInputElement | null;
                         const numSecs = inputElem ? inputElem.value : 0;
                         updateConfigValue("MotorOnTimeAfterMoveSecs", numSecs);
-                        // scaderManager.sendCommand(`/${restCommandName}/setmotorontime/${numSecs}`)
                       }
                       }>
                   Set
@@ -126,15 +149,14 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                 {/* Numeric input box and label for door open time */}
                 <label>
                   Door open time (secs):
-                  <input id="scader-door-open-time-secs" className="ScaderElem-input-small" type="number" />
+                  <input id="scader-door-remain-open-time-secs" className="ScaderElem-input-small" type="number" defaultValue={config.DoorRemainOpenTimeSecs} />
                 </label>
                 {/* Button to turn motor getting degrees from input */}
                 <button className="ScaderElem-button-editmode" onClick={
                       () => {
-                        const inputElem = document.getElementById("scader-door-open-time-secs") as HTMLInputElement | null;
+                        const inputElem = document.getElementById("scader-door-remain-open-time-secs") as HTMLInputElement | null;
                         const numSecs = inputElem ? inputElem.value : 0;
-                        updateConfigValue("DoorOpenTimeSecs", numSecs);
-                        // scaderManager.sendCommand(`/${restCommandName}/setdooropentime/${numSecs}`)
+                        updateConfigValue("DoorRemainOpenTimeSecs", numSecs);
                       }
                       }>
                   Set
@@ -145,15 +167,14 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                 {/* Numeric input box and label for motor current limit */}
                 <label>
                   Motor current limit (A):
-                  <input id="scader-motor-current-limit" className="ScaderElem-input-small" type="number" />
+                  <input id="scader-motor-current-limit" className="ScaderElem-input-small" type="number" defaultValue={config.MaxMotorCurrentAmps} />
                 </label>
                 {/* Button to set motor current limit */}
                 <button className="ScaderElem-button-editmode" onClick={
                       () => {
                         const inputElem = document.getElementById("scader-motor-current-limit") as HTMLInputElement | null;
                         const numAmps = inputElem ? inputElem.value : 0;
-                        const currentVal = {axes: [{A: {driver: {rmsAmps: numAmps}}}]}
-                        updateConfigValue("stepper", currentVal);
+                        updateConfigValue("MaxMotorCurrentAmps", numAmps);
                       }
                       }>
                   Set
@@ -168,12 +189,66 @@ export default function ScaderOpener(props:ScaderScreenProps) {
   }
 
   const normalModeScreen = () => {
+    let inOutMode = "";
+    if (state.status) {
+      if (state.status.inEnabled && state.status.outEnabled) {
+        inOutMode = "In/Out";
+      } else if (state.status.inEnabled) {
+        inOutMode = "In-Only";
+      } else if (state.status.outEnabled) {
+        inOutMode = "Out-Only";
+      } else {
+        inOutMode = "Locked";
+      }
+    }
+
+    let openState = "Closed";
+    if (state.status && state.status.isOpen) {
+      if (state.status.timeBeforeCloseSecs === 0) {
+        openState = "Open indefinitely";
+      } else {
+        openState = `Open (for ${state.status.timeBeforeCloseSecs.toString()}s)`;
+      }
+    }
+
     return (
       // Display if enabled
       config.enable ?
         <div className="ScaderElem">
-          <div className="ScaderElem-header">
-            Hello!
+          <div className="ScaderElem-body">
+            {config.enable && state.status && 
+            <div className="ScaderElem-status-grid">
+              {/* Status info grid */}
+              <div>{openState}</div>
+              <div>{inOutMode}</div>
+              {state.status.kitButtonPressed ? <div>Kitchen Button</div> : null}
+              {state.status.consButtonPressed ? <div>Consv Button</div> : null}
+              {state.status.pirSenseInActive ? <div>Kitchen PIR Actv</div> : null}
+              {state.status.pirSenseInTriggered ? <div>Kitchen PIR Trig</div> : null}
+              {state.status.pirSenseOutActive ? <div>Consv PIR Actv</div> : null}
+              {state.status.pirSenseOutTriggered ? <div>Consv PIR Trig</div> : null}
+              {state.status.isOverCurrent ? <div>OverCurrent</div> : null}
+              <div>{state.status.avgCurrent.toString()}A</div>
+            </div>
+          }
+          </div>
+          <div className="ScaderElem-footer">
+            {/* Button to open door */}
+            <button className="ScaderElem-button" onClick={
+              () => {
+                scaderManager.sendCommand(`/${restCommandName}/open`)
+              }
+              }>
+              Open
+            </button>
+            {/* Button to close door */}
+            <button className="ScaderElem-button" onClick={
+              () => {
+                scaderManager.sendCommand(`/${restCommandName}/close`)
+              }
+              }>
+              Close
+            </button>
           </div>
         </div>
       : null

@@ -185,6 +185,18 @@ body {
   flex: auto;
 }
 
+.ScaderElem-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  grid-gap: 0px 0px;
+  grid-template-areas: ". . ." ". . ." ". . .";
+}
+
+.ScaderElem-status-grid div {
+  padding: 10px;
+}
+
 .ScaderElem-isOpen {
   color: white;
   margin: 0;
@@ -202,6 +214,16 @@ body {
   background-color: red;
   border-radius: 10px;
   padding: 10px;
+}
+
+.ScaderElem-lightlevels-list {
+  display: flex;
+  flex-direction: row;
+}
+
+.ScaderElem-lightlevels-list p {
+  flex: 1;
+  margin: 0;
 }
 
 .ScaderHeader {

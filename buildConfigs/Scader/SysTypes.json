@@ -4,7 +4,7 @@
 		"CmdsAtStart": "",
 		"WebUI": "",
 		"SysManager": {
-			"monitorPeriodMs":10000,
+			"monitorPeriodMs":30000,
 			"reportList":[
 				"NetMan",
 				"BLEMan",
@@ -244,10 +244,11 @@
 			"bellSenseLevel": 1
 		},
 		"ScaderOpener": {
-			"DoorOpenTimeSecs": 45,
-			"DoorOpenAngle": 30,
+			"DoorRemainOpenTimeSecs": 45,
+			"DoorTimeToOpenSecs": 20,
+			"DoorOpenAngle": 120,
 			"MotorOnTimeAfterMoveSecs": 1,
-			"DoorMoveTimeMs": 20000,
+			"MaxMotorCurrentAmps": 0.5,
 			"LED_OUT_EN_PIN": 21,
 			"LED_IN_EN_PIN": 22,
 			"PIR_SENSE_IN_PIN": 2,

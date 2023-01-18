@@ -100,7 +100,7 @@ void ScaderOpener::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
     // Control shade
     endpointManager.addEndpoint("opener", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderOpener::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "Control Opener - /open or /close or /mode/in or /mode/out or /mode/both or /mode/none or mode/open - /setmotorontime/<secs>, /setopenpos, /setclosedpos - /test/motoron, /testmotoroff, /test/turnto/<degrees>");
+                            "Control Opener - /open or /close or /mode/in or /mode/out or /mode/both or /mode/none or mode/open or /test/motoron, /test/motoroff, /test/turnto/<degrees>");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,64 +175,18 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
                 rslt = false;
             }
         }
-        // else if (params[1] == "setopenangle")
-        // {
-        //     // Get value passed in
-        //     uint32_t openPos = DoorOpener::DEFAULT_DOOR_OPEN_ANGLE;
-        //     if (params.size() > 2)
-        //     {
-        //         openPos = params[2].toInt();
-        //     }
 
-        //     // Send to opener
-        //     _doorOpener.setOpenAngleDegrees(openPos);
-            
-        // }
-        // else if (params[1] == "setmotorontime")
-        // {
-        //     // Get value passed in
-        //     uint32_t motorOnTime = DoorOpener::DEFAULT_MOTOR_ON_TIME_SECS;
-        //     if (params.size() > 2)
-        //     {
-        //         motorOnTime = params[2].toInt();
-        //     }
-
-        //     // Send to opener
-        //     _doorOpener.setMotorOnTimeAfterMoveSecs(motorOnTime);
-        // }
-        // else if (params[1] == "setdooropentime")
-        // {
-        //     // Get value passed in
-        //     uint32_t doorOpenTime = DoorOpener::DEFAULT_DOOR_OPEN_TIME_SECS;
-        //     if (params.size() > 2)
-        //     {
-        //         doorOpenTime = params[2].toInt();
-        //     }
-
-        //     // Send to opener
-        //     _doorOpener.setDoorOpenTimeSecs(doorOpenTime);
-        // }
         // Test
         else if (params[1] == "test")
         {
             if (params.size() > 1)
             {
-                if (params[2] == "motoron")
-                {
-                    _doorOpener.testMotorEnable(true);
-                    rsltStr = "Motor on";
-                }
-                else if (params[2] == "motoroff")
-                {
-                    _doorOpener.testMotorEnable(false);
-                    rsltStr = "Motor off";
-                }
-                else if (params[2] == "turnto")
+                if (params[2] == "turnto")
                 {
                     if (params.size() > 2)
                     {
                         int degrees = params[3].toInt();
-                        _doorOpener.testMotorTurnTo(degrees);
+                        _doorOpener.motorControl(true, true, degrees, 0);
                         rsltStr = "Turned " + String(degrees) + " degrees";
                     }
                     else
@@ -297,20 +251,3 @@ void ScaderOpener::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     _doorOpener.getStatusHash(stateHash);
 }
-
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// // Write the mutable config
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// void ScaderOpener::saveMutableData()
-// {
-//     // Save relay states
-//     String jsonConfig = "\"DoorOpenAngle\":" + String(_doorOpener.getOpenAngleDegrees());
-//     jsonConfig += ",\"MotorOnTimeAfterMoveSecs\":" + String(_doorOpener.getMotorOnTimeAfterMoveSecs());
-//     jsonConfig += ",\"DoorOpenTimeSecs\":" + String(_doorOpener.getDoorOpenTimeSecs());
-
-//     // Add outer brackets
-//     jsonConfig = "{" + jsonConfig + "}";
-//     LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
-//     SysModBase::configSaveData(jsonConfig);
-// }

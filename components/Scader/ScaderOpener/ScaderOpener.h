@@ -52,5 +52,4 @@ private:
 
     void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void getStatusHash(std::vector<uint8_t>& stateHash);
-    // void saveMutableData();
 };

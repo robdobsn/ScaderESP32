@@ -37,9 +37,19 @@ export class ScaderConfig {
         enable: false,
     }
     ScaderOpener: {
-        enable: boolean
+        enable: boolean,
+        DoorOpenAngle: number,
+        DoorRemainOpenTimeSecs: number,
+        DoorTimeToOpenSecs: number,
+        MotorOnTimeAfterMoveSecs: number,
+        MaxMotorCurrentAmps: number,
     } = {
         enable: false,
+        DoorOpenAngle: 90,
+        DoorRemainOpenTimeSecs: 30,
+        DoorTimeToOpenSecs: 30,
+        MotorOnTimeAfterMoveSecs: 30,
+        MaxMotorCurrentAmps: 0.1,
     }
     ScaderLEDPix: {
         enable: boolean

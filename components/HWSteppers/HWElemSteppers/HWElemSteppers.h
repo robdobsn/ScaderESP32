@@ -60,6 +60,12 @@ public:
         _motionController.setMotorOnTimeAfterMoveSecs(motorOnTimeAfterMoveSecs);
     }
 
+    // Set max motor current (amps)
+    void setMaxMotorCurrentAmps(uint32_t axisIdx, float maxMotorCurrent)
+    {
+        _motionController.setMaxMotorCurrentAmps(axisIdx, maxMotorCurrent);
+    }
+
 private:
     // Motion controller
     MotionController _motionController;

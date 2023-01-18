@@ -21,14 +21,21 @@ export class ScaderManager {
     // Modified configuration
     private _mutableConfig: ScaderConfig = new ScaderConfig();
 
-    // Current state
-    private _currentState: ScaderState = new ScaderState();
-
     // Config change callbacks
     private _configChangeCallbacks: Array<(config: ScaderConfig) => void> = [];
 
     // State change callbacks
     private _stateChangeCallbacks: { [key: string]: (state: ScaderStateType) => void } = {};
+
+    // Last time we got a state update
+    private _lastStateUpdate: number = 0;
+    private MAX_TIME_BETWEEN_STATE_UPDATES_MS: number = 30000;
+
+    // Flag to indicate web socket reconnection is required
+    private _attemptWebSocketReconnect: boolean = false;
+
+    // Websocket
+    private _websocket: WebSocket | null = null;
 
     // Get instance
     public static getInstance(): ScaderManager {
@@ -64,6 +71,28 @@ export class ScaderManager {
     ////////////////////////////////////////////////////////////////////////////
 
     public async init(): Promise<boolean> {
+        await this.getAppSettingsAndCheck();
+
+        const rslt = await this.connectWebSocket();
+
+        // Start timer to check for websocket reconnection
+        setInterval(() => {
+            if (this._attemptWebSocketReconnect || ((Date.now() - this._lastStateUpdate) > this.MAX_TIME_BETWEEN_STATE_UPDATES_MS)) {
+                this._attemptWebSocketReconnect = false;
+                this._lastStateUpdate = Date.now();
+                this.connectWebSocket();
+            }
+        }, 10000);
+
+        return rslt;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Get the configuration from the main server
+    ////////////////////////////////////////////////////////////////////////////
+
+    private async getAppSettingsAndCheck(): Promise<boolean> {
+
         // Get the configuration from the main server
         const appSettingsResult = await this.getAppSettings("");
         if (!appSettingsResult) {
@@ -76,8 +105,16 @@ export class ScaderManager {
             }
             this._serverAddressPrefix = this._testServerPath;
         }
+        return true;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Open websocket
+    ////////////////////////////////////////////////////////////////////////////
+
+    private async connectWebSocket(): Promise<boolean> {
         // Open a websocket to the server
-        let ws:WebSocket | null = null;
+        this._websocket = null;
         try {
             console.log(`ScaderManager init location.origin ${window.location.origin} ${window.location.protocol} ${window.location.host} ${window.location.hostname} ${window.location.port} ${window.location.pathname} ${window.location.search} ${window.location.hash}`)
             let webSocketURL = this._serverAddressPrefix;
@@ -88,22 +125,22 @@ export class ScaderManager {
             }
             webSocketURL += "/scader";
             console.log(`ScaderManager init opening websocket ${webSocketURL}`);
-            ws = new WebSocket(webSocketURL);
-            if (!ws) {
+            this._websocket = new WebSocket(webSocketURL);
+            if (!this._websocket) {
                 console.error("ScaderManager init unable to create websocket");
                 return false;
             }
-            ws.binaryType = "arraybuffer";
+            this._websocket.binaryType = "arraybuffer";
 
-            ws.onopen = () => {
+            this._websocket.onopen = () => {
                 console.log(`ScaderManager init websocket opened to ${this._serverAddressPrefix}`);
                 // Subscribe to scader messages
                 for (const [key] of Object.entries(this._scaderConfig)) {
                     const subscribeName = key;
                     if (subscribeName !== "ScaderCommon") {
                         console.log(`ScaderManager init subscribing to ${subscribeName}`);
-                        if (ws) {
-                            ws.send(JSON.stringify({
+                        if (this._websocket) {
+                            this._websocket.send(JSON.stringify({
                                 cmdName: "subscription",
                                 action: "update",
                                 pubRecs: [
@@ -114,7 +151,7 @@ export class ScaderManager {
                     }
                 }            
             }
-            ws.onmessage = (event) => {
+            this._websocket.onmessage = (event) => {
                 const data = JSON.parse(event.data) as ScaderStateType;
                 console.log(`ScaderManager websocket message ${JSON.stringify(data)}`);
                 // Check module in message
@@ -129,11 +166,14 @@ export class ScaderManager {
                 }
                 // Use the callback to update the state
                 this._stateChangeCallbacks[data.module](data);
+                // Update the last state update time
+                this._lastStateUpdate = Date.now();
             }
-            ws.onclose = () => {
+            this._websocket.onclose = () => {
                 console.log(`ScaderManager websocket closed`);
+                this._attemptWebSocketReconnect = true;
             }
-            ws.onerror = (error) => {
+            this._websocket.onerror = (error) => {
                 console.log(`ScaderManager websocket error ${error}`);
             }
         }

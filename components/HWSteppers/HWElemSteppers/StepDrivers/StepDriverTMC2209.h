@@ -38,6 +38,8 @@ public:
         return "TMC2209";
     }
 
+    virtual void setMaxMotorCurrentAmps(float maxMotorCurrentAmps) override final;
+
 private:
     // Driver register codes
     // These must be in the same order as added to _driverRegisters
@@ -62,6 +64,7 @@ private:
     uint32_t getMRESFieldValue(uint32_t microsteps);
     void convertRMSCurrentToRegs(double reqCurrentAmps, double holdFactor, 
             StepDriverParams::HoldModeEnum holdMode, bool& vsenseOut, uint32_t& irunOut, uint32_t& iholdOut);
+    void setMainRegs();
 
     // TMC2209 Defs
     static const uint8_t TMC_2209_SYNC_BYTE = 5;

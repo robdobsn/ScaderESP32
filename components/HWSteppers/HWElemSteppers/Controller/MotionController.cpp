@@ -624,6 +624,17 @@ void MotionController::setupMotionControl(const char* jsonElem, const ConfigBase
             _homingNeededBeforeAnyMove, _rampGenTimer.getPeriodUs());
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Set max motor current
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void MotionController::setMaxMotorCurrentAmps(uint32_t axisIdx, float maxMotorCurrentAmps)
+{
+    // Set max motor current
+    if (axisIdx < _stepperDrivers.size())
+        _stepperDrivers[axisIdx]->setMaxMotorCurrentAmps(maxMotorCurrentAmps);
+}
+
 #ifdef asdasdasd
 
 // Each robot has a set of functions that transform points from real-world coordinates

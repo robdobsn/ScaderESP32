@@ -10,8 +10,8 @@
 #include <stdint.h>
 
 // The formats declared here are intended to help future-proof the separation between hardware elements
-// and objects wanting to communicate with them. To add a binary communication format a diffent format code
-// should be added and each end coded to communicated with a set binary format which then doesn't change.
+// and objects wanting to communicate with them. To add a binary communication format a diffent format, code
+// should be added and each end written to communicate with a set binary format which then doesn't change.
 
 // Format for MultiStepper
 static const uint32_t MULTISTEPPER_CMD_BINARY_FORMAT_1 = 0;

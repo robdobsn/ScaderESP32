@@ -115,7 +115,7 @@ export default function ScaderShades(props:ScaderScreenProps) {
 
   const editModeScreen = () => {
     return (
-      <div className="ScaderElem=edit">
+      <div className="ScaderElem-edit">
         <div className="ScaderElem-header">
           {/* Checkbox for enable shades */}
           <label>
@@ -236,8 +236,12 @@ export default function ScaderShades(props:ScaderScreenProps) {
             {/* Light levels */}
             {config.enableLightLevels ?
               <div className="ScaderElem-lightlevels">
-                <div className="ScaderElem-lightlevels-header">Light levels</div>
-                <div>{JSON.stringify(state)}</div>
+                <div className="ScaderElem-lightlevels-list">Light levels
+                  {/* Light-levels in the lux member of state */}
+                  {state.lux ? state.lux.map((val) => (
+                    <p>{val}</p>
+                  )) : null}
+                </div>
               </div>
             : null}                    
           </div>

@@ -18,6 +18,7 @@ static const char* MODULE_PREFIX = "SysTypeManager";
 // #define DEBUG_SYS_TYPE_CONFIG
 // #define DEBUG_SYS_TYPE_CONFIG_DETAIL
 // #define DEBUG_GET_POST_SETTINGS
+// #define DEBUG_SYS_TYPE_SETTING_WRITE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -168,7 +169,9 @@ bool SysTypeManager::setSysSettings(const uint8_t *pData, int len)
         // Store the configuration permanently
         // LOG_W(MODULE_PREFIX, "SYS_TYPE_CONFIG currently %s", _sysTypeConfig.getConfigString().c_str());
         _sysTypeConfig.writeConfig(configJson);
-        // LOG_W(MODULE_PREFIX, "SYS_TYPE_CONFIG now %s", _sysTypeConfig.getConfigString().c_str());
+#ifdef DEBUG_SYS_TYPE_SETTING_WRITE
+        LOG_I(MODULE_PREFIX, "SYS_TYPE_CONFIG now %s", _sysTypeConfig.getConfigString().c_str());
+#endif
 
         // Get type name
         _curSysTypeName = _sysTypeConfig.getString("SysType", "");
@@ -219,6 +222,11 @@ void SysTypeManager::addRestAPIEndpoints(RestAPIEndpointManager& endpointManager
     endpointManager.addEndpoint("getsettings", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&SysTypeManager::apiSysTypeGetSettings, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                             "Get settings for system /getsettings/<filter> where filter is all, nv, base (nv indicates non-volatile) and filter can be blank for all");
+
+    // Clear settings
+    endpointManager.addEndpoint("clearsettings", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
+                            std::bind(&SysTypeManager::apiSysTypeClearSettings, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                            "Clear settings for system /clearsettings");
 }
 
 void SysTypeManager::apiGetSysTypes(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
@@ -314,4 +322,12 @@ void SysTypeManager::apiSysTypePostSettingsBody(const String& reqStr, const uint
         LOG_I(MODULE_PREFIX, "apiSysTypePostSettingsBody partial len %d index %d total %d curBufLen %d", 
             len, index, total, _postResultBuf.size());
     }
+}
+
+void SysTypeManager::apiSysTypeClearSettings(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+{
+    LOG_I(MODULE_PREFIX, "ClearSettings");
+    String emptyObj = "{}";
+    bool clearOk = setSysSettings((uint8_t*)emptyObj.c_str(), emptyObj.length());
+    Raft::setJsonBoolResult(reqStr.c_str(), respStr, clearOk);
 }

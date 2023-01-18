@@ -12,8 +12,13 @@
 
 static const char* MODULE_PREFIX = "StepDrv2209";
 
+#define WARN_ON_DRIVER_BUSY
+
 #define DEBUG_IHOLD_IRUN_CALCS
 #define DEBUG_PWM_FREQ_CALCS
+#define DEBUG_REGISTER_WRITE
+#define DEBUG_IHOLD_IRUN
+// #define DEBUG_REGISTER_READ_PROCESS
 // #define DEBUG_STEPPING_ONLY_IF_NOT_ISR
 // #define DEBUG_DIRECTION_ONLY_IF_NOT_ISR
 
@@ -31,15 +36,15 @@ StepDriverTMC2209::StepDriverTMC2209()
     // DriverRegisterCodes enumeration as that is used for indexing
 
     // Add GCONF register
-    _driverRegisters.push_back({0, 0x000001C0});
+    _driverRegisters.push_back({"GCONF", 0, 0x000001C0});
     // Add CHOPCONF register with default value
-    _driverRegisters.push_back({0x6c, 0x10000050});
+    _driverRegisters.push_back({"CHOPCONF", 0x6c, 0x10000050});
     // Add IHOLD_IRUN register with default value
-    _driverRegisters.push_back({0x10, 0x00001f00});
+    _driverRegisters.push_back({"IHOLD_RUN", 0x10, 0x00001f00});
     // Add PWMCONF register with default value
-    _driverRegisters.push_back({0x70, 0xC10D0024});
+    _driverRegisters.push_back({"PWMCONF", 0x70, 0xC10D0024});
     // Add VACTUAL register with default value
-    _driverRegisters.push_back({0x22, 0x00000000});
+    _driverRegisters.push_back({"VACTUAL", 0x22, 0x00000000});
 
     // Vars
     _dirnCurValue = false;
@@ -56,36 +61,8 @@ bool StepDriverTMC2209::setup(const String& stepperName, const StepDriverParams&
     StepDriverBase::setup(stepperName, stepperParams, usingISR);
     _singleWireReadWrite = true;
 
-    // Get CHOPCONF vsense value and IRUN, IHOLD values from required RMS current
-    bool vsenseValue = false;
-    uint32_t irunValue = 0;
-    uint32_t iholdValue = 0;
-    convertRMSCurrentToRegs(stepperParams.rmsAmps, stepperParams.holdFactor, stepperParams.holdMode, vsenseValue, irunValue, iholdValue);
-
-    // Init the GCONF register
-    _driverRegisters[DRIVER_REGISTER_CODE_GCONF].initRequired = true;
-    _driverRegisters[DRIVER_REGISTER_CODE_GCONF].regInitVal =
-                (1 << TMC_2209_GCONF_MULTISTEP_FILT_BIT) |
-                (1 << TMC_2209_GCONF_PDN_UART_BIT) |
-                (stepperParams.invDirn ? (1 << TMC_2209_GCONF_INV_DIRN_BIT) : 0) |
-                ((stepperParams.extSenseOhms < 0.01) ? (1 << TMC_2209_GCONF_EXT_SENSE_RES_BIT) : 0) |
-                (stepperParams.extVRef ? (1 << TMC_2209_GCONF_EXT_VREF_BIT) : 0) |
-                (stepperParams.extMStep ? 0 : (1 << TMC_2209_GCONF_MSTEP_REG_SELECT_BIT));
-
-    // Init the CHOPCONF register
-    _driverRegisters[DRIVER_REGISTER_CODE_CHOPCONF].initRequired = true;
-    _driverRegisters[DRIVER_REGISTER_CODE_CHOPCONF].regInitVal =
-                (getMRESFieldValue(stepperParams.microsteps) << TMC_2209_CHOPCONF_MRES_BIT) |
-                (StepDriverParams::TOFF_VALUE_DEFAULT << TMC_2209_CHOPCONF_TOFF_BIT) |
-                (stepperParams.intpol ? (1 << TMC_2209_CHOPCONF_INTPOL_BIT) : 0) |
-                (vsenseValue ? (1 << TMC_2209_CHOPCONF_VSENSE_BIT) : 0);
-
-    // Init the IHOLD_IRUN register
-    _driverRegisters[DRIVER_REGISTER_CODE_IHOLD_IRUN].initRequired = true;
-    _driverRegisters[DRIVER_REGISTER_CODE_IHOLD_IRUN].regInitVal = 
-                (irunValue << TMC_2209_IRUN_BIT) |
-                (iholdValue << TMC_2209_IHOLD_BIT) |
-                (stepperParams.holdDelay << TMC_2209_IHOLD_DELAY_BIT);
+    // Set main registers
+    setMainRegs();
 
     // Calculate PWMCONF_PWM_FREQ
     double clockDiv = stepperParams.pwmFreqKHz * 1000.0 / TMC_2209_CLOCK_FREQ_HZ;
@@ -103,8 +80,8 @@ bool StepDriverTMC2209::setup(const String& stepperName, const StepDriverParams&
     }
 
     // Init the PWMCONF register
-    _driverRegisters[DRIVER_REGISTER_CODE_PWMCONF].initRequired = true;
-    _driverRegisters[DRIVER_REGISTER_CODE_PWMCONF].regInitVal = 
+    _driverRegisters[DRIVER_REGISTER_CODE_PWMCONF].writeRequired = true;
+    _driverRegisters[DRIVER_REGISTER_CODE_PWMCONF].regWriteVal = 
                 (12 << TMC_2209_PWMCONF_PWM_LIM_BIT) |
                 (1 << TMC_2209_PWMCONF_PWM_REG_BIT) |
                 ((stepperParams.holdMode == StepDriverParams::HOLD_MODE_FREEWHEEL) ? 1 :
@@ -116,9 +93,8 @@ bool StepDriverTMC2209::setup(const String& stepperName, const StepDriverParams&
                 (TMC_2209_PWMCONF_PWM_OFS << TMC_2209_PWMCONF_PWM_OFS_BIT);
 
     // Init the VACTUAL register
-    _driverRegisters[DRIVER_REGISTER_CODE_VACTUAL].initRequired = true;
-    _driverRegisters[DRIVER_REGISTER_CODE_VACTUAL].regInitVal = 0;
-
+    _driverRegisters[DRIVER_REGISTER_CODE_VACTUAL].writeRequired = true;
+    _driverRegisters[DRIVER_REGISTER_CODE_VACTUAL].regWriteVal = 0;
 
     // The following code gets register initial contents
     // - this is only needed if one-time-programmable (OTP) functionality is used
@@ -126,8 +102,8 @@ bool StepDriverTMC2209::setup(const String& stepperName, const StepDriverParams&
     // Read important registers initially
     // if (!writeOnly)
     // {
-    _driverRegisters[DRIVER_REGISTER_CODE_GCONF].readPending = true;
-    _driverRegisters[DRIVER_REGISTER_CODE_CHOPCONF].readPending = true;
+    // _driverRegisters[DRIVER_REGISTER_CODE_GCONF].readPending = true;
+    // _driverRegisters[DRIVER_REGISTER_CODE_CHOPCONF].readPending = true;
     // }
 
     // Setup step pin
@@ -165,7 +141,9 @@ void StepDriverTMC2209::service()
     // Check if driver is ready
     if (driverBusy())
     {
-        LOG_I(MODULE_PREFIX, "service driver is busy");
+#ifdef WARN_ON_DRIVER_BUSY
+        LOG_W(MODULE_PREFIX, "service driver is busy");
+#endif
         return;
     }
 
@@ -176,22 +154,23 @@ void StepDriverTMC2209::service()
     // Check readPending
     if (_driverRegisters[_driverRegisterIdx].readInProgress)
     {
-#ifdef DEBUG_READ_REGISTERS
+#ifdef DEBUG_REGISTER_READ_PROCESS
         LOG_I(MODULE_PREFIX, "service readinprogress");
 #endif
     }
     // Check for init required
-    else if (_driverRegisters[_driverRegisterIdx].initRequired)
+    else if (_driverRegisters[_driverRegisterIdx].writeRequired)
     {
-        writeTrinamicsRegister(_driverRegisters[_driverRegisterIdx].regAddr, 
-                                    _driverRegisters[_driverRegisterIdx].regInitVal);
-        _driverRegisters[_driverRegisterIdx].regValCur = _driverRegisters[_driverRegisterIdx].regInitVal;
-        _driverRegisters[_driverRegisterIdx].initRequired = false;
+        writeTrinamicsRegister(_driverRegisters[_driverRegisterIdx].regName.c_str(), 
+                                _driverRegisters[_driverRegisterIdx].regAddr, 
+                                _driverRegisters[_driverRegisterIdx].regWriteVal);
+        _driverRegisters[_driverRegisterIdx].regValCur = _driverRegisters[_driverRegisterIdx].regWriteVal;
+        _driverRegisters[_driverRegisterIdx].writeRequired = false;
     }
     else if (_driverRegisters[_driverRegisterIdx].readPending)
     {
         // Start reading register
-#ifdef DEBUG_READ_REGISTERS
+#ifdef DEBUG_REGISTER_READ_PROCESS
         LOG_I(MODULE_PREFIX, "service start read regCode %d", _driverRegisterIdx);
 #endif
         startReadTrinamicsRegister(_driverRegisterIdx);
@@ -204,7 +183,8 @@ void StepDriverTMC2209::service()
         uint32_t newRegValue = _driverRegisters[_driverRegisterIdx].regValCur;
         newRegValue &= ~_driverRegisters[_driverRegisterIdx].writeBitsMask;
         newRegValue |= _driverRegisters[_driverRegisterIdx].writeOrValue;
-        writeTrinamicsRegister(_driverRegisters[_driverRegisterIdx].regAddr, newRegValue);
+        writeTrinamicsRegister(_driverRegisters[_driverRegisterIdx].regName.c_str(), 
+                    _driverRegisters[_driverRegisterIdx].regAddr, newRegValue);
         _driverRegisters[_driverRegisterIdx].writePending = false;
     }
 
@@ -379,4 +359,72 @@ bool IRAM_ATTR StepDriverTMC2209::stepEnd()
         return true;
     }
     return false;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Set the max motor current
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void StepDriverTMC2209::setMaxMotorCurrentAmps(float maxMotorCurrentAmps)
+{
+    // Set the max motor current
+    _stepperParams.rmsAmps = maxMotorCurrentAmps;
+
+    // setMaxMotorCurrentAmps
+    LOG_I(MODULE_PREFIX, "setMaxMotorCurrentAmps %0.2f", maxMotorCurrentAmps);
+
+    // Set the current
+    setMainRegs();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Set the motor current
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void StepDriverTMC2209::setMainRegs()
+{
+    // Get CHOPCONF vsense value and IRUN, IHOLD values from required RMS current
+    bool vsenseValue = false;
+    uint32_t irunValue = 0;
+    uint32_t iholdValue = 0;
+    convertRMSCurrentToRegs(_stepperParams.rmsAmps, _stepperParams.holdFactor, _stepperParams.holdMode, 
+                    vsenseValue, irunValue, iholdValue);
+
+    // Init the GCONF register
+    _driverRegisters[DRIVER_REGISTER_CODE_GCONF].writeRequired = true;
+    _driverRegisters[DRIVER_REGISTER_CODE_GCONF].regWriteVal =
+                (1 << TMC_2209_GCONF_MULTISTEP_FILT_BIT) |
+                (1 << TMC_2209_GCONF_PDN_UART_BIT) |
+                (_stepperParams.invDirn ? (1 << TMC_2209_GCONF_INV_DIRN_BIT) : 0) |
+                ((_stepperParams.extSenseOhms < 0.01) ? (1 << TMC_2209_GCONF_EXT_SENSE_RES_BIT) : 0) |
+                (_stepperParams.extVRef ? (1 << TMC_2209_GCONF_EXT_VREF_BIT) : 0) |
+                (_stepperParams.extMStep ? 0 : (1 << TMC_2209_GCONF_MSTEP_REG_SELECT_BIT));
+
+    // Init the CHOPCONF register
+    _driverRegisters[DRIVER_REGISTER_CODE_CHOPCONF].writeRequired = true;
+    _driverRegisters[DRIVER_REGISTER_CODE_CHOPCONF].regWriteVal =
+                (getMRESFieldValue(_stepperParams.microsteps) << TMC_2209_CHOPCONF_MRES_BIT) |
+                (StepDriverParams::TOFF_VALUE_DEFAULT << TMC_2209_CHOPCONF_TOFF_BIT) |
+                (_stepperParams.intpol ? (1 << TMC_2209_CHOPCONF_INTPOL_BIT) : 0) |
+                (vsenseValue ? (1 << TMC_2209_CHOPCONF_VSENSE_BIT) : 0);
+
+    // Init the IHOLD_IRUN register
+    _driverRegisters[DRIVER_REGISTER_CODE_IHOLD_IRUN].writeRequired = true;
+    _driverRegisters[DRIVER_REGISTER_CODE_IHOLD_IRUN].regWriteVal = 
+                (irunValue << TMC_2209_IRUN_BIT) |
+                (iholdValue << TMC_2209_IHOLD_BIT) |
+                (_stepperParams.holdDelay << TMC_2209_IHOLD_DELAY_BIT);
+#ifdef DEBUG_IHOLD_IRUN
+    LOG_I(MODULE_PREFIX, "setMainRegs irunValue %d iholdValue %d, reg %s(0x%02x), val %08x", 
+                    irunValue, iholdValue, 
+                    _driverRegisters[DRIVER_REGISTER_CODE_IHOLD_IRUN].regName,
+                    DRIVER_REGISTER_CODE_IHOLD_IRUN,
+                    _driverRegisters[DRIVER_REGISTER_CODE_IHOLD_IRUN].regWriteVal);
+#endif
+
+    // Set flags to indicate that registers should be read back to confirm
+    _driverRegisters[DRIVER_REGISTER_CODE_GCONF].readPending = true;
+    _driverRegisters[DRIVER_REGISTER_CODE_CHOPCONF].readPending = true;
+    // Note that IHOLD_IRUN is not read back as it is read only
+    _driverRegisters[DRIVER_REGISTER_CODE_PWMCONF].readPending = true;
 }

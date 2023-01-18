@@ -101,7 +101,7 @@ def otaUpdate(sourceFolder, ip):
             if sendResult.get("rslt", "") != "ok":
                 _log.error(f"OTAUpdateWebUI failed to send {fname} to {ip} - {sendResult}")
             else:
-                _log.info(f"OTAUpdateWebUI sent {fname} to {ip}")
+                _log.info(f"OTAUpdateWebUI sent {fname} to {ip} - {sendResult}")
     return 0
 
 def main():

@@ -163,7 +163,8 @@ void ScaderShades::service()
         {
             if (Raft::isTimeout(millis(), _tickCounts[shadeIdx], _msTimeouts[shadeIdx]))
             {
-                LOG_I(MODULE_PREFIX, "Timeout idx %d duration %d", shadeIdx, _msTimeouts[shadeIdx]);
+                LOG_I(MODULE_PREFIX, "Timeout idx %d duration %d enableLightLevels %d", 
+                        shadeIdx, _msTimeouts[shadeIdx], _lightLevelsEnabled);
                 // Clear the command
                 clearShadeBits(shadeIdx);
                 // Check for sequence step complete

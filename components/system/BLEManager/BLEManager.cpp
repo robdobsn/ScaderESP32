@@ -10,10 +10,12 @@
 
 #include <Logger.h>
 #include <RestAPIEndpointManager.h>
-#include <CommsChannelManager.h>
 #include <RaftUtils.h>
 #include <ESPUtils.h>
 #include <SysManager.h>
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
+#include <CommsChannelSettings.h>
 #include "BLEManager.h"
 #include "BLEGattServer.h"
 
@@ -96,7 +98,7 @@ BLEManager::BLEManager(const char *pModuleName, ConfigBase &defaultConfig, Confi
     _bleRestartState = BLERestartState_Idle;
 
     // ChannelID
-    _commsChannelID = CommsChannelManager::CHANNEL_ID_UNDEFINED;
+    _commsChannelID = CommsCoreIF::CHANNEL_ID_UNDEFINED;
 
     // Singleton
     _pBLEManager = this;
@@ -126,7 +128,7 @@ void BLEManager::applySetup()
     #ifdef CONFIG_BT_ENABLED
 
     // See if BLE enabled
-    _enableBLE = (configGetLong("enable", 0) != 0);
+    _enableBLE = configGetBool("enable", false);
 #ifdef DEBUG_BLE_SETUP
     LOG_I(MODULE_PREFIX, "applySetup BLE enabled %c", _enableBLE ? 'Y' : 'N');
 #endif
@@ -369,7 +371,7 @@ void BLEManager::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Comms channels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BLEManager::addCommsChannels(CommsChannelManager& commsChannelManager)
+void BLEManager::addCommsChannels(CommsCoreIF& commsCoreIF)
 {
 #ifdef CONFIG_BT_ENABLED
 
@@ -377,7 +379,7 @@ void BLEManager::addCommsChannels(CommsChannelManager& commsChannelManager)
     static const CommsChannelSettings commsChannelSettings(_maxPacketLength, _maxPacketLength, 0, 0, _maxPacketLength, 0);
 
     // Register as a message channel
-    _commsChannelID = commsChannelManager.registerChannel("RICSerial", 
+    _commsChannelID = commsCoreIF.registerChannel("RICSerial", 
             "BLE",
             "BLE",
             std::bind(&BLEManager::sendBLEMsg, this, std::placeholders::_1),
@@ -1002,8 +1004,8 @@ void BLEManager::gattAccessCallback(const char* characteristicName, bool readOp,
     if (!readOp)
     {
         // Send the message to the comms channel if this is a write to the characteristic
-        if (getCommsChannelManager())
-            getCommsChannelManager()->handleInboundMessage(_commsChannelID, payloadbuffer, payloadlength);
+        if (getCommsCore())
+            getCommsCore()->handleInboundMessage(_commsChannelID, payloadbuffer, payloadlength);
 
 #ifdef DEBUG_BLE_RX_PAYLOAD
         // Debug

@@ -18,7 +18,7 @@
 
 FileStreamBase::FileStreamBase(FileStreamBlockCB fileRxBlockCB, 
         FileStreamCanceEndCB fileRxCancelEndCB,
-        CommsChannelManager* pCommsChannelManager,
+        CommsCoreIF* pCommsCore,
         FileStreamBase::FileStreamContentType fileStreamContentType,
         FileStreamBase::FileStreamFlowType fileStreamFlowType,
         uint32_t streamID,
@@ -28,7 +28,7 @@ FileStreamBase::FileStreamBase(FileStreamBlockCB fileRxBlockCB,
     // Vars
     _fileStreamRxBlockCB = fileRxBlockCB;
     _fileStreamRxCancelEndCB = fileRxCancelEndCB;
-    _pCommsChannelManager = pCommsChannelManager;
+    _pCommsCore = pCommsCore;
     _fileStreamContentType = fileStreamContentType;
     _fileStreamFlowType = fileStreamFlowType;
     _streamID = streamID;

@@ -24,17 +24,10 @@ static const char* MODULE_PREFIX = "RICFrame";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ProtocolRICFrame::ProtocolRICFrame(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
-                CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB) :
+ProtocolRICFrame::ProtocolRICFrame(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, 
+                CommsChannelMsgCB msgTxCB, CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB) :
     ProtocolBase(channelID, msgTxCB, msgRxCB, readyToRxCB)
 {
-    // Debug
-#ifdef DEBUG_CONSTRUCTOR
-    ConfigBase config(configJSON);
-    uint32_t maxRxMsgLen = config.getLong("MaxRxMsgLen", DEFAULT_RIC_FRAME_RX_MAX);
-    uint32_t maxTxMsgLen = config.getLong("MaxTxMsgLen", DEFAULT_RIC_FRAME_TX_MAX);
-    LOG_I(MODULE_PREFIX, "constructed maxRxMsgLen %d maxTxMsgLen %d", maxRxMsgLen, maxTxMsgLen);
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

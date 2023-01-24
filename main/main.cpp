@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.4.5"
+#define SYSTEM_VERSION "5.4.7"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -112,6 +112,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 
 // App
 #include <ConfigNVS.h>
+#include <CommsChannelManager.h>
 #include <SysTypeManager.h>
 #include <SysManager.h>
 #include <SerialConsole.h>
@@ -301,7 +302,7 @@ void mainTask(void *pvParameters)
 
      // System Module Manager
      SysManager _SysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig);
-     _sysTypeManager.setSysManager(&_SysManager);
+     _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_SysManager));
 
 // #ifdef FEATURE_INCLUDE_ROBOT_CONTROLLER
 //     // Robot Controller
@@ -323,7 +324,7 @@ void mainTask(void *pvParameters)
 
      // Comms Channel Manager
      CommsChannelManager _commsChannelManager("CommsMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
-     _SysManager.setCommsChannelManager(_commsChannelManager);
+     _SysManager.setCommsCore(&_commsChannelManager);
 
      // SerialConsole
      SerialConsole _serialConsole("SerialConsole", defaultSystemConfig, &_sysTypeConfig, nullptr);

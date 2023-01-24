@@ -32,16 +32,15 @@ static const char* MODULE_PREFIX = "RICSerial";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ProtocolRICSerial::ProtocolRICSerial(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
-                    CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB) :
+ProtocolRICSerial::ProtocolRICSerial(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, 
+                    CommsChannelMsgCB msgTxCB, CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB) :
     ProtocolBase(channelID, msgTxCB, msgRxCB, readyToRxCB)
 {
     // Extract configuration
-    ConfigBase config(configJSON);
-    _maxRxMsgLen = config.getLong("MaxRxMsgLen", DEFAULT_RIC_SERIAL_RX_MAX);
-    _maxTxMsgLen = config.getLong("MaxTxMsgLen", DEFAULT_RIC_SERIAL_TX_MAX);
-    unsigned frameBoundary = config.getLong("FrameBound", 0x7E);
-    unsigned controlEscape = config.getLong("CtrlEscape", 0x7D);
+    _maxRxMsgLen = config.getLong("MaxRxMsgLen", DEFAULT_RIC_SERIAL_RX_MAX, pConfigPrefix);
+    _maxTxMsgLen = config.getLong("MaxTxMsgLen", DEFAULT_RIC_SERIAL_TX_MAX, pConfigPrefix);
+    unsigned frameBoundary = config.getLong("FrameBound", 0x7E, pConfigPrefix);
+    unsigned controlEscape = config.getLong("CtrlEscape", 0x7D, pConfigPrefix);
 
     // New HDLC
     _pHDLC = new MiniHDLC(NULL, 

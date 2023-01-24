@@ -46,7 +46,7 @@ void NetDiscovery::setup()
 void NetDiscovery::applySetup()
 {
     // Extract info from config
-    _isDiscoveryEnabled = (configGetLong("enable", 0) != 0);
+    _isDiscoveryEnabled = configGetBool("enable", false);
     _udbBroadcastPort = configGetLong("udpPort", DEFAULT_UDP_BROADCAST_PORT);
 
     // Create task if required

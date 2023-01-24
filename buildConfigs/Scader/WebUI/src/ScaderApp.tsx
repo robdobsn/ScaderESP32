@@ -38,7 +38,7 @@ function ScaderApp() {
   };
 
   const handleSettingsSave = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(`ScaderApp.handleSettingsSave isChanged {scaderManager.isConfigChanged()} newConfig ${JSON.stringify(scaderManager.getMutableConfig())}`);
+    console.log(`ScaderApp.handleSettingsSave isChanged ${scaderManager.isConfigChanged()} newConfig ${JSON.stringify(scaderManager.getMutableConfig())}`);
     setEditingMode(false);
     scaderManager.persistConfig();
   };

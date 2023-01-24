@@ -34,7 +34,7 @@ public:
     }
 
     // Setup
-    virtual bool setup(ConfigBase& config)
+    virtual bool setup(ConfigBase& config, const char* pConfigPrefix)
     {
         return false;
     }

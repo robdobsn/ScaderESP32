@@ -130,14 +130,16 @@ public:
         return wasValid;
     }
 
-    bool setupAxes(const ConfigBase& config)
+    bool setupAxes(const ConfigBase& config, const char* pConfigPrefix)
     {
         // Clear existing
         _axisParams.clear();
         
+        // TODO REFACTOR TO USE JSON PATHS
+        
         // Extract sub-system elements
         std::vector<String> axesVec;
-        if (config.getArrayElems("axes", axesVec))
+        if (config.getArrayElems("axes", axesVec, pConfigPrefix))
         {
             // Check index ok
             uint32_t numAxesToAdd = axesVec.size();

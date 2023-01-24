@@ -30,6 +30,8 @@ std::vector<MotionArgs::FieldDefType> MotionArgs::getFieldDefs()
     fieldDefs.push_back(FieldDefType("exDist", &_extrudeDistance, "double"));
     fieldDefs.push_back(FieldDefType("feedrate", &_feedrate, "double"));
     fieldDefs.push_back(FieldDefType("idx", &_motionTrackingIdx, "double"));
+    fieldDefs.push_back(FieldDefType("en", &_enableMotors, "bool"));
+    fieldDefs.push_back(FieldDefType("clearQ", &_preClearMotionQueue, "bool"));
     return fieldDefs;
 }
 
@@ -52,7 +54,7 @@ void MotionArgs::fromJSON(const char* jsonStr)
         // Get value
         if (fieldDef._dataType.equalsIgnoreCase("bool"))
         {
-            bool fieldVal = cmdJson.getLong(fieldDef._name.c_str(), 0) != 0;
+            bool fieldVal = cmdJson.getBool(fieldDef._name.c_str(), 0);
             *((bool*)fieldDef._pValue) = fieldVal;
         }
         else if (fieldDef._dataType.equalsIgnoreCase("double"))
@@ -68,7 +70,7 @@ void MotionArgs::fromJSON(const char* jsonStr)
     // for (const ConfigBase flag : flagsList)
     // {
     //     String flagName = flag.getString("n", "");
-    //     bool flagValue = flag.getLong("v", 0) != 0;
+    //     bool flagValue = flag.getBool("v", 0);
     //     if (flagName.length() == 0)
     //         continue;
     //     _isRelative               = flagName.equalsIgnoreCase("isRelative")               ? flagValue : _isRelative              ;

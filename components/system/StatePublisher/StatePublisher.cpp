@@ -10,7 +10,8 @@
 #include <Logger.h>
 #include <ArduinoOrAlt.h>
 #include <RaftUtils.h>
-#include <CommsChannelManager.h>
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
 #include <RestAPIEndpointManager.h>
 #include <ConfigBase.h>
 #include <JSONParams.h>
@@ -40,7 +41,6 @@ static const char* MODULE_PREFIX = "StatePub";
 StatePublisher::StatePublisher(const char* pModuleName, ConfigBase& defaultConfig, ConfigBase* pGlobalConfig, ConfigBase* pMutableConfig)
         : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
 {
-    _pCommsChannelManager = NULL;
 #ifdef DEBUG_STATEPUB_OUTPUT_PUBLISH_STATS
     _worstTimeSetMs = 0;
     _recentWorstTimeUs = 0;
@@ -112,6 +112,8 @@ void StatePublisher::setup()
                 // Iterate rates and interfaces
                 for (int rateIdx = 0; rateIdx < numRatesAndInterfaces; rateIdx++)
                 {
+                    // TODO refactor to use JSON paths
+
                     // Get the rate and interface info
                     ConfigBase rateAndInterfaceInfo = RdJson::getString(("["+String(rateIdx)+"]").c_str(), "{}", ratesJSON.c_str());
                     String interface = rateAndInterfaceInfo.getString("if", "");
@@ -151,7 +153,7 @@ void StatePublisher::setup()
 void StatePublisher::service()
 {
     // Check valid
-    if (!_pCommsChannelManager)
+    if (!getCommsCore())
         return;
 
     // Check if publishing rate is to be throttled back
@@ -220,7 +222,7 @@ void StatePublisher::service()
                 if (rateRec._channelID == PUBLISHING_HANDLE_UNDEFINED)
                 {
                     // Get a match of interface and protocol
-                    rateRec._channelID = _pCommsChannelManager->getChannelIDByName(rateRec._interface, rateRec._protocol);
+                    rateRec._channelID = getCommsCore()->getChannelIDByName(rateRec._interface, rateRec._protocol);
 
 #ifdef DEBUG_PUBLISHING_HANDLE
                     // Debug
@@ -235,7 +237,7 @@ void StatePublisher::service()
 
                 // Check if interface can accept messages
                 bool noConn = false;
-                if (!_pCommsChannelManager->canAcceptOutbound(rateRec._channelID, noConn))
+                if (!getCommsCore()->canAcceptOutbound(rateRec._channelID, noConn))
                     continue;
 
 #ifdef DEBUG_REDUCED_PUBLISHING_RATE_WHEN_BUSY
@@ -277,15 +279,6 @@ void StatePublisher::addRestAPIEndpoints(RestAPIEndpointManager& endpointManager
     endpointManager.addEndpoint("subscription", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                 std::bind(&StatePublisher::apiSubscription, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                 "Subscription to published messages, see docs for details");
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Comms channels
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void StatePublisher::addCommsChannels(CommsChannelManager &commsChannelManager)
-{
-    _pCommsChannelManager = &commsChannelManager;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -332,6 +325,10 @@ void StatePublisher::receiveMsgGenCB(const char* msgGenID, SysMod_publishMsgGenF
 
 bool StatePublisher::publishData(StatePublisher::PubRec& pubRec, InterfaceRateRec& rateRec)
 {
+    // Check comms core
+    if (!getCommsCore())
+        return false;
+
     // Endpoint message we're going to send
     CommsChannelMsg endpointMsg(rateRec._channelID, MSG_PROTOCOL_ROSSERIAL, 0, MSG_TYPE_PUBLISH);
 
@@ -370,7 +367,7 @@ bool StatePublisher::publishData(StatePublisher::PubRec& pubRec, InterfaceRateRe
 #endif
 
     // Send message
-    _pCommsChannelManager->handleOutboundMessage(endpointMsg);
+    getCommsCore()->handleOutboundMessage(endpointMsg);
 
 #ifdef DEBUG_PUBLISHING_MESSAGE
 #ifdef DEBUG_ONLY_THIS_MSG_ID

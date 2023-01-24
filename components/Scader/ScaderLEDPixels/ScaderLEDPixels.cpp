@@ -41,7 +41,7 @@ static const char *MODULE_PREFIX = "ScaderLEDPixels";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig),
+    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
           _scaderCommon(*this, pModuleName)
 {
 }

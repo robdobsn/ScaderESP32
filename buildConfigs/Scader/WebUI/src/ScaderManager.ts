@@ -1,5 +1,5 @@
 import { ScaderConfig } from "./ScaderConfig";
-import { ScaderState, ScaderStateType } from "./ScaderState";
+import { ScaderStateType } from "./ScaderState";
 
 export class ScaderManager {
 
@@ -207,14 +207,14 @@ export class ScaderManager {
     }
 
     // Persist configuration
-    public persistConfig(): void {
+    public async persistConfig(): Promise<void> {
         // Check if ScaderCommon/hostname is changed
         if (this._mutableConfig.ScaderCommon.hostname !== this._scaderConfig.ScaderCommon.hostname) {
             // Send the new hostname to the server
-            this.setFriendlyName(this._mutableConfig.ScaderCommon.hostname);
+            await this.setFriendlyName(this._mutableConfig.ScaderCommon.hostname);
         }
         this._scaderConfig = JSON.parse(JSON.stringify(this._mutableConfig));
-        this.postAppSettings();
+        await this.postAppSettings();
     }
 
     // Check if config changed
@@ -235,7 +235,7 @@ export class ScaderManager {
     }
     
     ////////////////////////////////////////////////////////////////////////////
-    // Get and post the app settings from the server
+    // Get the app settings from the server
     ////////////////////////////////////////////////////////////////////////////
 
     async getAppSettings(serverAddr:string) : Promise<boolean> {
@@ -246,13 +246,20 @@ export class ScaderManager {
             getSettingsResponse = await fetch(serverAddr + this._urlPrefix + "/getsettings/nv");
             if (getSettingsResponse && getSettingsResponse.ok) {
                 const settings = await getSettingsResponse.json();
+
+                console.log(`ScaderManager getAppSettings ${JSON.stringify(settings)}`)
+
                 if ("nv" in settings) {
 
                     // Start with a base config
                     const configBase = new ScaderConfig();
 
+                    console.log(`ScaderManager getAppSettings empty config ${JSON.stringify(configBase)}`);
+
                     // Add in the non-volatile settings
                     this.addNonVolatileSettings(configBase, settings.nv);
+
+                    console.log(`ScaderManager getAppSettings config with nv ${JSON.stringify(configBase)}`);
 
                     // Extract non-volatile settings
                     this._scaderConfig = configBase;
@@ -276,7 +283,10 @@ export class ScaderManager {
         return false;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     // Post applicaton settings
+    ////////////////////////////////////////////////////////////////////////////
+
     async postAppSettings(): Promise<boolean> {
         try {
             const postSettingsURI = this._serverAddressPrefix + this._urlPrefix + "/postsettings/reboot";
@@ -289,30 +299,40 @@ export class ScaderManager {
                     body: JSON.stringify(this._scaderConfig).replace("\n", "\\n")
                 }
             );
+
+            console.log(`ScaderManager postAppSettings posted ${JSON.stringify(this._scaderConfig)}`)
+
             if (!postSettingsResponse.ok) {
-                console.log(`postAppSettings response not ok ${postSettingsResponse.status}`);
+                console.error(`postAppSettings response not ok ${postSettingsResponse.status}`);
             }
             return postSettingsResponse.ok;
         } catch (error) {
-            console.log(`postAppSettings error ${error}`);
+            console.error(`postAppSettings error ${error}`);
             return false;
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     // Add non-volatile settings to the config
+    ////////////////////////////////////////////////////////////////////////////
+
     private addNonVolatileSettings(config:ScaderConfig, nv:ScaderConfig) {
-        if ("ScaderRelays" in nv) {
-            nv["ScaderRelays"] = Object.assign(config.ScaderRelays, nv["ScaderRelays"]);
-            const nvRelays = nv["ScaderRelays"];
-            if ("relays" in nvRelays && (nvRelays["relays"] instanceof Array)) {
-                nvRelays["elems"] = nvRelays["relays"];
-                delete nvRelays["relays"];
-            }
+        // Iterate over keys in nv
+        let key: keyof ScaderConfig;
+        for (key in nv) {
+            Object.assign(config[key], nv[key])
         }
-        config = Object.assign(config, nv);
+
+        // if ("ScaderRelays" in nv) {
+        //     nv["ScaderRelays"] = Object.assign(config.ScaderRelays, nv["ScaderRelays"]);
+        // }
+        // config = Object.assign(config, nv);
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     // Set the friendly name for the device
+    ////////////////////////////////////////////////////////////////////////////
+
     public async setFriendlyName(friendlyName:string): Promise<void> {
         try {
             await fetch(this._serverAddressPrefix + this._urlPrefix + "/friendlyname/" + friendlyName);

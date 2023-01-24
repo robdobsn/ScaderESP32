@@ -20,7 +20,7 @@ static const char *MODULE_PREFIX = "ScaderWaterer";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderWaterer::ScaderWaterer(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
+    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true)
 {
     // Init
     _isEnabled = false;

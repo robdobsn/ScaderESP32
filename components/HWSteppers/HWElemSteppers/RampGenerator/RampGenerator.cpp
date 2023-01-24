@@ -67,7 +67,7 @@ void RampGenerator::setup(bool useRampGenTimer, std::vector<StepDriverBase*> ste
             std::vector<EndStops*> axisEndStops)
 {
     // // Check if step gen timer is to be used
-    // _useRampGenTimer = config.getLong("timerIntr", 1) != 0;
+    // _useRampGenTimer = config.getBool("timerIntr", true);
     // uint32_t stepGenPeriodUs = config.getLong("stepGenPeriodUs", RampGenTimer::rampGenPeriodUs_default);
     // Store steppers and end stops
     _stepperDrivers = stepperDrivers;

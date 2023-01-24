@@ -18,7 +18,7 @@
 		"LogManager": {
 			"logDests": [
 				{
-					"enable": 1,
+					"enable": true,
 					"type": "Papertrail",
 					"host": "logs2.papertrailapp.com",
 					"port": 48992,
@@ -80,7 +80,7 @@
 			"allowOriginAll": 1,
 			"apiPrefix": "api/",
 			"fileServer": 1,
-			"numConnSlots": 10,
+			"numConnSlots": 20,
 			"websockets": [
                 {
                     "pfix": "ws",
@@ -246,15 +246,21 @@
 		"ScaderOpener": {
 			"DoorRemainOpenTimeSecs": 45,
 			"DoorTimeToOpenSecs": 20,
-			"DoorOpenAngle": 120,
+			"DoorOpenAngle": 150,
+			"DoorClosedAngle": 250,
 			"MotorOnTimeAfterMoveSecs": 1,
 			"MaxMotorCurrentAmps": 0.5,
-			"LED_OUT_EN_PIN": 21,
-			"LED_IN_EN_PIN": 22,
+			"LED_OUT_EN_PIN": 13,
+			"LED_IN_EN_PIN": 14,
 			"PIR_SENSE_IN_PIN": 2,
 			"PIR_SENSE_OUT_PIN": 32,
 			"KITCHEN_BUTTON_PIN": 33,
 			"CONSV_BUTTON_PIN": 4,
+			"i2cPort": 0,
+			"sdaPin": 21,
+			"sclPin": 22,
+			"i2cBusFreqHz": 100000,
+			"mt6701addr": "0x06",
 			"bus":
 			{
 				"name": "SERA",
@@ -292,7 +298,7 @@
 						"name": "X",
 						"params": {
 							"unitsPerRot": 360,
-							"stepsPerRot": 3600,
+							"stepsPerRot": 3800,
 							"maxSpeed": 50,
 							"maxAcc": 50
 						},
@@ -302,7 +308,7 @@
 							"addr": 0,
 							"stepPin": "15",
 							"dirnPin": "12",
-							"invDirn": 1,
+							"invDirn": 0,
 							"writeOnly": 0,
 							"extSenseOhms": 0.15,
 							"extVRef": 0,

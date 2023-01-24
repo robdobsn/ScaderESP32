@@ -63,6 +63,7 @@ export class ScaderDoorStates {
 }
 
 export class ScaderOpenStatus {
+    isMoving: boolean = false;
     isOpen: boolean = false;
     inEnabled: boolean = false;
     outEnabled: boolean = false;
@@ -74,7 +75,8 @@ export class ScaderOpenStatus {
     pirSenseInTriggered: boolean = false;
     pirSenseOutActive: boolean = false;
     pirSenseOutTriggered: boolean = false;
-    avgCurrent: number = 0;
+    rotationAngleDegs: number = 0;
+    stepperCurAngle: number = 0;
     timeBeforeCloseSecs: number = 0;
 }
 export class ScaderOpenerStates {

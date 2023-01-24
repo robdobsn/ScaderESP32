@@ -9,8 +9,10 @@
 
 #include <Logger.h>
 #include "SerialConsole.h"
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
+#include <CommsChannelSettings.h>
 #include <RestAPIEndpointManager.h>
-#include "CommsChannelManager.h"
 #include <ConfigBase.h>
 #include <driver/uart.h>
 
@@ -36,7 +38,7 @@ SerialConsole::SerialConsole(const char* pModuleName, ConfigBase& defaultConfig,
     _txBufferSize = 1024;
 
     // ChannelID
-    _commsChannelID = CommsChannelManager::CHANNEL_ID_UNDEFINED;    
+    _commsChannelID = CommsCoreIF::CHANNEL_ID_UNDEFINED;    
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +48,7 @@ SerialConsole::SerialConsole(const char* pModuleName, ConfigBase& defaultConfig,
 void SerialConsole::setup()
 {
     // Get params
-    _isEnabled = configGetLong("enable", 0) != 0;
+    _isEnabled = configGetBool("enable", false);
     _crlfOnTx = configGetLong("crlfOnTx", 1);
     _uartNum = configGetLong("uartNum", 0);
     _baudRate = configGetLong("baudRate", 0);
@@ -117,13 +119,13 @@ void SerialConsole::addRestAPIEndpoints(RestAPIEndpointManager& endpointManager)
 // Comms channels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void SerialConsole::addCommsChannels(CommsChannelManager &commsChannelManager)
+void SerialConsole::addCommsChannels(CommsCoreIF& commsCoreIF)
 {
     // Comms channel
     static CommsChannelSettings commsChannelSettings;
 
     // Register as a channel of protocol messages
-    _commsChannelID = commsChannelManager.registerChannel(_protocol.c_str(),
+    _commsChannelID = commsCoreIF.registerChannel(_protocol.c_str(),
             modName(),
             modName(),
             std::bind(&SerialConsole::sendMsg, this, std::placeholders::_1),
@@ -318,8 +320,8 @@ void SerialConsole::processReceivedData(std::vector<uint8_t, SpiramAwareAllocato
 {
     if (rxData.size() == 0)
         return;
-    if (getCommsChannelManager())
-        getCommsChannelManager()->handleInboundMessage(_commsChannelID, rxData.data(), rxData.size());
+    if (getCommsCore())
+        getCommsCore()->handleInboundMessage(_commsChannelID, rxData.data(), rxData.size());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

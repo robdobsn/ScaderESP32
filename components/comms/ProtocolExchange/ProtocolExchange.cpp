@@ -10,7 +10,6 @@
 #include <Logger.h>
 #include "ProtocolExchange.h"
 #include "CommsChannelMsg.h"
-#include <CommsChannelManager.h>
 #include <RestAPIEndpointManager.h>
 #include <ProtocolRICSerial.h>
 #include <ProtocolRICFrame.h>
@@ -123,34 +122,34 @@ String ProtocolExchange::getDebugJSON()
 // Comms Channels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ProtocolExchange::addCommsChannels(CommsChannelManager& commsChannelManager)
+void ProtocolExchange::addCommsChannels(CommsCoreIF& commsCore)
 {
     // Add support for RICSerial
-    String ricSerialConfig = configGetString("RICSerial", "{}");
-    LOG_I(MODULE_PREFIX, "addCommsChannels - adding RICSerial config %s", ricSerialConfig.c_str());
-    ProtocolCodecFactoryHelper ricSerialProtocolDef = { ProtocolRICSerial::getProtocolNameStatic(), ProtocolRICSerial::createInstance, ricSerialConfig, 
+    LOG_I(MODULE_PREFIX, "addCommsChannels - adding RICSerial");
+    ProtocolCodecFactoryHelper ricSerialProtocolDef = { ProtocolRICSerial::getProtocolNameStatic(), 
+                        ProtocolRICSerial::createInstance, 
+                        configGetConfig(), "RICSerial",
                         std::bind(&ProtocolExchange::processEndpointMsg, this, std::placeholders::_1),
                         std::bind(&ProtocolExchange::canProcessEndpointMsg, this) };
-    if (getCommsChannelManager())
-        getCommsChannelManager()->addProtocol(ricSerialProtocolDef);
+    commsCore.addProtocol(ricSerialProtocolDef);
 
     // Add support for RICFrame
-    String ricFrameConfig = configGetString("RICFrame", "{}");
-    LOG_I(MODULE_PREFIX, "addCommsChannels - adding RICFrame config %s", ricFrameConfig.c_str());
-    ProtocolCodecFactoryHelper ricFrameProtocolDef = { ProtocolRICFrame::getProtocolNameStatic(), ProtocolRICFrame::createInstance, ricFrameConfig, 
+    LOG_I(MODULE_PREFIX, "addCommsChannels - adding RICFrame");
+    ProtocolCodecFactoryHelper ricFrameProtocolDef = { ProtocolRICFrame::getProtocolNameStatic(), 
+                        ProtocolRICFrame::createInstance, 
+                        configGetConfig(), "RICFrame",
                         std::bind(&ProtocolExchange::processEndpointMsg, this, std::placeholders::_1),
                         std::bind(&ProtocolExchange::canProcessEndpointMsg, this) };
-    if (getCommsChannelManager())
-        getCommsChannelManager()->addProtocol(ricFrameProtocolDef);
+    commsCore.addProtocol(ricFrameProtocolDef);
 
     // Add support for RICJSON
-    String ricJSONConfig = configGetString("RICJSON", "{}");
-    LOG_I(MODULE_PREFIX, "addCommsChannels - adding RICJSON config %s", ricJSONConfig.c_str());
-    ProtocolCodecFactoryHelper ricJSONProtocolDef = { ProtocolRICJSON::getProtocolNameStatic(), ProtocolRICJSON::createInstance, ricJSONConfig,
+    LOG_I(MODULE_PREFIX, "addCommsChannels - adding RICJSON");
+    ProtocolCodecFactoryHelper ricJSONProtocolDef = { ProtocolRICJSON::getProtocolNameStatic(), 
+                        ProtocolRICJSON::createInstance, 
+                        configGetConfig(), "RICJSON",
                         std::bind(&ProtocolExchange::processEndpointMsg, this, std::placeholders::_1),
                         std::bind(&ProtocolExchange::canProcessEndpointMsg, this) };
-    if (getCommsChannelManager())
-        getCommsChannelManager()->addProtocol(ricJSONProtocolDef);
+    commsCore.addProtocol(ricJSONProtocolDef);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -250,8 +249,8 @@ bool ProtocolExchange::processEndpointMsg(CommsChannelMsg &cmdMsg)
             endpointMsg.setAsResponse(cmdMsg);
 
             // Send message on the appropriate channel
-            if (getCommsChannelManager())
-                getCommsChannelManager()->handleOutboundMessage(endpointMsg);
+            if (getCommsCore())
+                getCommsCore()->handleOutboundMessage(endpointMsg);
 
             // Debug
 #ifdef DEBUG_RICREST_MESSAGES_RESPONSE
@@ -511,7 +510,7 @@ FileStreamSession* ProtocolExchange::getFileStreamNewSession(const char* fileStr
 
     // Create new session
     pSession = new FileStreamSession(fileStreamName, channelID, 
-                getCommsChannelManager(), _pFirmwareUpdater, 
+                getCommsCore(), _pFirmwareUpdater, 
                 fileStreamContentType, flowType, _nextStreamID, 
                 restAPIEndpointName, getRestAPIEndpointManager(),
                 fileStreamLength);

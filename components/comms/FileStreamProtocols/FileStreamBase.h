@@ -14,7 +14,7 @@
 
 class RICRESTMsg;
 class CommsChannelMsg;
-class CommsChannelManager;
+class CommsCoreIF;
 class SysModBase;
 class FileStreamBlock;
 
@@ -53,7 +53,7 @@ public:
     // Constructor
     FileStreamBase(FileStreamBlockCB fileRxBlockCB, 
             FileStreamCanceEndCB fileRxCancelEndCB,
-            CommsChannelManager* pCommsChannelManager,
+            CommsCoreIF* pCommsCoreIF,
             FileStreamBase::FileStreamContentType fileStreamContentType,
             FileStreamBase::FileStreamFlowType fileStreamFlowType,
             uint32_t streamID,
@@ -139,8 +139,8 @@ protected:
     FileStreamBlockCB _fileStreamRxBlockCB;
     FileStreamCanceEndCB _fileStreamRxCancelEndCB;
 
-    // Protocol endpoints
-    CommsChannelManager* _pCommsChannelManager;
+    // Comms core
+    CommsCoreIF* _pCommsCore;
 
     // File/stream content type
     FileStreamContentType _fileStreamContentType;

@@ -42,7 +42,7 @@ public:
     ~MotionController();
 
     // Setup
-    void setup(const ConfigBase& config);
+    void setup(const ConfigBase& config, const char* pConfigPrefix);
 
     // Set serial bus and whether to use bus for direction reversal 
     void setupSerialBus(BusBase* pBus, bool useBusForDirectionReversal);
@@ -67,6 +67,12 @@ public:
 
     // Go to previously set home position
     void goHome(const MotionArgs &args);
+
+    // Get last commanded position
+    AxesPosValues getLastPos()
+    {
+        return _blockManager.getLastPos();
+    }
 
     // Get data (diagnostics)
     String getDataJSON(HWElemStatusLevel_t level);
@@ -122,13 +128,13 @@ private:
 
     // Helpers
     void deinit();
-    void setupAxes(const ConfigBase& config);
+    void setupAxes(const ConfigBase& config, const char* pConfigPrefix);
     void setupAxisHardware(const ConfigBase& config);
     void setupStepDriver(const String& axisName, const char* jsonElem, const ConfigBase& mainConfig);
     void setupEndStops(const String& axisName, const char* jsonElem, const ConfigBase& mainConfig);
-    void setupRampGenerator(const char* jsonElem, const ConfigBase& config);
-    void setupMotorEnabler(const char* jsonElem, const ConfigBase& config);
-    void setupMotionControl(const char* jsonElem, const ConfigBase& config);
+    void setupRampGenerator(const char* jsonElem, const ConfigBase& config, const char* pConfigPrefix);
+    void setupMotorEnabler(const char* jsonElem, const ConfigBase& config, const char* pConfigPrefix);
+    void setupMotionControl(const char* jsonElem, const ConfigBase& config, const char* pConfigPrefix);
     bool moveToLinear(const MotionArgs& args);
     bool moveToRamped(const MotionArgs& args);
 

@@ -16,15 +16,15 @@
 class ProtocolRICFrame : public ProtocolBase
 {
 public:
-    ProtocolRICFrame(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
+    ProtocolRICFrame(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, CommsChannelMsgCB msgTxCB, 
                             CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB);
     virtual ~ProtocolRICFrame();
     
     // Create instance
-    static ProtocolBase* createInstance(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
-                CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB)
+    static ProtocolBase* createInstance(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, 
+                CommsChannelMsgCB msgTxCB, CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB)
     {
-        return new ProtocolRICFrame(channelID, configJSON, msgTxCB, msgRxCB, readyToRxCB);
+        return new ProtocolRICFrame(channelID, config, pConfigPrefix, msgTxCB, msgRxCB, readyToRxCB);
     }
 
     // // Set message complete callback
@@ -49,9 +49,4 @@ public:
     {
         return "RICFrame";
     }
-
-private:
-    // Consts
-    static const int DEFAULT_RIC_FRAME_RX_MAX = 1000;
-    static const int DEFAULT_RIC_FRAME_TX_MAX = 1000;
 };

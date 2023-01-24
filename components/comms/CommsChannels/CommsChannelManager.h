@@ -14,8 +14,9 @@
 #include "ProtocolCodecFactoryHelper.h"
 #include "CommsChannel.h"
 #include "SysModBase.h"
+#include <CommsCoreIF.h>
 
-class CommsChannelManager : public SysModBase
+class CommsChannelManager : public SysModBase, public CommsCoreIF
 {
 public:
     CommsChannelManager(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
@@ -24,42 +25,38 @@ public:
     // Register as an external message channel
     // xxBlockMax and xxQueueMaxLen parameters can be 0 for defaults to be used
     // Returns an ID used to identify this channel
-    uint32_t registerChannel(const char* protocolName, 
+    virtual uint32_t registerChannel(const char* protocolName, 
                 const char* interfaceName,
                 const char* channelName, 
                 CommsChannelMsgCB msgCB, 
                 ChannelReadyToSendCB outboundChannelReadyCB,
-                const CommsChannelSettings* pSettings = nullptr);
+                const CommsChannelSettings* pSettings = nullptr) override final;
 
     // Register as an internal message sink
     uint32_t registerSink(CommsChannelMsgCB msgCB);
 
     // Add protocol handler
-    void addProtocol(ProtocolCodecFactoryHelper& protocolDef);
+    virtual void addProtocol(ProtocolCodecFactoryHelper& protocolDef) override final;
 
     // Get channel IDs
-    int32_t getChannelIDByName(const String& channelName, const String& protocolName);
+    virtual int32_t getChannelIDByName(const String& channelName, const String& protocolName) override final;
     void getChannelIDsByInterface(const char* interfaceName, std::vector<uint32_t>& channelIDs);
     void getChannelIDs(std::vector<uint32_t>& channelIDs);
 
     // Check if we can accept inbound message
-    bool canAcceptInbound(uint32_t channelID);
+    virtual bool canAcceptInbound(uint32_t channelID) override final;
     
     // Handle channel message
-    void handleInboundMessage(uint32_t channelID, const uint8_t* pMsg, uint32_t msgLen);
+    virtual void handleInboundMessage(uint32_t channelID, const uint8_t* pMsg, uint32_t msgLen) override final;
 
     // Check if we can accept outbound message
-    bool canAcceptOutbound(uint32_t channelID, bool &noConn);
+    virtual bool canAcceptOutbound(uint32_t channelID, bool &noConn) override final;
     
     // Handle outbound message
-    void handleOutboundMessage(CommsChannelMsg& msg);
+    virtual void handleOutboundMessage(CommsChannelMsg& msg) override final;
 
     // Get the optimal comms block size
-    uint32_t getInboundBlockLen(uint32_t channelID, uint32_t defaultSize);
-
-    // Special channelIDs
-    static const uint32_t CHANNEL_ID_UNDEFINED = 0xffff;
-    static const uint32_t CHANNEL_ID_REST_API = 0xfffe;
+    virtual uint32_t getInboundBlockLen(uint32_t channelID, uint32_t defaultSize) override final;
 
     // Get info
     String getInfoJSON();

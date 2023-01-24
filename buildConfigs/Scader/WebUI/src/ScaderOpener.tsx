@@ -72,7 +72,8 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.consButtonPressed ? <div>CONSBut</div> : null}
               {state.status.pirSenseInActive ? <div>PIR_IN</div> : null}
               {state.status.pirSenseOutActive ? <div>PIR_OUT</div> : null}
-              <div>AvgI: {state.status.avgCurrent.toString()}</div>
+              <div>{state.status.rotationAngleDegs.toString() + "°"}</div>
+              <div>{"Step:" + state.status.stepperCurAngle.toString() + "°"}</div>
             </div>
           </div>
         }
@@ -81,21 +82,25 @@ export default function ScaderOpener(props:ScaderScreenProps) {
             <div className="ScaderElem-edit-group">
               <div className="ScaderElem-edit-line">
                 {/* Button to set open position */}
-                <label>
-                  Open Angle (Degrees):
-                  <input id="scader-motor-open-angle" className="ScaderElem-input-small" type="number" defaultValue={config.DoorOpenAngle} />
-                </label>
                 <button className="ScaderElem-button-editmode" onClick={
                       () => {
-                        const inputElem = document.getElementById("scader-motor-open-angle") as HTMLInputElement | null;
-                        const numDegrees = inputElem ? inputElem.value : 0;
+                        const numDegrees = state.status ? state.status.rotationAngleDegs : 0;
                         updateConfigValue("DoorOpenAngle", numDegrees);
                       }}>
-                  Set
+                  Set Open Position
                 </button>
+                <button className="ScaderElem-button-editmode" onClick={
+                      () => {
+                        const numDegrees = state.status ? state.status.rotationAngleDegs : 0;
+                        updateConfigValue("DoorClosedAngle", numDegrees);
+                      }}>
+                  Set Closed Position
+                </button>
+              </div>
+              <div className="ScaderElem-edit-line">
                 {/* Numeric input box and label for number of degrees to turn to */}
                 <label>
-                  Angle (Degrees):
+                  Angle (degs):
                   <input id="scader-motor-num-degrees" className="ScaderElem-input-small" type="number" defaultValue="30" />
                 </label>
                 {/* Button to turn motor getting degrees from input */}
@@ -106,14 +111,14 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                         scaderManager.sendCommand(`/${restCommandName}/test/turnto/${numDegrees}`)
                       }
                       }>
-                  Turn Motor to Angle
+                  Turn
                 </button>
               </div>
 
               <div className="ScaderElem-edit-line">
                 {/* Numeric input box and label for time for door to move to open/closed */}
                 <label>
-                  Time to open (secs):
+                  Time to open (s):
                   <input id="scader-door-time-to-open-secs" className="ScaderElem-input-small" type="number" defaultValue={config.DoorTimeToOpenSecs} />
                 </label>
                 <button className="ScaderElem-button-editmode" onClick={
@@ -130,7 +135,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               <div className="ScaderElem-edit-line">
                 {/* Numeric input box and label for time for motor to remain on after movement */}
                 <label>
-                  Motor on time after move (secs):
+                  Motor hold (s):
                   <input id="scader-motor-on-time-secs" className="ScaderElem-input-small" type="number" defaultValue={config.MotorOnTimeAfterMoveSecs} />
                 </label>
                 {/* Button to turn motor getting degrees from input */}
@@ -148,7 +153,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               <div className="ScaderElem-edit-line">
                 {/* Numeric input box and label for door open time */}
                 <label>
-                  Door open time (secs):
+                  Stay open (s):
                   <input id="scader-door-remain-open-time-secs" className="ScaderElem-input-small" type="number" defaultValue={config.DoorRemainOpenTimeSecs} />
                 </label>
                 {/* Button to turn motor getting degrees from input */}
@@ -166,7 +171,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               <div className="ScaderElem-edit-line">
                 {/* Numeric input box and label for motor current limit */}
                 <label>
-                  Motor current limit (A):
+                  Current limit (A):
                   <input id="scader-motor-current-limit" className="ScaderElem-input-small" type="number" defaultValue={config.MaxMotorCurrentAmps} />
                 </label>
                 {/* Button to set motor current limit */}
@@ -202,9 +207,12 @@ export default function ScaderOpener(props:ScaderScreenProps) {
       }
     }
 
-    let openState = "Closed";
+    let openState = (state.status && state.status.isMoving) ? "Closing" : "Closed";
     if (state.status && state.status.isOpen) {
-      if (state.status.timeBeforeCloseSecs === 0) {
+      if (state.status.isMoving) {
+        openState = "Opening";
+      }
+      else if (state.status.timeBeforeCloseSecs === 0) {
         openState = "Open indefinitely";
       } else {
         openState = `Open (for ${state.status.timeBeforeCloseSecs.toString()}s)`;
@@ -227,8 +235,8 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.pirSenseInTriggered ? <div>Kitchen PIR Trig</div> : null}
               {state.status.pirSenseOutActive ? <div>Consv PIR Actv</div> : null}
               {state.status.pirSenseOutTriggered ? <div>Consv PIR Trig</div> : null}
-              {state.status.isOverCurrent ? <div>OverCurrent</div> : null}
-              <div>{state.status.avgCurrent.toString()}A</div>
+              <div>{state.status.rotationAngleDegs ? state.status.rotationAngleDegs.toString() + "°" : ""}</div>
+              <div>{state.status.stepperCurAngle ? "Step:" + state.status.stepperCurAngle.toString() + "°" : ""}</div>
             </div>
           }
           </div>

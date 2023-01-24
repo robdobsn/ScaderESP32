@@ -16,8 +16,6 @@
 
 static const char* MODULE_PREFIX = "FSSess";
 
-class CommsChannelManager;
-
 // Warn
 #define WARN_ON_FW_UPDATE_FAILED
 #define WARN_ON_STREAM_FAILED
@@ -31,7 +29,7 @@ class CommsChannelManager;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 FileStreamSession::FileStreamSession(const String& filename, uint32_t channelID,
-                CommsChannelManager* pCommsChannelManager, SysModBase* pFirmwareUpdater,
+                CommsCoreIF* pCommsCore, SysModBase* pFirmwareUpdater,
                 FileStreamBase::FileStreamContentType fileStreamContentType, 
                 FileStreamBase::FileStreamFlowType fileStreamFlowType,
                 uint32_t streamID, const char* restAPIEndpointName,
@@ -81,7 +79,7 @@ FileStreamSession::FileStreamSession(const String& filename, uint32_t channelID,
                 _pFileStreamProtocolHandler = new FileUploadHTTPProtocol(
                             std::bind(&FileStreamSession::fileStreamBlockWrite, this, std::placeholders::_1),
                             std::bind(&FileStreamSession::fileStreamCancelEnd, this, std::placeholders::_1),
-                            pCommsChannelManager,
+                            pCommsCore,
                             fileStreamContentType, 
                             fileStreamFlowType,
                             streamID,
@@ -93,7 +91,7 @@ FileStreamSession::FileStreamSession(const String& filename, uint32_t channelID,
                 _pFileStreamProtocolHandler = new FileUploadOKTOProtocol(
                             std::bind(&FileStreamSession::fileStreamBlockWrite, this, std::placeholders::_1),
                             std::bind(&FileStreamSession::fileStreamCancelEnd, this, std::placeholders::_1),
-                            pCommsChannelManager,
+                            pCommsCore,
                             fileStreamContentType, 
                             fileStreamFlowType,
                             streamID,
@@ -108,7 +106,7 @@ FileStreamSession::FileStreamSession(const String& filename, uint32_t channelID,
             _pFileStreamProtocolHandler = new StreamDatagramProtocol(
                         std::bind(&FileStreamSession::fileStreamBlockWrite, this, std::placeholders::_1),
                         std::bind(&FileStreamSession::fileStreamCancelEnd, this, std::placeholders::_1),
-                        pCommsChannelManager,
+                        pCommsCore,
                         fileStreamContentType, 
                         fileStreamFlowType,
                         streamID,

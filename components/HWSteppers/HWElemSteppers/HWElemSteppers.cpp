@@ -11,6 +11,8 @@
 
 static const char *MODULE_PREFIX = "HWElemSteppers";
 
+#define DEBUG_STEPPER_CMD_JSON
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor / Destructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,17 +29,17 @@ HWElemSteppers::~HWElemSteppers()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void HWElemSteppers::setup(ConfigBase &config, ConfigBase* pDefaults)
+void HWElemSteppers::setup(ConfigBase &config, ConfigBase* pDefaults, const char* pConfigPrefix)
 {
     // Base setup
-    HWElemBase::setup(config, pDefaults);
+    HWElemBase::setup(config, pDefaults, pConfigPrefix);
 
     // Setup motion controller
-    _motionController.setup(config);
+    _motionController.setup(config, pConfigPrefix);
 
     // Debug
-    LOG_I(MODULE_PREFIX, "name %s type %s bus %s pollRateHz %f",
-              _name.c_str(), _type.c_str(), _busName.c_str(), _pollRateHz);
+    LOG_I(MODULE_PREFIX, "setup prefix %s name %s type %s bus %s pollRateHz %f",
+            pConfigPrefix, _name.c_str(), _type.c_str(), _busName.c_str(), _pollRateHz);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +92,25 @@ String HWElemSteppers::getDataJSON(HWElemStatusLevel_t level)
 
 double HWElemSteppers::getNamedValue(const char* param, bool& isFresh)
 {
-    return 0;
+    switch(tolower(param[0]))
+    {
+        case 'x':
+        case 'y':
+        case 'z':
+        {
+            isFresh = true;
+            AxesPosValues pos = _motionController.getLastPos();
+            switch(tolower(param[0]))
+            {
+                case 'x': return pos.getVal(0);
+                case 'y': return pos.getVal(1);
+                case 'z': return pos.getVal(2);
+            }
+            isFresh = false;
+            return 0;
+        }
+        default: { isFresh = false; return 0; }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,8 +156,11 @@ UtilsRetCode::RetCode HWElemSteppers::sendCmdJSON(const char* cmdJSON)
 {
     MotionArgs motionArgs;
     motionArgs.fromJSON(cmdJSON);
+
+#ifdef DEBUG_STEPPER_CMD_JSON
     String cmdStr = motionArgs.toJSON();
     LOG_I(MODULE_PREFIX, "sendCmdJSON %s", cmdStr.c_str());
+#endif
 
     _motionController.moveTo(motionArgs);
 

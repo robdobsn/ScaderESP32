@@ -142,9 +142,26 @@ void StepDriverTMC2209::service()
     if (driverBusy())
     {
 #ifdef WARN_ON_DRIVER_BUSY
-        LOG_W(MODULE_PREFIX, "service driver is busy");
+        if (!_warnOnDriverBusyDone)
+        {
+            if (_warnOnDriverBusyStartTimeMs == 0)
+            {
+                _warnOnDriverBusyStartTimeMs = millis();
+            }
+            else if (Raft::isTimeout(millis(), _warnOnDriverBusyStartTimeMs, WARN_ON_DRIVER_BUSY_AFTER_MS))
+            {
+                LOG_E(MODULE_PREFIX, "service driver busy for too long");
+                _warnOnDriverBusyStartTimeMs = 0;
+                _warnOnDriverBusyDone = true;
+            }
+        }
 #endif
         return;
+    }
+    else
+    {
+        _warnOnDriverBusyStartTimeMs = 0;
+        _warnOnDriverBusyDone = false;
     }
 
     // Handle register activity

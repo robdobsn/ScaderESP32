@@ -1,9 +1,7 @@
 idf_component_register(
                 SRCS 
-                  "RestAPIEndpoints/RestAPIEndpointManager.cpp"
                   "CommsChannels/CommsChannelManager.cpp"
                   "CommsChannels/CommsChannel.cpp"
-                  "CommsChannelMsg/CommsChannelMsg.cpp"
                   "ProtocolRawMsg/ProtocolRawMsg.cpp"
                   "ProtocolBase/ProtocolBase.cpp"
                   "ROSSerial/ROSSerialMsg.cpp"
@@ -20,9 +18,7 @@ idf_component_register(
                   "ProtocolExchange/ProtocolExchange.cpp"
                   "ProtocolExchange/FileStreamSession.cpp"
                 INCLUDE_DIRS
-                  "RestAPIEndpoints"
                   "CommsChannels"
-                  "CommsChannelMsg"
                   "ProtocolRawMsg"
                   "ProtocolBase"
                   "ROSSerial"

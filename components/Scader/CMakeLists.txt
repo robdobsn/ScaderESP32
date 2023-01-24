@@ -43,5 +43,6 @@ idf_component_register(
                   FastLED-idf
                   HWSteppers
                   hardware
+                  rafti2c-src
                 )
 

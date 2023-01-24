@@ -12,12 +12,17 @@ export class DoorConfig {
 }
 
 export class ScaderConfig {
+    NetMan: {
+        EthEnabled: number
+    } = {
+        EthEnabled: 1
+    }
     ScaderCommon: {
         name: string,
-        hostname: string,
+        hostname: string
     } = {
         name: "Scader",
-        hostname: "scader",
+        hostname: "scader"
     }
     ScaderRelays: {
         enable: boolean,
@@ -39,13 +44,15 @@ export class ScaderConfig {
     ScaderOpener: {
         enable: boolean,
         DoorOpenAngle: number,
+        DoorClosedAngle: number,
         DoorRemainOpenTimeSecs: number,
         DoorTimeToOpenSecs: number,
         MotorOnTimeAfterMoveSecs: number,
         MaxMotorCurrentAmps: number,
     } = {
         enable: false,
-        DoorOpenAngle: 90,
+        DoorOpenAngle: 150,
+        DoorClosedAngle: 250,
         DoorRemainOpenTimeSecs: 30,
         DoorTimeToOpenSecs: 30,
         MotorOnTimeAfterMoveSecs: 30,

@@ -11,23 +11,19 @@
 
 #include <stdint.h>
 #include <functional>
+#include <CommsCoreIF.h>
 
 class CommsChannelMsg;
 class ProtocolBase;
+class ConfigBase;
 
 // Put byte callback function type
 typedef std::function<void(uint8_t ch)> ProtocolBasePutByteCBType;
 // Received frame callback function type
 typedef std::function<void(const uint8_t *framebuffer, int framelength)> ProtocolBaseFrameCBType;
-// Message callback function type
-typedef std::function<bool(CommsChannelMsg& msg)> CommsChannelMsgCB;
-// Ready to receive callback function type
-typedef std::function<bool()> CommsChannelReadyToRxCB;
 // Create protocol instance
-typedef std::function<ProtocolBase* (uint32_t channelID, const char* pConfigJSON, CommsChannelMsgCB msgTxCB, 
+typedef std::function<ProtocolBase* (uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, CommsChannelMsgCB msgTxCB, 
                 CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB)> ProtocolCreateFnType;
-// Channel ready function type
-typedef std::function<bool(uint32_t channelID, bool& noConn)> ChannelReadyToSendCB;
 
 class ProtocolBase
 {

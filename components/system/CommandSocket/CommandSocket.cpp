@@ -9,8 +9,10 @@
 #include "CommandSocket.h"
 #include <Logger.h>
 #include <RaftUtils.h>
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
+#include <CommsChannelSettings.h>
 #include <RestAPIEndpointManager.h>
-#include <CommsChannelManager.h>
 #include <NetworkSystem.h>
 
 static const char *MODULE_PREFIX = "CommandSocket";
@@ -33,7 +35,7 @@ CommandSocket::CommandSocket(const char *pModuleName, ConfigBase &defaultConfig,
 #endif
 
     // ChannelID
-    _commsChannelID = CommsChannelManager::CHANNEL_ID_UNDEFINED;
+    _commsChannelID = CommsCoreIF::CHANNEL_ID_UNDEFINED;
 }
 
 CommandSocket::~CommandSocket()
@@ -60,7 +62,7 @@ void CommandSocket::setup()
 void CommandSocket::applySetup()
 {
     // Enable
-    _isEnabled = configGetLong("enable", 0) != 0;
+    _isEnabled = configGetBool("enable", false);
 
     // Port
     _port = configGetLong("socketPort", 24);
@@ -137,13 +139,13 @@ void CommandSocket::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Comms channels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CommandSocket::addCommsChannels(CommsChannelManager &commsChannelManager)
+void CommandSocket::addCommsChannels(CommsCoreIF &commsCore)
 {
     // Comms channel
     static const CommsChannelSettings commsChannelSettings;
 
     // Register as a message channel
-    _commsChannelID = commsChannelManager.registerChannel(_protocol.c_str(),
+    _commsChannelID = commsCore.registerChannel(_protocol.c_str(),
             modName(),
             modName(),
             std::bind(&CommandSocket::sendMsg, this, std::placeholders::_1),

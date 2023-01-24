@@ -46,7 +46,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   rafti2c
   GIT_REPOSITORY https://github.com/robdobsn/RaftI2C
-  GIT_TAG        v0.0.1
+  GIT_TAG        v0.0.3
 )
 
 # Populate first so we have a folder that we can add in EXTRA_COMPONENT_DIRS

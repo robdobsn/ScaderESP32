@@ -9,8 +9,10 @@
 #include <Logger.h>
 #include <RaftUtils.h>
 #include <CommandSerial.h>
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
+#include <CommsChannelSettings.h>
 #include <RestAPIEndpointManager.h>
-#include <CommsChannelManager.h>
 #include <SpiramAwareAllocator.h>
 #include <driver/uart.h>
 
@@ -34,7 +36,7 @@ CommandSerial::CommandSerial(const char *pModuleName, ConfigBase &defaultConfig,
     _isInitialised = false;
 
     // ChannelID
-    _commsChannelID = CommsChannelManager::CHANNEL_ID_UNDEFINED;
+    _commsChannelID = CommsCoreIF::CHANNEL_ID_UNDEFINED;
 }
 
 CommandSerial::~CommandSerial()
@@ -61,7 +63,7 @@ void CommandSerial::applySetup()
     _isInitialised = false;
 
     // Enable
-    _isEnabled = configGetLong("enable", 0) != 0;
+    _isEnabled = configGetBool("enable", false);
 
     // Port
     _uartNum = configGetLong("uartNum", 80);
@@ -135,7 +137,7 @@ void CommandSerial::applySetup()
 
 void CommandSerial::service()
 {
-    if (!_isInitialised || !getCommsChannelManager())
+    if (!_isInitialised || !getCommsCore())
         return;
 
     // Check anything available
@@ -153,7 +155,7 @@ void CommandSerial::service()
         {
             // LOG_D(MODULE_PREFIX, "service charsAvail %d ch %02x", numCharsAvailable, buf[0]);
             // Send to comms channel
-            getCommsChannelManager()->handleInboundMessage(_commsChannelID, charBuf.data(), bytesRead);
+            getCommsCore()->handleInboundMessage(_commsChannelID, charBuf.data(), bytesRead);
         }
     }
 }
@@ -170,13 +172,13 @@ void CommandSerial::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Comms channels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CommandSerial::addCommsChannels(CommsChannelManager &commsChannelManager)
+void CommandSerial::addCommsChannels(CommsCoreIF& commsCoreIF)
 {
     // Comms channel
     static const CommsChannelSettings commsChannelSettings;
 
     // Register as a message channel
-    _commsChannelID = commsChannelManager.registerChannel(_protocol.c_str(),
+    _commsChannelID = commsCoreIF.registerChannel(_protocol.c_str(),
             modName(),
             modName(),
             std::bind(&CommandSerial::sendMsg, this, std::placeholders::_1),

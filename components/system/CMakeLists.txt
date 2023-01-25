@@ -1,8 +1,5 @@
 idf_component_register(
                 SRCS 
-                  "SysMod/SysModBase.cpp"
-                  "SysManager/SysManager.cpp"
-                  "SysTypes/SysTypeManager.cpp"
                   "BLEManager/BLEManager.cpp"
                   "BLEManager/BLEGattServer.cpp"
                   "NetworkManager/NetworkManager.cpp"
@@ -18,9 +15,6 @@ idf_component_register(
                   "StatePublisher/StatePublisher.cpp"
                   "LogManager/LogManager.cpp"
                 INCLUDE_DIRS
-                  "SysMod"
-                  "SysManager"
-                  "SysTypes"
                   "BLEManager"
                   "NetworkManager"
                   "SerialConsole"

@@ -101,9 +101,9 @@ public:
         _maxVal = AxisPosDataType(RdJson::getDouble("maxVal", 0, _maxValValid, axisJSON));
         _homeOffsetVal = AxisPosDataType(RdJson::getDouble("homeOffsetVal", 0, axisJSON));
         _homeOffSteps = AxisStepsDataType(RdJson::getDouble("homeOffSteps", 0, axisJSON));
-        _isDominantAxis = RdJson::getLong("isDominantAxis", 0, axisJSON) != 0;
-        _isPrimaryAxis = RdJson::getLong("isPrimaryAxis", 1, axisJSON) != 0;
-        _isServoAxis = RdJson::getLong("isServoAxis", 0, axisJSON) != 0;
+        _isDominantAxis = RdJson::getBool("isDominantAxis", 0, axisJSON);
+        _isPrimaryAxis = RdJson::getBool("isPrimaryAxis", 1, axisJSON);
+        _isServoAxis = RdJson::getBool("isServoAxis", 0, axisJSON);
     }
 
     void debugLog(int axisIdx)

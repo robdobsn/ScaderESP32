@@ -15,6 +15,7 @@
 #include <RestAPIEndpointManager.h>
 #include <SysManager.h>
 #include <NetworkSystem.h>
+#include <CommsChannelMsg.h>
 #include <JSONParams.h>
 #include <ESPUtils.h>
 #include <time.h>
@@ -31,7 +32,7 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderRelays::ScaderRelays(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-        : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig),
+        : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
           _scaderCommon(*this, pModuleName)
 {
 }

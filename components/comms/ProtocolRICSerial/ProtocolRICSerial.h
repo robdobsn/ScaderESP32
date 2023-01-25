@@ -17,15 +17,15 @@ class MiniHDLC;
 class ProtocolRICSerial : public ProtocolBase
 {
 public:
-    ProtocolRICSerial(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
+    ProtocolRICSerial(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, CommsChannelMsgCB msgTxCB, 
                         CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB);
     virtual ~ProtocolRICSerial();
     
     // Create instance
-    static ProtocolBase* createInstance(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
-                        CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB)
+    static ProtocolBase* createInstance(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, 
+                        CommsChannelMsgCB msgTxCB, CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB)
     {
-        return new ProtocolRICSerial(channelID, configJSON, msgTxCB, msgRxCB, readyToRxCB);
+        return new ProtocolRICSerial(channelID, config, pConfigPrefix, msgTxCB, msgRxCB, readyToRxCB);
     }
 
     // // Set message complete callback

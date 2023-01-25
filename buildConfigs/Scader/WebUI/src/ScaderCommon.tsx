@@ -24,32 +24,38 @@ interface ScaderHeaderProps {
 
 export const ScaderCommon = (props:ScaderHeaderProps) => {
 
-    const [config, setConfig] = React.useState(props.config.ScaderCommon);
+    const [config, setConfig] = React.useState(props.config);
 
     scaderManager.onConfigChange((newConfig) => {
         console.log("ScaderCommon.onConfigChange");
         // Update config
-        setConfig(newConfig.ScaderCommon);
+        setConfig(newConfig);
       });  
-
-    const updateMutableConfig = (newConfig: any) => {
-        // Update ScaderManager
-        ScaderManager.getInstance().getMutableConfig().ScaderCommon = newConfig;
-    }
 
     const onTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         console.log(`ScaderCommon.onTitleChange ${event.target.value}`);
         // Update config
-        const newConfig = {name: event.target.value, hostname: config.hostname};
-        setConfig(newConfig);
-        updateMutableConfig(newConfig);
+        setConfig({...config, ScaderCommon: {...config.ScaderCommon, name: event.target.value}});
+        ScaderManager.getInstance().getMutableConfig().ScaderCommon = config.ScaderCommon;
     };
 
     const onHostnameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         console.log(`ScaderCommon.onHostnameChange ${event.target.value}`);
-        const newConfig = {name: config.name, hostname: event.target.value};
+        setConfig({...config, ScaderCommon: {...config.ScaderCommon, hostname: event.target.value}});
+        ScaderManager.getInstance().getMutableConfig().ScaderCommon = config.ScaderCommon;
+    };
+
+    const handleEthEnabledChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log(`ScaderCommon.handleEthEnabledChange ${event.target.checked}`);
+        const netManConfig = {...config.NetMan, EthEnabled: event.target.checked ? 1 : 0};
+        console.log(`ScaderCommon.handleEthEnabledChange netManConfig = ${JSON.stringify(netManConfig)}`);
+        const newConfig = {...config, NetMan: netManConfig};
+        console.log(`ScaderCommon.handleEthEnabledChange config = ${JSON.stringify(newConfig)}`);
+        const mutableConfig = ScaderManager.getInstance().getMutableConfig();
+        console.log(`ScaderCommon.handleEthEnabledChange mutableConfig = ${JSON.stringify(mutableConfig)}`);
+        mutableConfig.NetMan = newConfig.NetMan;
+        console.log(`ScaderCommon.handleEthEnabledChange updated mutableConfig = ${JSON.stringify(mutableConfig)}`);
         setConfig(newConfig);
-        updateMutableConfig(newConfig);
     };
 
     const onClickSave = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -64,7 +70,7 @@ export const ScaderCommon = (props:ScaderHeaderProps) => {
         <div className={headerClassName}>
             {props.isEditMode ? 
                 <div className="ScaderHeader-title">Edit Mode</div> :
-                <div className="ScaderHeader-title">{config.name ? config.name : "Scader"}</div>
+                <div className="ScaderHeader-title">{config.ScaderCommon.name ? config.ScaderCommon.name : "Scader"}</div>
             }
             {props.isEditMode ?
                 <div className="ScaderHeader-button-bar">
@@ -88,13 +94,19 @@ export const ScaderCommon = (props:ScaderHeaderProps) => {
                 <div className="ScaderElem-header">
                     <p>
                         <label htmlFor="scader-title">Title:</label>
-                        <input className="ScaderElem-input" type="text" name="scader-title" value={config.name} onChange={onTitleChange}></input>
+                        <input className="ScaderElem-input" type="text" name="scader-title" value={config.ScaderCommon.name} onChange={onTitleChange}></input>
                     </p>
                     <p>
                         {/* Input for hostname with label */}
                         <label htmlFor="scader-hostname">Hostname:</label>
-                        <input className="ScaderElem-input" type="text" name="scader-hostname" value={config.hostname} onChange={onHostnameChange}></input>
+                        <input className="ScaderElem-input" type="text" name="scader-hostname" value={config.ScaderCommon.hostname} onChange={onHostnameChange}></input>
                     </p>
+          <label>
+            <input className="ScaderElem-checkbox" type="checkbox" 
+                  checked={config.NetMan.EthEnabled === 1}
+                  onChange={handleEthEnabledChange} />
+            Enable Wired Ethernet
+          </label>                    
                 </div>
             </div>
             : null}

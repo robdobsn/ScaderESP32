@@ -9,8 +9,9 @@
 #include <FileUploadOKTOProtocol.h>
 #include <RICRESTMsg.h>
 #include <FileSystem.h>
+#include <CommsCoreIF.h>
 #include <CommsChannelMsg.h>
-#include <CommsChannelManager.h>
+#include <CommsCoreIF.h>
 
 // Log prefix
 static const char *MODULE_PREFIX = "FileUpldOKTO";
@@ -29,13 +30,13 @@ static const char *MODULE_PREFIX = "FileUpldOKTO";
 
 FileUploadOKTOProtocol::FileUploadOKTOProtocol(FileStreamBlockCB fileRxBlockCB, 
             FileStreamCanceEndCB fileRxCancelEndCB,
-            CommsChannelManager* pCommsChannelManager,
+            CommsCoreIF* pCommsCore,
             FileStreamBase::FileStreamContentType fileStreamContentType, 
             FileStreamBase::FileStreamFlowType fileStreamFlowType,
             uint32_t streamID,
             uint32_t fileStreamLength,
             const char* fileStreamName) :
-    FileStreamBase(fileRxBlockCB, fileRxCancelEndCB, pCommsChannelManager, fileStreamContentType, 
+    FileStreamBase(fileRxBlockCB, fileRxCancelEndCB, pCommsCore, fileStreamContentType, 
             fileStreamFlowType, streamID, fileStreamLength, fileStreamName)
 {
     // File params
@@ -255,8 +256,8 @@ void FileUploadOKTOProtocol::service()
 #endif
 
         // Send message on the appropriate channel
-        if (_pCommsChannelManager)
-            _pCommsChannelManager->handleOutboundMessage(endpointMsg);
+        if (_pCommsCore)
+            _pCommsCore->handleOutboundMessage(endpointMsg);
     }
 }
 
@@ -314,9 +315,9 @@ void FileUploadOKTOProtocol::handleUploadStartMsg(const String& reqStr, String& 
 
         // Check block sizes against channel maximum
         uint32_t chanBlockMax = 0;
-        if (_pCommsChannelManager)
+        if (_pCommsCore)
         {
-            chanBlockMax = _pCommsChannelManager->getInboundBlockLen(channelID, FILE_BLOCK_SIZE_DEFAULT);
+            chanBlockMax = _pCommsCore->getInboundBlockLen(channelID, FILE_BLOCK_SIZE_DEFAULT);
             if ((_blockSize > chanBlockMax) && (chanBlockMax > 0))
             {
                 // Apply factor to block size
@@ -610,8 +611,8 @@ void FileUploadOKTOProtocol::uploadCancel(const char* reasonStr)
 #endif
 
         // Send message on the appropriate channel
-        if (_pCommsChannelManager)
-            _pCommsChannelManager->handleOutboundMessage(endpointMsg);
+        if (_pCommsCore)
+            _pCommsCore->handleOutboundMessage(endpointMsg);
     }
 }
 

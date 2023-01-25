@@ -59,6 +59,11 @@ private:
     // Driver register index
     uint32_t _driverRegisterIdx = 0;
 
+    // Driver busy warnings
+    uint32_t _warnOnDriverBusyStartTimeMs = 0;
+    bool _warnOnDriverBusyDone;
+    static const uint32_t WARN_ON_DRIVER_BUSY_AFTER_MS = 100;
+
     // Helpers
     void setPDNDisable(bool disable);
     uint32_t getMRESFieldValue(uint32_t microsteps);

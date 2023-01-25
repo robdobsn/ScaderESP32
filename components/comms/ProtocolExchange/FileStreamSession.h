@@ -22,7 +22,7 @@ class FileStreamSession
 public:
     // Constructor / destructor
     FileStreamSession(const String& filename, uint32_t channelID,
-                CommsChannelManager* pCommsChannelManager, SysModBase* pFirmwareUpdater,
+                CommsCoreIF* pCommsCore, SysModBase* pFirmwareUpdater,
                 FileStreamBase::FileStreamContentType fileStreamContentType, 
                 FileStreamBase::FileStreamFlowType fileStreamFlowType,
                 uint32_t streamID, const char* restAPIEndpointName,

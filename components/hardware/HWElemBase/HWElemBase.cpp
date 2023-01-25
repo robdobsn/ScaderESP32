@@ -11,7 +11,8 @@
 #include <BusRequestInfo.h>
 #include <BusRequestResult.h>
 #include <RICRESTMsg.h>
-#include <CommsChannelManager.h>
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
 #include <ConfigBase.h>
 #include <RaftUtils.h>
 #include "ArduinoOrAlt.h"
@@ -26,15 +27,7 @@ static const char *MODULE_PREFIX = "HWElemBase";
 
 HWElemBase::HWElemBase()
 {
-    _pBus = nullptr;
     setPollRateAndTimeout(10.0);
-    _versionStr = "0.0.0";
-    _IDNo = 0;
-    _address = 0;
-    _addressIsSet = false;
-    _whoAmITypeCode = WHOAMI_TYPE_CODE_NONE;
-    _addOnFamily = ADD_ON_FAMILY_ORDINARY_I2C;
-    _pCommsChannelManager = nullptr;
 }
 
 HWElemBase::~HWElemBase()
@@ -45,26 +38,26 @@ HWElemBase::~HWElemBase()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void HWElemBase::setup(ConfigBase& config, ConfigBase* pDefaults)
+void HWElemBase::setup(ConfigBase& config, ConfigBase* pDefaults, const char* pConfigPrefix)
 {
     // Get settings
-    _name = config.getString("name", _name.c_str());
-    _type = config.getString("type", _type.c_str());
-    _busName = getStringWithDefault("bus", "", config, pDefaults);
+    _name = config.getString("name", _name.c_str(), pConfigPrefix);
+    _type = config.getString("type", _type.c_str(), pConfigPrefix);
+    _busName = getStringWithDefault("bus", "", config, pDefaults, pConfigPrefix);
     if (!_addressIsSet)
     {
-        uint32_t address = strtoul(config.getString("addr", "0xffffffff").c_str(), nullptr, 0);
+        uint32_t address = strtoul(config.getString("addr", "0xffffffff", pConfigPrefix).c_str(), nullptr, 0);
         if (address != 0xffffffff)
         {
             _address = address;
             _addressIsSet = true;
         }
     }
-    _IDNo = config.getLong("IDNo", -1);
+    _IDNo = config.getLong("IDNo", -1, pConfigPrefix);
 
     // Polling details
-    _pollFor = getStringWithDefault("poll", "", config, pDefaults);
-    setPollRateAndTimeout(getDoubleWithDefault("pollHz", 10, config, pDefaults));
+    _pollFor = getStringWithDefault("poll", "", config, pDefaults, pConfigPrefix);
+    setPollRateAndTimeout(getDoubleWithDefault("pollHz", 10, config, pDefaults, pConfigPrefix));
 
     // Queued bus requests
     _queuedBusReqsActive = false;
@@ -252,7 +245,7 @@ void HWElemBase::cmdResultCallback(BusRequestResult &reqResult)
     ricRESTMsg.encode(msgBuf, endpointMsg, RICRESTMsg::RICREST_ELEM_CODE_CMDRESPJSON);
 
     // Send message on the appropriate channel
-    if (_pCommsChannelManager)
-        _pCommsChannelManager->handleOutboundMessage(endpointMsg);
+    if (_pCommsCore)
+        _pCommsCore->handleOutboundMessage(endpointMsg);
 }
 

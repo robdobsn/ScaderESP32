@@ -24,7 +24,7 @@ public:
     virtual ~BusSerial();
 
     // Setup
-    virtual bool setup(ConfigBase& config) override final;
+    virtual bool setup(ConfigBase& config, const char* pConfigPrefix) override final;
 
     // Service
     virtual void service() override final;

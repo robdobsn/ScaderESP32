@@ -43,6 +43,8 @@ public:
         _motionTrackingIndexValid = false;
         _isHoming = false;
         _feedrateUnitsPerMin = false;
+        _enableMotors = true;
+        _preClearMotionQueue = false;        
 
         // Reset values to sensible levels
         _targetSpeed = 0;
@@ -122,6 +124,14 @@ public:
     bool areUnitsSteps()
     {
         return _unitsAreSteps;
+    }
+    bool isEnableMotors() const
+    {
+        return _enableMotors;
+    }
+    bool isClearQueue() const
+    {
+        return _preClearMotionQueue;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -372,6 +382,8 @@ private:
     bool _isHoming;
     bool _motionTrackingIndexValid;
     bool _feedrateUnitsPerMin;
+    bool _enableMotors;
+    bool _preClearMotionQueue;
 
     // Boolean flags
     class FieldDefType {

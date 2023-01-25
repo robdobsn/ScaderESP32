@@ -12,7 +12,11 @@
 #include <RaftUtils.h>
 #include <JSONParams.h>
 #include <ESPUtils.h>
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
+#include <CommsChannelSettings.h>
 #include <RestAPIEndpointManager.h>
+#include <CommsCoreIF.h>
 #include <SysManager.h>
 
 // Log prefix
@@ -29,7 +33,7 @@ MQTTManager::MQTTManager(const char *pModuleName, ConfigBase &defaultConfig, Con
     : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
 {
     // ChannelID
-    _commsChannelID = CommsChannelManager::CHANNEL_ID_UNDEFINED;
+    _commsChannelID = CommsCoreIF::CHANNEL_ID_UNDEFINED;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +43,7 @@ MQTTManager::MQTTManager(const char *pModuleName, ConfigBase &defaultConfig, Con
 void MQTTManager::setup()
 {
     // Extract info from config
-    bool isMQTTEnabled = (configGetLong("enable", 0) != 0);
+    bool isMQTTEnabled = configGetBool("enable", false);
     String brokerHostname = configGetString("brokerHostname", "");
     uint32_t brokerPort = configGetLong("brokerPort", RdMQTTClient::DEFAULT_MQTT_PORT);
     String mqttClientID = configGetString("clientID", "");
@@ -62,7 +66,7 @@ void MQTTManager::setup()
         // Check direction
         String defaultName = "topic" + String(i+1);
         String topicName = topicJSON.getString("name", defaultName);
-        bool isInbound = topicJSON.getLong("inbound", 1) != 0;
+        bool isInbound = topicJSON.getBool("inbound", true);
         String topicPath = topicJSON.getString("path", "");
         uint8_t qos = topicJSON.getLong("qos", 0);
 
@@ -107,7 +111,7 @@ void MQTTManager::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 {
 }
 
-void MQTTManager::addCommsChannels(CommsChannelManager& commsChannelManager)
+void MQTTManager::addCommsChannels(CommsCoreIF& commsCoreIF)
 {
     // Get a list of outbound topic names
     std::vector<String> topicNames;
@@ -123,7 +127,7 @@ void MQTTManager::addCommsChannels(CommsChannelManager& commsChannelManager)
         LOG_I(MODULE_PREFIX, "addCommsChannels %s", topicName.c_str());
 
         // Register as a channel
-        _commsChannelID = commsChannelManager.registerChannel("RICJSON", 
+        _commsChannelID = commsCoreIF.registerChannel("RICJSON", 
                 "MQTT",
                 topicName.c_str(),
                 [this, topicName](CommsChannelMsg& msg) { return sendMQTTMsg(topicName, msg); },

@@ -48,11 +48,11 @@ void NetworkManager::setup()
 void NetworkManager::applySetup()
 {
     // Extract info from config
-    bool isWiFiEnabled = (configGetLong("WiFiEnabled", 0) != 0);
-    bool isEthEnabled = (configGetLong("EthEnabled", 0) != 0);
-    bool isWiFiAPModeEnabled = (configGetLong("WiFiAPModeEn", 0) != 0);
-    bool isWiFiSTAModeEnabled = (configGetLong("WiFiSTAModeEn", 1) != 0);
-    bool isEthWiFiBrided = (configGetLong("EthWiFiBridge", 0) != 0);
+    bool isWiFiEnabled = configGetBool("WiFiEnabled", false);
+    bool isEthEnabled = configGetBool("EthEnabled", false);
+    bool isWiFiAPModeEnabled = configGetBool("WiFiAPModeEn", false);
+    bool isWiFiSTAModeEnabled = configGetBool("WiFiSTAModeEn", true);
+    bool isEthWiFiBrided = configGetBool("EthWiFiBridge", false);
     String defaultHostname = configGetString("defaultHostname", _defaultHostname.c_str());
     networkSystem.setup(isWiFiEnabled, isEthEnabled, defaultHostname.c_str(), 
                 isWiFiSTAModeEnabled, isWiFiAPModeEnabled, isEthWiFiBrided);
@@ -63,12 +63,23 @@ void NetworkManager::applySetup()
     String apSSID = configGetString("WiFiAPSSID", "");
     String apPassword = configGetString("WiFiAPPass", "");
 
+    LOG_I(MODULE_PREFIX, "setup WiFi:%s Eth:%s SSID %s defaultHostname %s password %s", 
+            isWiFiEnabled ? "ENABLED" : "NO", 
+            isEthEnabled ? "ENABLED" : "NO",
+            ssid.c_str(),
+            defaultHostname.c_str(),
+            password.c_str());
+
     // Set WiFi credentials
-    networkSystem.configureWiFi(ssid, password, "", apSSID, apPassword);
+    bool rsltOk = networkSystem.configureWiFi(ssid, password, "", apSSID, apPassword);
 
     // Debug
-    LOG_D(MODULE_PREFIX, "setup isEnabled %s defaultHostname %s ", isWiFiEnabled ? "YES" : "NO", defaultHostname.c_str(), 
-            ssid.c_str(), password.c_str());
+    LOG_I(MODULE_PREFIX, "setup %s WiFi:%s Eth:%s SSID %s defaultHostname %s", 
+            rsltOk ? "OK" : "FAILED",
+            isWiFiEnabled ? "ENABLED" : "NO", 
+            isEthEnabled ? "ENABLED" : "NO",
+            ssid.c_str(),
+            defaultHostname.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

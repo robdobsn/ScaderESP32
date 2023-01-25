@@ -16,7 +16,6 @@
 
 class ConfigBase;
 class RobotController;
-class CommsChannelManager;
 
 // #define DEBUG_STATEPUB_OUTPUT_PUBLISH_STATS 1
 
@@ -47,7 +46,9 @@ protected:
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& endpointManager) override final;
     
     // Add comms channels
-    virtual void addCommsChannels(CommsChannelManager &commsChannelManager) override final;
+    virtual void addCommsChannels(CommsCoreIF& commsCoreIF) override final
+    {
+    }
 
 private:
     enum TriggerType_t
@@ -113,9 +114,6 @@ private:
     uint64_t _recentWorstTimeUs;
     uint32_t _worstTimeSetMs;
 #endif
-
-    // Comms channel manager
-    CommsChannelManager* _pCommsChannelManager;
 
     // Helpers
     void cleanUp();

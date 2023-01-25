@@ -143,7 +143,7 @@ uint32_t CommsChannelManager::registerChannel(const char* protocolName,
     // Failed to create channel
     LOG_W(MODULE_PREFIX, "registerChannel FAILED protocolName %s interfaceName %s", 
                 protocolName, interfaceName);
-    return CommsChannelManager::CHANNEL_ID_UNDEFINED;
+    return CommsCoreIF::CHANNEL_ID_UNDEFINED;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -447,12 +447,15 @@ void CommsChannelManager::ensureProtocolCodecExists(uint32_t channelID)
         {
             // Debug
 #ifdef DEBUG_PROTOCOL_CODEC
-            LOG_I(MODULE_PREFIX, "ensureProtocolCodecExists channelID %d protocol %s params %s",
-                    channelID, channelProtocol.c_str(), codecFactoryHelper.paramsJSON.c_str());
+            LOG_I(MODULE_PREFIX, "ensureProtocolCodecExists channelID %d protocol %s configPrefix %s",
+                    channelID, channelProtocol.c_str(), 
+                    codecFactoryHelper.pConfigPrefix ? codecFactoryHelper.pConfigPrefix : "NULL");
 #endif
 
             // Create a protocol object
-            ProtocolBase* pProtocolCodec = codecFactoryHelper.createFn(channelID, codecFactoryHelper.paramsJSON.c_str(), 
+            ProtocolBase* pProtocolCodec = codecFactoryHelper.createFn(channelID, 
+                        codecFactoryHelper.config,
+                        codecFactoryHelper.pConfigPrefix,
                         std::bind(&CommsChannelManager::frameSendCB, this, std::placeholders::_1), 
                         codecFactoryHelper.frameRxCB,
                         codecFactoryHelper.readyToRxCB);

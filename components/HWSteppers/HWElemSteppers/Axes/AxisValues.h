@@ -456,9 +456,9 @@ public:
     // void fromJSON(const char* jsonStr)
     // {
     //     JSONParams jsonData(jsonStr);
-    //     _bits.bX = jsonData.getLong("x", 0) != 0;
-    //     _bits.bY = jsonData.getLong("y", 0) != 0;
-    //     _bits.bZ = jsonData.getLong("z", 0) != 0;
+    //     _bits.bX = jsonData.getBool("x", 0);
+    //     _bits.bY = jsonData.getBool("y", 0);
+    //     _bits.bZ = jsonData.getBool("z", 0);
     // }
     // String toJSON()
     // {

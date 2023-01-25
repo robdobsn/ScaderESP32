@@ -11,9 +11,10 @@
 #include <Logger.h>
 #include <RaftUtils.h>
 #include <RestAPIEndpointManager.h>
-#include <CommsChannelManager.h>
 #include <NetworkSystem.h>
 #include <RaftWebServer.h>
+#include <CommsCoreIF.h>
+#include <CommsChannelMsg.h>
 #include <RdWebHandlerStaticFiles.h>
 #include <RdWebHandlerRestAPI.h>
 #include <RdWebHandlerWS.h>
@@ -69,19 +70,19 @@ void WebServer::configChanged()
 void WebServer::applySetup()
 {
     // Enable
-    _webServerEnabled = configGetLong("enable", 0) != 0;
+    _webServerEnabled = configGetBool("enable", false);
 
     // Port
     _port = configGetLong("webServerPort", 80);
 
     // Access control allow origin all
-    _accessControlAllowOriginAll = configGetLong("allowOriginAll", 1) != 0;
+    _accessControlAllowOriginAll = configGetBool("allowOriginAll", true);
 
     // REST API prefix
     _restAPIPrefix = configGetString("apiPrefix", "api/");
 
     // File server enable
-    bool enableFileServer = configGetLong("fileServer", 1) != 0;
+    bool enableFileServer = configGetBool("fileServer", true);
 
     // Num connection slots
     uint32_t numConnSlots = configGetLong("numConnSlots", 6);
@@ -105,7 +106,7 @@ void WebServer::applySetup()
         {
             RaftWebServerSettings settings(_port, numConnSlots, _webSocketConfigs.size() > 0, 
                     enableFileServer, taskCore, taskPriority, taskStackSize, sendBufferMaxLen,
-                    CommsChannelManager::CHANNEL_ID_REST_API);
+                    CommsCoreIF::CHANNEL_ID_REST_API);
             _rdWebServer.setup(settings);
         }
         _isWebServerSetup = true;
@@ -161,14 +162,6 @@ void WebServer::setupEndpoints()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Comms channels
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void WebServer::addCommsChannels(CommsChannelManager& commsChannelManager)
-{
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Static Resources
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -221,8 +214,8 @@ void WebServer::webSocketSetup()
 #ifdef DEBUG_WEBSOCKETS
     LOG_I(MODULE_PREFIX, "webSocketSetup num websocket configs %d", _webSocketConfigs.size());
 #endif
-    CommsChannelManager* pEndpointManager = getCommsChannelManager();
-    if (!pEndpointManager)
+    CommsCoreIF* pCommsCore = getCommsCore();
+    if (!pCommsCore)
         return;
 
     // Create websockets
@@ -233,9 +226,9 @@ void WebServer::webSocketSetup()
 
         // Setup WebHandler for Websockets    
         RdWebHandlerWS* pHandler = new RdWebHandlerWS(jsonConfig, 
-                std::bind(&CommsChannelManager::canAcceptInbound, pEndpointManager, 
+                std::bind(&CommsCoreIF::canAcceptInbound, pCommsCore, 
                         std::placeholders::_1),
-                std::bind(&CommsChannelManager::handleInboundMessage, pEndpointManager, 
+                std::bind(&CommsCoreIF::handleInboundMessage, pCommsCore, 
                         std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
                 );
         if (!pHandler)
@@ -256,7 +249,7 @@ void WebServer::webSocketSetup()
             String interfaceName = jsonConfig.getString("pfix", "ws");
             String wsName = interfaceName + "_" + connIdx;
             String protocol = jsonConfig.getString("pcol", "RICSerial");
-            uint32_t wsChanID = getCommsChannelManager()->registerChannel(
+            uint32_t wsChanID = pCommsCore->registerChannel(
                     protocol.c_str(), 
                     interfaceName.c_str(),
                     wsName.c_str(),

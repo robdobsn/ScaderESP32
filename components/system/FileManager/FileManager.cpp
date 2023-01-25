@@ -46,12 +46,12 @@ void FileManager::setup()
 void FileManager::applySetup()
 {
     // Config settings
-    bool enableSPIFFS = (configGetLong("SPIFFSEnabled", 0) != 0);
-    bool enableLittleFS = (configGetLong("LittleFSEnabled", 0) != 0);
-    bool localFsFormatIfCorrupt = (configGetLong("LocalFsFormatIfCorrupt", 0) != 0);
-    bool enableSD = (configGetLong("SDEnabled", 0) != 0);
-    bool defaultToSDIfAvailable = (configGetLong("DefaultSD", 0) != 0);
-    bool cacheFileSystemInfo = (configGetLong("CacheFileSysInfo", 0) != 0);
+    bool enableSPIFFS = configGetBool("SPIFFSEnabled", false);
+    bool enableLittleFS = configGetBool("LittleFSEnabled", false);
+    bool localFsFormatIfCorrupt = configGetBool("LocalFsFormatIfCorrupt", false);
+    bool enableSD = configGetBool("SDEnabled", false);
+    bool defaultToSDIfAvailable = configGetBool("DefaultSD", false);
+    bool cacheFileSystemInfo = configGetBool("CacheFileSysInfo", false);
 
     // SD pins
     String pinName = configGetString("SDMOSI", "");

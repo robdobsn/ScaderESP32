@@ -51,7 +51,7 @@ enum HWElemSafetyAction
     SAFETY_ACTION_RESUME,
 };
 
-class CommsChannelManager;
+class CommsCoreIF;
 
 class HWElemBase
 {
@@ -62,7 +62,7 @@ public:
     virtual ~HWElemBase();
 
     // Setup
-    virtual void setup(ConfigBase& config, ConfigBase* pDefaults);
+    virtual void setup(ConfigBase& config, ConfigBase* pDefaults, const char* pConfigPrefix);
 
     // Post-Setup - called after any buses have been connected
     virtual void postSetup()
@@ -73,9 +73,9 @@ public:
     virtual void service();
 
     // Set CommsChannelManager
-    void setCommsChannelManager(CommsChannelManager* pCommsChannelManager)
+    void setCommsCore(CommsCoreIF* pCommsCore)
     {
-        _pCommsChannelManager = pCommsChannelManager;
+        _pCommsCore = pCommsCore;
     }
 
     // Reset
@@ -390,23 +390,30 @@ protected:
 
     // Get string with defaults
     String getStringWithDefault(const char* key, const char* fallbackDefault,
-                                ConfigBase& config, ConfigBase* pDefs)
+                                ConfigBase& config, ConfigBase* pDefs, const char* pConfigPrefix)
     {
-        return config.getString(key, pDefs ? pDefs->getString(key, fallbackDefault) : fallbackDefault);
+        return config.getString(key, pDefs ? pDefs->getString(key, fallbackDefault) : fallbackDefault, pConfigPrefix);
     }
 
     // Get double with defaults
     double getDoubleWithDefault(const char* key, double fallbackDefault,
-                                ConfigBase& config, ConfigBase* pDefs)
+                                ConfigBase& config, ConfigBase* pDefs, const char* pConfigPrefix)
     {
-        return config.getDouble(key, pDefs ? pDefs->getDouble(key, fallbackDefault) : fallbackDefault);
+        return config.getDouble(key, pDefs ? pDefs->getDouble(key, fallbackDefault) : fallbackDefault, pConfigPrefix);
     }
 
     // Get long with defaults
     long getLongWithDefault(const char* key, long fallbackDefault,
-                            ConfigBase& config, ConfigBase* pDefs)
+                            ConfigBase& config, ConfigBase* pDefs, const char* pConfigPrefix)
     {
-        return config.getLong(key, pDefs ? pDefs->getLong(key, fallbackDefault) : fallbackDefault);
+        return config.getLong(key, pDefs ? pDefs->getLong(key, fallbackDefault) : fallbackDefault, pConfigPrefix);
+    }
+
+    // Get bool with defaults
+    bool getBoolWithDefault(const char* key, bool fallbackDefault,
+                            ConfigBase& config, ConfigBase* pDefs, const char* pConfigPrefix)
+    {
+        return config.getBool(key, pDefs ? pDefs->getBool(key, fallbackDefault) : fallbackDefault, pConfigPrefix);
     }
 
     // Set type
@@ -446,16 +453,16 @@ protected:
     }
 
     // Bus this element is connected to
-    BusBase* _pBus;
+    BusBase* _pBus = nullptr;
 
     // Settings
     String _name;
     String _type;
     String _busName;
-    uint16_t _address;
-    bool _addressIsSet;
-    int32_t _IDNo;
-    HWElemAddOnFamily _addOnFamily;
+    uint16_t _address = 0;
+    bool _addressIsSet = false;
+    int32_t _IDNo = 0;
+    HWElemAddOnFamily _addOnFamily = ADD_ON_FAMILY_ORDINARY_I2C;
 
     // Polling
     String _pollFor;
@@ -464,24 +471,24 @@ protected:
 
     // WhoAmI and serial
     String _whoAmIStr;
-    uint32_t _whoAmITypeCode;
+    uint32_t _whoAmITypeCode = WHOAMI_TYPE_CODE_NONE;
     String _serialNo;
 
     // Version
-    String _versionStr;
+    String _versionStr = "0.0.0";
 
     // Queue of bus requests
     static const uint32_t MAX_QUEUED_BUS_REQS = 10;
     std::list<HWElemReq> _queuedBusReqs;
-    bool _queuedBusReqsActive;
-    uint32_t _queuedBusReqLastStartMs;
-    uint32_t _queuedBusReqHoldOffMs;
+    bool _queuedBusReqsActive = false;
+    uint32_t _queuedBusReqLastStartMs = 0;
+    uint32_t _queuedBusReqHoldOffMs = 0;
 
     // Command response message key
     String _cmdResponseMsgKey;
 
     // Comms channel manager - for comms with system
-    CommsChannelManager* _pCommsChannelManager;
+    CommsCoreIF* _pCommsCore = nullptr;
 
     // Consts
     static const int MAX_RAW_WRITE_BYTES = 64;

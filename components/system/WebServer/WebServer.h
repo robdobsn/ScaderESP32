@@ -40,16 +40,18 @@ public:
 
 protected:
     // Setup
-    virtual void setup();
+    virtual void setup() override final;
 
     // Service - called frequently
-    virtual void service();
+    virtual void service() override final;
 
     // Add endpoints
-    virtual void addRestAPIEndpoints(RestAPIEndpointManager& endpointManager);
+    virtual void addRestAPIEndpoints(RestAPIEndpointManager& endpointManager) override final;
 
     // Add comms channels
-    virtual void addCommsChannels(CommsChannelManager& commsChannelManager);
+    virtual void addCommsChannels(CommsCoreIF& commsCoreIF) override final
+    {
+    }
     
 private:
     // Helpers

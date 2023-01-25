@@ -12,18 +12,21 @@
 #include <RaftUtils.h>
 #include <ConfigPinMap.h>
 #include <RestAPIEndpointManager.h>
+#include <CommsChannelMsg.h>
 #include <SysManager.h>
 #include <esp_attr.h>
 #include <driver/gpio.h>
 
 static const char *MODULE_PREFIX = "ScaderOpener";
 
+#define DEBUG_OPENER_MUTABLE_DATA
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderOpener::ScaderOpener(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig),
+    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
           _scaderCommon(*this, pModuleName)
 {
 }
@@ -50,8 +53,14 @@ void ScaderOpener::setup()
     // HW Now initialised
     _isInitialised = true;
 
+    // Get mutable data
+    bool inEnabled = configGetBool("openerState/inEn", false);
+    bool outEnabled = configGetBool("openerState/outEn", false);
+
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled name %s", _scaderCommon.getFriendlyName().c_str());
+    LOG_I(MODULE_PREFIX, "setup enabled name %s inEnabled %d outEnabled %d", 
+                _scaderCommon.getFriendlyName().c_str(),
+                inEnabled, outEnabled);
 
     // Setup publisher with callback functions
     SysManager* pSysManager = getSysManager();
@@ -77,9 +86,24 @@ void ScaderOpener::setup()
 
 void ScaderOpener::service()
 {
+    // Check initialised
     if (!_isInitialised)
         return;
+
+    // Service door opener
     _doorOpener.service();
+
+    // Check if mutable data changed
+    if (_doorOpener.modeHasChanged())
+    {
+        // Check if min time has passed
+        if (Raft::isTimeout(millis(), _mutableDataChangeLastMs, MUTABLE_DATA_SAVE_MIN_MS))
+        {
+            // Save mutable data
+            saveMutableData();
+            _doorOpener.modeChangeClear();
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,19 +147,19 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
         // Open
         if (params[1] == "open")
         {
-            _doorOpener.moveDoor(true);
+            _doorOpener.motorMoveToPosition(true);
             rsltStr = "Opened";
         }
         // Close
         else if (params[1] == "close")
         {
-            _doorOpener.moveDoor(false);
+            _doorOpener.motorMoveToPosition(false);
             rsltStr = "Closed";
         }
         // Stop
-        else if (params[1] == "stop")
+        else if (params[1] == "stopanddisable")
         {
-            _doorOpener.stopDoor();
+            _doorOpener.stopAndDisableDoor();
             rsltStr = "Stopped";
         }
         // Mode
@@ -145,22 +169,22 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
             {
                 if (params[2] == "in")
                 {
-                    _doorOpener.setMode(true, false);
+                    _doorOpener.setMode(true, false, true);
                     rsltStr = "Mode set to IN";
                 }
                 else if (params[2] == "out")
                 {
-                    _doorOpener.setMode(false, true);
+                    _doorOpener.setMode(false, true, true);
                     rsltStr = "Mode set to OUT";
                 }
                 else if (params[2] == "both")
                 {
-                    _doorOpener.setMode(true, true);
+                    _doorOpener.setMode(true, true, true);
                     rsltStr = "Mode set to BOTH";
                 }
                 else if (params[2] == "none")
                 {
-                    _doorOpener.setMode(false, false);
+                    _doorOpener.setMode(false, false, true);
                     rsltStr = "Mode set to NONE";
                 }
                 else
@@ -186,7 +210,7 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
                     if (params.size() > 2)
                     {
                         int degrees = params[3].toInt();
-                        _doorOpener.motorControl(true, true, degrees, 0);
+                        _doorOpener.motorMoveToAngle(degrees);
                         rsltStr = "Turned " + String(degrees) + " degrees";
                     }
                     else
@@ -250,4 +274,23 @@ String ScaderOpener::getStatusJSON()
 void ScaderOpener::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     _doorOpener.getStatusHash(stateHash);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Write the mutable config
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ScaderOpener::saveMutableData()
+{
+    // Save relay states
+    String jsonConfig = R"("openerState":{"inEn":__INEN__,"outEn":__OUTEN__})";
+    jsonConfig.replace("__INEN__", String(_doorOpener.getOpenerInEn()));
+    jsonConfig.replace("__OUTEN__", String(_doorOpener.getOpenerOutEn()));
+
+    // Add outer brackets
+    jsonConfig = "{" + jsonConfig + "}";
+#ifdef DEBUG_OPENER_MUTABLE_DATA
+    LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
+#endif
+    SysModBase::configSaveData(jsonConfig);
 }

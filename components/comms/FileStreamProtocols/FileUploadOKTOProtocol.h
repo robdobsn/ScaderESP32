@@ -28,7 +28,7 @@ public:
     // Constructor
     FileUploadOKTOProtocol(FileStreamBlockCB fileRxBlockCB, 
             FileStreamCanceEndCB fileRxCancelCB,
-            CommsChannelManager* pCommsChannelManager,
+            CommsCoreIF* pCommsCore,
             FileStreamBase::FileStreamContentType fileStreamContentType, 
             FileStreamBase::FileStreamFlowType fileStreamFlowType,
             uint32_t streamID, 

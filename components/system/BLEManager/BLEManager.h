@@ -47,7 +47,7 @@ protected:
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& endpointManager) override final;
 
     // Add comms channel
-    virtual void addCommsChannels(CommsChannelManager& commsChannelManager) override final;
+    virtual void addCommsChannels(CommsCoreIF& commsCoreIF) override final;
 
     // Get status JSON
     virtual String getStatusJSON() override final;

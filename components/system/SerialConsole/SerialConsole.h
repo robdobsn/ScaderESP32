@@ -14,7 +14,7 @@
 #include <SpiramAwareAllocator.h>
 
 class RestAPIEndpointManager;
-class CommsChannelManager;
+class CommsCoreIF;
 class CommsChannelMsg;
 class ConfigBase;
 
@@ -50,7 +50,7 @@ protected:
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& endpointManager) override final;
     
     // Add comms channels
-    virtual void addCommsChannels(CommsChannelManager &commsChannelManager) override final;
+    virtual void addCommsChannels(CommsCoreIF& commsCoreIF) override final;
 
     // Handle JSON command
     virtual UtilsRetCode::RetCode receiveCmdJSON(const char* cmdJSON) override final;

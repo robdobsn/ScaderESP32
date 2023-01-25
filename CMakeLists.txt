@@ -32,25 +32,32 @@ FetchContent_Declare(
   # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
   # GIT_TAG        16a95d23bcc9025176e647e3c87dc447c1a2cc50
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        3439fcd0bad33ba3055f56a2f74b87cabb63ebad
+  GIT_TAG        66f3f57efc62b08e0b092051ff6930f0bea27443
 )
 
 # Fetch the RaftWebServer library
 FetchContent_Declare(
   raftwebserver
   GIT_REPOSITORY https://github.com/robdobsn/RaftWebServer
-  GIT_TAG        v0.0.4
+  GIT_TAG        v0.0.5
+)
+
+# Fetch the RaftI2C library
+FetchContent_Declare(
+  rafti2c
+  GIT_REPOSITORY https://github.com/robdobsn/RaftI2C
+  GIT_TAG        v0.0.3
 )
 
 # Populate first so we have a folder that we can add in EXTRA_COMPONENT_DIRS
 message(STATUS "Fetching dependencies...")
 FetchContent_Populate(raftcore)
 FetchContent_Populate(raftwebserver)
+FetchContent_Populate(rafti2c)
 
 # Fetch raftwebserver and raftcore
-set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${raftcore_SOURCE_DIR} ${raftwebserver_SOURCE_DIR})
-# FetchContent_MakeAvailable(raftcore)
-FetchContent_MakeAvailable(raftcore raftwebserver)
+set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${raftcore_SOURCE_DIR} ${raftwebserver_SOURCE_DIR} ${rafti2c_SOURCE_DIR})
+FetchContent_MakeAvailable(raftcore raftwebserver rafti2c)
 
 # Add optional component folders
 set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${OPTIONAL_COMPONENTS})
@@ -59,7 +66,7 @@ set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${OPTIONAL_COMPONENTS})
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 # Define the project name
-project(${FW_IMAGE_NAME} DEPENDS esp_littlefs raftcore raftwebserver)
+project(${FW_IMAGE_NAME} DEPENDS esp_littlefs raftcore raftwebserver rafti2c)
 
 # This makes it easy for VS Code to access the compile commands for the most
 # recently built FW revision.

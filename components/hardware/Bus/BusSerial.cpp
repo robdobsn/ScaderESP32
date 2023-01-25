@@ -50,23 +50,23 @@ BusSerial::~BusSerial()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool BusSerial::setup(ConfigBase& config)
+bool BusSerial::setup(ConfigBase& config, const char* pConfigPrefix)
 {
     // Check if already configured
     if (_isInitialised)
         return false;
 
     // Get bus details
-    _uartNum = config.getLong("uartNum", 0);
-    String pinName = config.getString("rxPin", "");
+    _uartNum = config.getLong("uartNum", 0, pConfigPrefix);
+    String pinName = config.getString("rxPin", "", pConfigPrefix);
     _rxPin = ConfigPinMap::getPinFromName(pinName.c_str());
-    pinName = config.getString("txPin", "");
+    pinName = config.getString("txPin", "", pConfigPrefix);
     _txPin = ConfigPinMap::getPinFromName(pinName.c_str());
-    _baudRate = config.getLong("baudRate", BAUD_RATE_DEFAULT);
-    _busName = config.getString("name", "");
-    _rxBufSize = config.getLong("rxBufSize", RX_BUF_SIZE_DEFAULT);
-    _txBufSize = config.getLong("txBufSize", TX_BUF_SIZE_DEFAULT);
-    _minTimeBetweenSendsMs = config.getLong("minAfterSendMs", 0);
+    _baudRate = config.getLong("baudRate", BAUD_RATE_DEFAULT, pConfigPrefix);
+    _busName = config.getString("name", "", pConfigPrefix);
+    _rxBufSize = config.getLong("rxBufSize", RX_BUF_SIZE_DEFAULT, pConfigPrefix);
+    _txBufSize = config.getLong("txBufSize", TX_BUF_SIZE_DEFAULT, pConfigPrefix);
+    _minTimeBetweenSendsMs = config.getLong("minAfterSendMs", 0, pConfigPrefix);
 
     // Check valid
     if ((_rxPin < 0) || (_txPin < 0))

@@ -14,6 +14,7 @@
 #include <RestAPIEndpointManager.h>
 #include <SysManager.h>
 #include <NetworkSystem.h>
+#include <CommsChannelMsg.h>
 #include <JSONParams.h>
 #include <ESPUtils.h>
 #include <time.h>
@@ -26,7 +27,7 @@ static const char *MODULE_PREFIX = "ScaderDoors";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderDoors::ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig),
+    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
           _scaderCommon(*this, pModuleName)
 {
     // Clear strike pins to -1
@@ -56,12 +57,12 @@ void ScaderDoors::setup()
     }
 
     // Get active/sense levels of pins
-    _strikePinUnlockLevel[0] = configGetLong("doors[0]/strikeOn", 0) != 0;
-    _strikePinUnlockLevel[1] = configGetLong("doors[1]/strikeOn", 0) != 0;
+    _strikePinUnlockLevel[0] = configGetBool("doors[0]/strikeOn", false);
+    _strikePinUnlockLevel[1] = configGetBool("doors[1]/strikeOn", false);
     _unlockForSecs[0] = configGetLong("doors[0]/unlockForSecs", 1);
     _unlockForSecs[1] = configGetLong("doors[1]/unlockForSecs", 1);
-    _openSensePinLevel[0] = configGetLong("doors[0]/openSenseLevel", 0) != 0;
-    _openSensePinLevel[1] = configGetLong("doors[1]/openSenseLevel", 0) != 0;
+    _openSensePinLevel[0] = configGetBool("doors[0]/openSenseLevel", false);
+    _openSensePinLevel[1] = configGetBool("doors[1]/openSenseLevel", false);
 
     // Configure GPIOs
     ConfigPinMap::PinDef gpioPins[] = {
@@ -76,7 +77,7 @@ void ScaderDoors::setup()
     ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
 
     // Bell pressed pin sense
-    _bellPressedPinLevel = configGetLong("bellSenseLevel", 0) != 0;
+    _bellPressedPinLevel = configGetBool("bellSenseLevel", false);
 
     // Master door index
     _masterDoorIndex = configGetLong("masterDoorIdx", 0);

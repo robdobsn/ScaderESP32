@@ -98,7 +98,7 @@ MotionController::~MotionController()
 // Setup the motor and pipeline parameters using a JSON input string
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotionController::setup(const ConfigBase& config)
+void MotionController::setup(const ConfigBase& config, const char* pConfigPrefix)
 {
     // Stop any motion
     _rampGenerator.stop();
@@ -108,24 +108,24 @@ void MotionController::setup(const ConfigBase& config)
     deinit();
 
     // Check if using ramp timer
-    _rampTimerEn = config.getLong("ramp/rampTimerEn", 0) != 0;
+    _rampTimerEn = config.getBool("ramp/rampTimerEn", 0, pConfigPrefix);
 
     // Setup axes (and associated hardware)
-    setupAxes(config);
+    setupAxes(config, pConfigPrefix);
 #ifdef INFO_LOG_AXES_PARAMS
     _axesParams.debugLog();
 #endif
 
     // Setup ramp generator and pipeline
-    setupRampGenerator("ramp", config);
+    setupRampGenerator("ramp", config, pConfigPrefix);
     _rampGenerator.pause(false);
     _rampGenerator.enable(true);
 
     // Setup motor enabler
-    setupMotorEnabler("motorEn", config);
+    setupMotorEnabler("motorEn", config, pConfigPrefix);
 
     // Setup motion control
-    setupMotionControl("motion", config);
+    setupMotionControl("motion", config, pConfigPrefix);
 
 #ifdef DEBUG_MOTION_CONTROL_TIMER
     // Debug
@@ -215,6 +215,19 @@ void MotionController::service()
 
 bool MotionController::moveTo(const MotionArgs &args)
 {
+    // Handle clear queue
+    if (args.isClearQueue())
+    {
+        _blockManager.clear();
+    }
+
+    // Handle disable motors
+    if (!args.isEnableMotors())
+    {
+        _motorEnabler.enableMotors(false, false);
+        return true;
+    }
+
     // Handle linear motion (no ramp) - motion is defined in terms of steps (not mm)
     if (args.isLinear())
         return _blockManager.addLinearBlock(args);
@@ -386,14 +399,14 @@ void MotionController::deinit()
 // Setup axes
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotionController::setupAxes(const ConfigBase& config)
+void MotionController::setupAxes(const ConfigBase& config, const char* pConfigPrefix)
 {
     // Setup axes params
-    _axesParams.setupAxes(config);
+    _axesParams.setupAxes(config, pConfigPrefix);
 
     // Extract hardware related to axes
     std::vector<String> axesVec;
-    if (config.getArrayElems("axes", axesVec))
+    if (config.getArrayElems("axes", axesVec, pConfigPrefix))
     {
         uint32_t axisIdx = 0;
         for (String& axisConfigStr : axesVec)
@@ -428,7 +441,9 @@ void MotionController::setupAxisHardware(const ConfigBase& config)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void MotionController::setupStepDriver(const String& axisName, const char* jsonElem, const ConfigBase& mainConfig)
-{    
+{
+    // TODO refactor to use JSON paths
+
     // Extract element config
     ConfigBase config = mainConfig.getString(jsonElem, "{}");
 
@@ -441,18 +456,18 @@ void MotionController::setupStepDriver(const String& axisName, const char* jsonE
 
     // Get step controller settings
     stepperParams.microsteps = config.getLong("microsteps", StepDriverParams::MICROSTEPS_DEFAULT);
-    stepperParams.writeOnly = config.getLong("writeOnly", 0) != 0;
+    stepperParams.writeOnly = config.getBool("writeOnly", 0);
 
     // Get hardware stepper params
     String stepPinName = config.getString("stepPin", "-1");
     stepperParams.stepPin = ConfigPinMap::getPinFromName(stepPinName.c_str());
     String dirnPinName = config.getString("dirnPin", "-1");
     stepperParams.dirnPin = ConfigPinMap::getPinFromName(dirnPinName.c_str());
-    stepperParams.invDirn = config.getLong("invDirn", 0) != 0;
+    stepperParams.invDirn = config.getBool("invDirn", 0);
     stepperParams.extSenseOhms = config.getDouble("extSenseOhms", StepDriverParams::EXT_SENSE_OHMS_DEFAULT);
-    stepperParams.extVRef = config.getLong("extVRef", 0) != 0;
-    stepperParams.extMStep = config.getLong("extMStep", 0) != 0;
-    stepperParams.intpol = config.getLong("intpol", 0) != 0;
+    stepperParams.extVRef = config.getBool("extVRef", false);
+    stepperParams.extMStep = config.getBool("extMStep", false);
+    stepperParams.intpol = config.getBool("intpol", false);
     stepperParams.minPulseWidthUs = config.getLong("minPulseWidthUs", 1);
     stepperParams.rmsAmps = config.getDouble("rmsAmps", StepDriverParams::RMS_AMPS_DEFAULT);
     stepperParams.holdDelay = config.getLong("holdDelay", StepDriverParams::IHOLD_DELAY_DEFAULT);
@@ -538,11 +553,11 @@ void MotionController::setupEndStops(const String& axisName, const char* jsonEle
 
             // Setup endstop
             ConfigBase config = endstopConfigStr;
-            bool isMax = config.getLong("isMax", 0) != 0;
+            bool isMax = config.getBool("isMax", false);
             String name = config.getString("name", "");
             String endstopPinName = config.getString("sensePin", "-1");
             int pin = ConfigPinMap::getPinFromName(endstopPinName.c_str());
-            bool activeLevel = config.getLong("actLvl", 0) != 0;
+            bool activeLevel = config.getBool("actLvl", false);
             String inputTypeStr = config.getString("inputType", "INPUT_PULLUP");
             int inputType = ConfigPinMap::getInputType(inputTypeStr.c_str());
             if (pEndStops)
@@ -560,10 +575,12 @@ void MotionController::setupEndStops(const String& axisName, const char* jsonEle
 // Setup ramp generator
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotionController::setupRampGenerator(const char* jsonElem, const ConfigBase& mainConfig)
+void MotionController::setupRampGenerator(const char* jsonElem, const ConfigBase& mainConfig, const char* pConfigPrefix)
 {
+    // TODO refactor to use JSON paths
+
     // Configure the driver
-    ConfigBase rampGenConfig = mainConfig.getString(jsonElem, "{}");
+    ConfigBase rampGenConfig = mainConfig.getString(jsonElem, "{}", pConfigPrefix);
 
     // Ramp generator config
     long rampTimerUs = rampGenConfig.getLong("rampTimerUs", RampGenTimer::rampGenPeriodUs_default);
@@ -588,10 +605,12 @@ void MotionController::setupRampGenerator(const char* jsonElem, const ConfigBase
 // Setup motor enabler
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotionController::setupMotorEnabler(const char* jsonElem, const ConfigBase& mainConfig)
+void MotionController::setupMotorEnabler(const char* jsonElem, const ConfigBase& mainConfig, const char* pConfigPrefix)
 {
+    // TODO refactor to use JSON paths
+
     // Configure the motor enabler
-    ConfigBase enablerConfig = mainConfig.getString(jsonElem, "{}");
+    ConfigBase enablerConfig = mainConfig.getString(jsonElem, "{}", pConfigPrefix);
 
     // Setup
     _motorEnabler.setup(enablerConfig);
@@ -601,10 +620,12 @@ void MotionController::setupMotorEnabler(const char* jsonElem, const ConfigBase&
 // Setup motion control
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotionController::setupMotionControl(const char* jsonElem, const ConfigBase& mainConfig)
+void MotionController::setupMotionControl(const char* jsonElem, const ConfigBase& mainConfig, const char* pConfigPrefix)
 {
+    // TODO refactor to use JSON paths
+
     // Configuration
-    ConfigBase motionConfig = mainConfig.getString(jsonElem, "{}");
+    ConfigBase motionConfig = mainConfig.getString(jsonElem, "{}", pConfigPrefix);
 
     // Params
     String geometry = motionConfig.getString("geom", "XYZ");

@@ -26,7 +26,7 @@ ESPOTAUpdate::ESPOTAUpdate(const char *pModuleName, ConfigBase& defaultConfig, C
         : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
 {
     // Extract info from config
-    _otaDirectEnabled = (configGetLong("OTADirect", 1) != 0);
+    _otaDirectEnabled = configGetBool("OTADirect", true);
     
     // Restart pending
     _directUpdateRestartPending = false;

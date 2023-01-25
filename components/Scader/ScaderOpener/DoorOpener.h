@@ -12,6 +12,7 @@
 #include <ArduinoOrAlt.h>
 #include <DebounceButton.h>
 #include <RaftUtils.h>
+#include <RaftI2CCentral.h>
 #include <ConfigBase.h>
 #include <SimpleMovingAverage.h>
 #include <HWElemSteppers.h>
@@ -28,29 +29,32 @@ public:
     virtual ~DoorOpener();
     void setup(ConfigBase& config);
     void service();
-    void moveDoor(bool openDoor);
-    void stopDoor();
+    void motorMoveToPosition(bool open);
+    void motorMoveToAngle(uint32_t angleDegs);
+    void stopAndDisableDoor();
     void onKitchenButtonPressed(int val);
     void onConservatoryButtonPressed(int val);
     bool isBusy();
-    void setMode(bool enIntoKitchen, bool enOutOfKitchen);
+    void setMode(bool enIntoKitchen, bool enOutOfKitchen, bool recordChange);
     String getStatusJSON(bool includeBraces);
     void getStatusHash(std::vector<uint8_t>& stateHash);
-    void motorControl(bool isEn, bool dirn, double openDegrees, double closedDegrees);
 
     // Timing
     static const uint32_t MOVE_PENDING_TIME_MS = 500;
     static const uint32_t OVER_CURRENT_BLINK_TIME_MS = 200;
     static const uint32_t OVER_CURRENT_CLEAR_TIME_MS = 5000;
     static const uint32_t OVER_CURRENT_IGNORE_AT_START_OF_OPEN_MS = 5000;
-    static const uint32_t DEFAULT_DOOR_OPEN_ANGLE = 120;
-    static const uint32_t DEFAULT_DOOR_CLOSED_ANGLE = 0;
+    static const uint32_t DEFAULT_DOOR_OPEN_ANGLE = 150;
+    static const uint32_t DEFAULT_DOOR_CLOSED_ANGLE = 250;
     static const uint32_t DEFAULT_DOOR_REMAIN_OPEN_TIME_SECS = 45;
-    static const uint32_t DEFAULT_DOOR_TIME_TO_OPEN_SECS = 20;
+    static const uint32_t DEFAULT_DOOR_TIME_TO_OPEN_SECS = 8;
 
     // Overcurrent threshold
     static const uint32_t CURRENT_SAMPLE_TIME_MS = 10;
     static const uint16_t CURRENT_OVERCURRENT_THRESHOLD = 800;
+
+    // Rotation angle
+    static const uint32_t ROTATION_ANGLE_SAMPLE_TIME_MS = 100;
 
     // Button state (works like a menu)
     enum OpenerInOutMode_t
@@ -75,6 +79,24 @@ public:
             case OPENER_IN_OUT_MODE_DISABLED: return "Disabled";
         }
         return "Unknown";
+    }
+
+    // Enable modes
+    bool getOpenerInEn()
+    {
+        return _inEnabled;
+    }
+    bool getOpenerOutEn()
+    {
+        return _outEnabled;
+    }
+    bool modeHasChanged()
+    {
+        return _modeChanged;
+    }
+    void modeChangeClear()
+    {
+        _modeChanged = false;
     }
 
     // // Default door open angle
@@ -126,7 +148,7 @@ private:
 
     // Other settings
     uint32_t _doorRemainOpenTimeSecs = 0;
-    uint32_t _doorTimeToOpenSecs = 0;
+    uint32_t _doorTimeToOpenSecs = DEFAULT_DOOR_TIME_TO_OPEN_SECS;
     uint32_t _currentLastSampleMs = 0;
     uint32_t _overCurrentBlinkTimeMs = 0;
     uint32_t _overCurrentStartTimeMs = 0;
@@ -140,8 +162,10 @@ private:
     uint32_t _doorOpenedTimeMs = 0;
     bool _inEnabled = false;
     bool _outEnabled = false;
+    bool _modeChanged = false;
     bool _isOverCurrent = false;
     bool _overCurrentBlinkCurOn = false;
+    uint32_t _doorMoveStartTimeMs = 0;
 
     // Button debounce
     DebounceButton _kitchenButton;
@@ -162,12 +186,28 @@ private:
     bool _pirSenseOutLast = false;
     uint32_t _pirSenseOutActiveMs = 0;
 
+    // Rotation angle
+    uint32_t _rotationAngle = 0;
+
     // Vissen which is the motor current sense
     MovingAverage<200> _avgCurrent;
 
     // // TinyPICO hardware
     // TinyPICO _tinyPico;
 
+    // I2C bus
+    RaftI2CCentral _i2cCentral;
+    bool _i2cEnabled = false;
+
+    // Magnetic rotation sensor MT6701 address
+    uint32_t _mt6701Addr = 0x06;
+
+    // Rotation angle timing
+    uint32_t _lastRotationAngleMs = 0;
+
     // Debug
     uint32_t _debugLastDisplayMs = 0;
+
+    // Helpers
+    float calcDoorMoveSpeedDegsPerSec();
 };

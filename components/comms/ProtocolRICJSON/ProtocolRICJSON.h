@@ -16,15 +16,15 @@
 class ProtocolRICJSON : public ProtocolBase
 {
 public:
-    ProtocolRICJSON(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
+    ProtocolRICJSON(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, CommsChannelMsgCB msgTxCB, 
                     CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB);
     virtual ~ProtocolRICJSON();
 
     // Create instance
-    static ProtocolBase* createInstance(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
-                    CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB)
+    static ProtocolBase* createInstance(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, 
+                    CommsChannelMsgCB msgTxCB, CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB)
     {
-        return new ProtocolRICJSON(channelID, configJSON, msgTxCB, msgRxCB, readyToRxCB);
+        return new ProtocolRICJSON(channelID, config, pConfigPrefix, msgTxCB, msgRxCB, readyToRxCB);
     }
 
     // // Set message complete callback
@@ -49,9 +49,4 @@ public:
     {
         return "RICJSON";
     }
-
-private:
-    // Consts
-    static const int DEFAULT_RIC_FRAME_RX_MAX = 1000;
-    static const int DEFAULT_RIC_FRAME_TX_MAX = 1000;
 };

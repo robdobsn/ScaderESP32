@@ -24,7 +24,7 @@ public:
     virtual ~HWElemSteppers();
 
     // Setup
-    virtual void setup(ConfigBase& config, ConfigBase* pDefaults) override final;
+    virtual void setup(ConfigBase& config, ConfigBase* pDefaults, const char* pConfigPrefix) override final;
 
     // Post-Setup - called after any buses have been connected
     virtual void postSetup() override final;

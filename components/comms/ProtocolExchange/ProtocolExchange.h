@@ -18,6 +18,7 @@
 #include "FileStreamSession.h"
 
 class APISourceInfo;
+class commsCoreIF;
 
 class ProtocolExchange : public SysModBase
 {
@@ -41,7 +42,7 @@ protected:
     virtual void service() override final;
 
     // Add comms channels
-    virtual void addCommsChannels(CommsChannelManager& commsChannelManager) override final;
+    virtual void addCommsChannels(CommsCoreIF& commsCore) override final;
 
     // Get debug info
     virtual String getDebugJSON();

@@ -27,13 +27,13 @@ static const char *MODULE_PREFIX = "StreamDatagram";
 
 StreamDatagramProtocol::StreamDatagramProtocol(FileStreamBlockCB fileRxBlockCB, 
             FileStreamCanceEndCB fileRxCancelEndCB,
-            CommsChannelManager* pCommsChannelManager,
+            CommsCoreIF* pCommsCore,
             FileStreamBase::FileStreamContentType fileStreamContentType, 
             FileStreamBase::FileStreamFlowType fileStreamFlowType,
             uint32_t streamID,
             uint32_t fileStreamLength,
             const char* fileStreamName) :
-    FileStreamBase(fileRxBlockCB, fileRxCancelEndCB, pCommsChannelManager, fileStreamContentType, 
+    FileStreamBase(fileRxBlockCB, fileRxCancelEndCB, pCommsCore, fileStreamContentType, 
             fileStreamFlowType, streamID, fileStreamLength, fileStreamName)
 {
     _streamPos = 0;

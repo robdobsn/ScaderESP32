@@ -23,8 +23,8 @@ static const char* MODULE_PREFIX = "RICJSON";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ProtocolRICJSON::ProtocolRICJSON(uint32_t channelID, const char* configJSON, CommsChannelMsgCB msgTxCB, 
-                CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB) :
+ProtocolRICJSON::ProtocolRICJSON(uint32_t channelID, ConfigBase& config, const char* pConfigPrefix, 
+                CommsChannelMsgCB msgTxCB, CommsChannelMsgCB msgRxCB, CommsChannelReadyToRxCB readyToRxCB) :
     ProtocolBase(channelID, msgTxCB, msgRxCB, readyToRxCB)
 {
     // Debug

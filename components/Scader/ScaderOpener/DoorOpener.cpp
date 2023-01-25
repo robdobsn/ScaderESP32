@@ -420,6 +420,8 @@ void DoorOpener::motorMoveToPosition(bool open)
     int32_t targetDegrees = open ? _doorOpenAngleDegrees : _doorClosedAngleDegrees;
     int32_t currentDegrees = _rotationAngle;
     int32_t degreesToTurn = targetDegrees - currentDegrees;
+    // Add a little to ensure door fully open/closed
+    degreesToTurn = (int)(degreesToTurn * 1.02);
 
     // Form command
     String moveCmd = R"({"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";

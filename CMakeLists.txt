@@ -32,7 +32,7 @@ FetchContent_Declare(
   # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
   # GIT_TAG        16a95d23bcc9025176e647e3c87dc447c1a2cc50
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        66f3f57efc62b08e0b092051ff6930f0bea27443
+  GIT_TAG        v0.2.2
 )
 
 # Fetch the RaftWebServer library

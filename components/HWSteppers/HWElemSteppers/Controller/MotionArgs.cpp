@@ -32,6 +32,7 @@ std::vector<MotionArgs::FieldDefType> MotionArgs::getFieldDefs()
     fieldDefs.push_back(FieldDefType("idx", &_motionTrackingIdx, "double"));
     fieldDefs.push_back(FieldDefType("en", &_enableMotors, "bool"));
     fieldDefs.push_back(FieldDefType("clearQ", &_preClearMotionQueue, "bool"));
+    fieldDefs.push_back(FieldDefType("ampsPCofMax", &_ampsPercentOfMax, "double"));
     return fieldDefs;
 }
 

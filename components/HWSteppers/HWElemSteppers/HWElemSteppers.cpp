@@ -98,6 +98,7 @@ double HWElemSteppers::getNamedValue(const char* param, bool& isFresh)
         case 'y':
         case 'z':
         {
+            // Get axis position
             isFresh = true;
             AxesPosValues pos = _motionController.getLastPos();
             switch(tolower(param[0]))
@@ -108,6 +109,13 @@ double HWElemSteppers::getNamedValue(const char* param, bool& isFresh)
             }
             isFresh = false;
             return 0;
+        }
+        case 'b':
+        {
+            // Check for busy
+            isFresh = true;
+            return _motionController.isBusy();
+            break;
         }
         default: { isFresh = false; return 0; }
     }
@@ -154,15 +162,20 @@ UtilsRetCode::RetCode HWElemSteppers::sendCmdBinary(uint32_t formatCode, const u
 
 UtilsRetCode::RetCode HWElemSteppers::sendCmdJSON(const char* cmdJSON)
 {
+    // Extract command from JSON
+    JSONParams jsonInfo(cmdJSON);
+    String cmd = jsonInfo.getString("cmd", "");
+    if (cmd.equalsIgnoreCase("motion"))
+    {
     MotionArgs motionArgs;
     motionArgs.fromJSON(cmdJSON);
-
 #ifdef DEBUG_STEPPER_CMD_JSON
     String cmdStr = motionArgs.toJSON();
     LOG_I(MODULE_PREFIX, "sendCmdJSON %s", cmdStr.c_str());
 #endif
-
     _motionController.moveTo(motionArgs);
+    } 
+
 
     // LOG_I(MODULE_PREFIX, "sendCmdJSON %s", cmdJSON);
     

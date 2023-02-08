@@ -221,6 +221,9 @@ void DoorOpener::service()
         // }
     }
 
+    // Service calibration
+    serviceCalibration();
+
     // Calculate window average of vissen analogRead
     // if (Raft::isTimeout(millis(), _currentLastSampleMs, CURRENT_SAMPLE_TIME_MS))
     // {
@@ -265,8 +268,22 @@ void DoorOpener::service()
         if (rslt == RaftI2CCentralIF::ACCESS_RESULT_OK)
         {
             // Convert to angle
-            uint32_t rawRotationAngle = (rotationAngleBytes[0] << 6) | (rotationAngleBytes[1] >> 2);
-            _rotationAngle = (360*rawRotationAngle)/16384;
+            int32_t rawRotationAngle = (rotationAngleBytes[0] << 6) | (rotationAngleBytes[1] >> 2);
+            _rotationAngleFromMagSensor = (360*rawRotationAngle)/16384;
+
+            // Check for wrap
+            if (_rotationAngleFromMagSensor > 270 && _rotationAngleFromMagSensorLast < 90)
+            {
+                _rotationAngleFromMagSensorWrapCount--;
+            }
+            else if (_rotationAngleFromMagSensor < 90 && _rotationAngleFromMagSensorLast > 270)
+            {
+                _rotationAngleFromMagSensorWrapCount++;
+            }
+            _rotationAngleFromMagSensorLast = _rotationAngleFromMagSensor;
+
+            // Corrected value (handling wrapping)
+            _rotationAngleCorrected = _rotationAngleFromMagSensor + _rotationAngleFromMagSensorWrapCount*360;
 
             // LOG_I(MODULE_PREFIX, "service rotation angle = %.2f (raw %d)", 360.0*rotationAngle/16384.0, rotationAngle);
         }
@@ -284,7 +301,7 @@ void DoorOpener::service()
         bool isValid = false;
         LOG_I(MODULE_PREFIX, "svc %s rotDegs %d stepAng %.2f iPIR: v=%d actv=%d lst=%d en=%d oPIR: v=%d actv=%d lst=%d en=%d kitBut=%d conBut=%d timeOpenMs=%lld doorStayOpenSecs=%d",
             _isOpen ? "OPEN " : "CLOSED ", 
-            _rotationAngle,
+            _rotationAngleCorrected,
             _pStepper ? _pStepper->getNamedValue("x", isValid) : 0,
             digitalRead(_pirSenseInPin), _pirSenseInActive, _pirSenseInLast, _inEnabled, 
             digitalRead(_pirSenseOutPin), _pirSenseOutActive, _pirSenseOutLast, _outEnabled,
@@ -307,7 +324,7 @@ void DoorOpener::stopAndDisableDoor()
         return;
 
     // Send command
-    _pStepper->sendCmdJSON(R"({"en":0,"clearQ":1})");
+    _pStepper->sendCmdJSON(R"({"cmd":"supv","en":0,"clearQ":1})");
 }
 
 void DoorOpener::onKitchenButtonPressed(int val)
@@ -382,7 +399,8 @@ void DoorOpener::servicePIR(const char* pName, uint32_t pirPin, bool& pirActive,
 }
 bool DoorOpener::isBusy()
 {
-    return _doorMoveStartTimeMs != 0;
+    bool isValid = false;
+    return _pStepper && _pStepper->getNamedValue("b", isValid) != 0;
 }
 void DoorOpener::setMode(bool enIntoKitchen, bool enOutOfKitchen, bool recordChange)
 {
@@ -393,6 +411,31 @@ void DoorOpener::setMode(bool enIntoKitchen, bool enOutOfKitchen, bool recordCha
     if (recordChange)
         _modeChanged = true;
     setLEDs();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Calibrate
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void DoorOpener::calibrate()
+{
+    // Debug
+    LOG_I(MODULE_PREFIX, "calibrate %s", _pStepper ? "" : "FAILED NO STEPPER ");
+
+    // Check valid
+    if (!_pStepper)
+        return;
+
+    // Set motor current
+    _pStepper->sendCmdJSON(R"({"cmd":"supv","holdcurrent":0.2})");
+
+    // Assume we are starting at the closed position
+    _doorClosedAngleDegrees = _rotationAngleCorrected;
+    LOG_I(MODULE_PREFIX, "calibrate angle %u this is closed position - step 1 - detect motion direction",
+                _doorClosedAngleDegrees);
+
+    // Set to first state
+    setCalState(CAL_STATE_START_ROTATION_1);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -418,15 +461,16 @@ void DoorOpener::motorMoveToPosition(bool open)
 
     // Calculate angle to turn (in degrees)
     int32_t targetDegrees = open ? _doorOpenAngleDegrees : _doorClosedAngleDegrees;
-    int32_t currentDegrees = _rotationAngle;
+    int32_t currentDegrees = _rotationAngleCorrected;
     int32_t degreesToTurn = targetDegrees - currentDegrees;
     // Add a little to ensure door fully open/closed
     degreesToTurn = (int)(degreesToTurn * 1.02);
 
     // Form command
-    String moveCmd = R"({"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
+    double doorMoveSpeedDegsPerSec = calcDoorMoveSpeedDegsPerSec(degreesToTurn, 0);
+    String moveCmd = R"({"cmd":"motion","rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
     moveCmd.replace("__POS__", String(degreesToTurn));
-    moveCmd.replace("__SPEED__", String(calcDoorMoveSpeedDegsPerSec()));
+    moveCmd.replace("__SPEED__", String(doorMoveSpeedDegsPerSec));
 
     // Send command
     UtilsRetCode::RetCode retc = _pStepper->sendCmdJSON(moveCmd.c_str());
@@ -436,7 +480,7 @@ void DoorOpener::motorMoveToPosition(bool open)
 
     // Debug
     LOG_I(MODULE_PREFIX, "motorMoveToPosition speed=%.2fdegs/s doorTimeToOpen %ds cmd %s retc %s", 
-                calcDoorMoveSpeedDegsPerSec(), _doorTimeToOpenSecs, moveCmd.c_str(), UtilsRetCode::getRetcStr(retc));
+                doorMoveSpeedDegsPerSec, _doorTimeToOpenSecs, moveCmd.c_str(), UtilsRetCode::getRetcStr(retc));
 
 }
 
@@ -444,10 +488,11 @@ void DoorOpener::motorMoveToPosition(bool open)
 // Move door to specific angle
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::motorMoveToAngle(uint32_t angleDegs)
+void DoorOpener::motorMoveAngle(int32_t angleDegs, bool relative, uint32_t moveTimeSecs)
 {
     // Debug
-    LOG_I(MODULE_PREFIX, "moveDoorToAngle %s%d", _pStepper ? "" : "FAILED NO STEPPER ", angleDegs);
+    LOG_I(MODULE_PREFIX, "moveDoorAngle %s%d%s", _pStepper ? "" : "FAILED NO STEPPER ", angleDegs, 
+                    relative ? " relative" : "");
 
     // Check valid
     if (!_pStepper)
@@ -461,9 +506,11 @@ void DoorOpener::motorMoveToAngle(uint32_t angleDegs)
     }
 
     // Form command
-    String moveCmd = R"({"rel":0,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
+    double doorMoveSpeedDegsPerSec = calcDoorMoveSpeedDegsPerSec(angleDegs, moveTimeSecs);
+    String moveCmd = R"({"cmd":"motion","rel":__REL__,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
+    moveCmd.replace("__REL__", String(relative ? 1 : 0));
     moveCmd.replace("__POS__", String(angleDegs));
-    moveCmd.replace("__SPEED__", String(calcDoorMoveSpeedDegsPerSec()));
+    moveCmd.replace("__SPEED__", String(doorMoveSpeedDegsPerSec));
 
     // Send command
     UtilsRetCode::RetCode retc = _pStepper->sendCmdJSON(moveCmd.c_str());
@@ -472,8 +519,9 @@ void DoorOpener::motorMoveToAngle(uint32_t angleDegs)
     _doorMoveStartTimeMs = millis();
 
     // Debug
-    LOG_I(MODULE_PREFIX, "motorMoveToAngle angle=%d speed=%.2fdegs/s doorTimeToOpen %ds cmd %s retc %s", 
-                angleDegs, calcDoorMoveSpeedDegsPerSec(), _doorTimeToOpenSecs, moveCmd.c_str(), UtilsRetCode::getRetcStr(retc));
+    LOG_I(MODULE_PREFIX, "motorMoveAngle angle=%d %s speed=%.2fdegs/s moveTime %ds cmd %s retc %s", 
+                angleDegs, relative ? "relative" : "absolute",
+                doorMoveSpeedDegsPerSec, moveTimeSecs, moveCmd.c_str(), UtilsRetCode::getRetcStr(retc));
 
 }
 
@@ -481,12 +529,19 @@ void DoorOpener::motorMoveToAngle(uint32_t angleDegs)
 // Calculate door move speed degs per sec
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float DoorOpener::calcDoorMoveSpeedDegsPerSec()
+float DoorOpener::calcDoorMoveSpeedDegsPerSec(double angleDegs, double timeSecs)
 {
-    uint32_t maxTurnAngle = abs((int)_doorOpenAngleDegrees-(int)_doorClosedAngleDegrees);
-    if (maxTurnAngle == 0)
-        maxTurnAngle = abs((int)DEFAULT_DOOR_OPEN_ANGLE - (int)DEFAULT_DOOR_CLOSED_ANGLE);
-    float doorOpenSpeedDegsPerSec = float(maxTurnAngle) / (_doorTimeToOpenSecs == 0 ? DEFAULT_DOOR_TIME_TO_OPEN_SECS : _doorTimeToOpenSecs);
+    double moveTimeSecs = timeSecs;
+    if (moveTimeSecs == 0)
+        moveTimeSecs = _doorTimeToOpenSecs == 0 ? DEFAULT_DOOR_TIME_TO_OPEN_SECS : _doorTimeToOpenSecs;
+    double turnAngle = angleDegs;
+    if (turnAngle == 0)
+    {
+        turnAngle = abs(_doorOpenAngleDegrees-_doorClosedAngleDegrees);
+        if (turnAngle == 0)
+            turnAngle = abs(DEFAULT_DOOR_OPEN_ANGLE - DEFAULT_DOOR_CLOSED_ANGLE);
+    }
+    double doorOpenSpeedDegsPerSec = turnAngle / moveTimeSecs;
     return doorOpenSpeedDegsPerSec;
 }
 
@@ -511,8 +566,10 @@ String DoorOpener::getStatusJSON(bool includeBraces)
     json += ",\"pirSenseOutActive\":" + String(_pirSenseOutActive ? 1 : 0);
     json += ",\"pirSenseOutTriggered\":" + String(digitalRead(_pirSenseOutPin) ? 1 : 0);
     json += ",\"avgCurrent\":" + String(_avgCurrent.getAverage());
-    json += ",\"rotationAngleDegs\":" + String(_rotationAngle);
+    json += ",\"rotationAngleDegs\":" + String(_rotationAngleCorrected);
     json += ",\"stepperCurAngle\":" + String(_pStepper ? _pStepper->getNamedValue("x", isValid) : 0);
+    json += ",\"doorOpenAngleDegs\":" + String(_doorOpenAngleDegrees);
+    json += ",\"doorClosedAngleDegs\":" + String(_doorClosedAngleDegrees);
     json += ",\"timeBeforeCloseSecs\":" + String(getSecsBeforeClose());
     if (includeBraces)
         json = "{" + json + "}";
@@ -541,7 +598,101 @@ void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
     stateHash.push_back(_pirSenseOutActive ? 1 : 0);
     stateHash.push_back(_avgCurrent.getAverage());
     stateHash.push_back(getSecsBeforeClose() & 0xFF);
-    stateHash.push_back(_rotationAngle & 0xff);
+    stateHash.push_back(_rotationAngleCorrected & 0xff);
+    stateHash.push_back(_doorOpenAngleDegrees & 0xff);
+    stateHash.push_back(_doorClosedAngleDegrees & 0xff);
     bool isValid = false;
     stateHash.push_back(_pStepper ? (uint8_t)(_pStepper->getNamedValue("x", isValid)) : 0);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Service Calibration
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void DoorOpener::serviceCalibration()
+{
+    // Check overall timeout
+    if ((_calState != CAL_STATE_NONE) && Raft::isTimeout(millis(), _calStartTimeMs, 30000))
+    {
+        LOG_I(MODULE_PREFIX, "serviceCalibration overall timeout");
+        setCalState(CAL_STATE_NONE);
+        return;
+    }
+
+    switch(_calState)
+    {
+        case CAL_STATE_NONE:
+            break;
+        case CAL_STATE_START_ROTATION_1:
+        {
+            // Move to angle to check if motion is inhibited by door frame
+            motorMoveAngle(10, true, 0);
+            setCalState(CAL_STATE_WAIT_ROTATION_1);
+            break;
+        }
+        case CAL_STATE_WAIT_ROTATION_1:
+        {
+            // Check if door has moved
+            if (!isBusy())
+            {
+                // Check if door has moved
+                if (abs(_rotationAngleCorrected - _doorClosedAngleDegrees) > 5)
+                {
+                    // Door has moved - so rotation direction to open is positive
+                    _doorOpenRotationDirection = 1;
+                    LOG_I(MODULE_PREFIX, "serviceCalibration door moved - so rotation direction to open is positive");
+                }
+                else
+                {
+                    // Door has not moved - so rotation direction to open is negative
+                    _doorOpenRotationDirection = -1;
+                    LOG_I(MODULE_PREFIX, "serviceCalibration door not moved - so rotation direction to open is negative");
+                }
+                // Rotate back to original position
+                motorMoveAngle(-10, true, 0);
+                setCalState(CAL_STATE_WAIT_ROTATION_2);
+            }
+            break;
+        }
+        case CAL_STATE_WAIT_ROTATION_2:
+        {
+            // Check for door movement finished
+            if (!isBusy())
+            {
+                // Now rotate to the position where the door hits the end stop
+                LOG_I(MODULE_PREFIX, "serviceCalibration rotating to open end stop");
+                motorMoveAngle(_doorOpenRotationDirection * CAL_DOOR_OPEN_ANGLE_MAX, true, 0);
+                setCalState(CAL_STATE_WAIT_OPEN_1);
+            }
+            break;
+        }
+        case CAL_STATE_WAIT_OPEN_1:
+        {
+            // Check for door movement finished
+            if (!isBusy())
+            {
+                LOG_I(MODULE_PREFIX, "serviceCalibration rotate to open end stop complete");
+                
+                // Rotate back a few degrees from the end stop
+                motorMoveAngle(-_doorOpenRotationDirection * 10, true, 0);
+                setCalState(CAL_STATE_WAIT_ROTATION_3);
+            }
+            break;
+        }
+        case CAL_STATE_WAIT_ROTATION_3:
+        {
+            // Check for door movement finished
+            if (!isBusy())
+            {
+                // This is the angle where the door hits the end stop
+                _doorOpenAngleDegrees = _rotationAngleCorrected;
+                LOG_I(MODULE_PREFIX, "serviceCalibration open position %d degrees", _doorOpenAngleDegrees);
+                setCalState(CAL_STATE_NONE);
+
+                // Move door back to closed position
+                motorMoveAngle(_doorClosedAngleDegrees - _doorOpenAngleDegrees, true, 0);
+            }
+            break;
+        }
+    }
 }

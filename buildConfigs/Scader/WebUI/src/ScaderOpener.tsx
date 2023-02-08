@@ -74,6 +74,8 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.pirSenseOutActive ? <div>PIR_OUT</div> : null}
               <div>{state.status.rotationAngleDegs.toString() + "°"}</div>
               <div>{"Step:" + state.status.stepperCurAngle.toString() + "°"}</div>
+              <div>{"Open:" + state.status.doorOpenAngleDegs.toString() + "°"}</div>
+              <div>{"Closed:" + state.status.doorClosedAngleDegs.toString() + "°"}</div>
             </div>
           </div>
         }
@@ -81,6 +83,20 @@ export default function ScaderOpener(props:ScaderScreenProps) {
           <div className="ScaderElem-editmode">
             <div className="ScaderElem-edit-group">
               <div className="ScaderElem-edit-line">
+                {/* Button to start calibration */}
+                <button className="ScaderElem-button-editmode" onClick={
+                      () => {
+                        scaderManager.sendCommand(`/${restCommandName}/calibrate`)
+
+                        // After 30 secs, save config values for open and closed angles
+                        setTimeout(() => {
+                          updateConfigValue("DoorOpenAngle", state.status.doorOpenAngleDegs);
+                          updateConfigValue("DoorClosedAngle", state.status.doorClosedAngleDegs);
+                        }, 30000);
+                      }
+                      }>
+                  Calibrate (assume door closed initially)
+                </button>
                 {/* Button to set open position */}
                 <button className="ScaderElem-button-editmode" onClick={
                       () => {
@@ -89,6 +105,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                       }}>
                   Set Open Position
                 </button>
+                {/* Button to set closed position */}
                 <button className="ScaderElem-button-editmode" onClick={
                       () => {
                         const numDegrees = state.status ? state.status.rotationAngleDegs : 0;
@@ -194,6 +211,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
   }
 
   const normalModeScreen = () => {
+    // In-out mode text
     let inOutMode = "";
     if (state.status) {
       if (state.status.inEnabled && state.status.outEnabled) {
@@ -207,6 +225,14 @@ export default function ScaderOpener(props:ScaderScreenProps) {
       }
     }
 
+    // In enabled button class
+    let inEnabledButtonClass = "ScaderElem-button button-onoff " +
+          (state.status && state.status.inEnabled ? "inout-enabled" : "inout-disabled");
+    // Out enabled button class
+    let outEnabledButtonClass = "ScaderElem-button button-onoff " +
+          (state.status && state.status.outEnabled ? "inout-enabled" : "inout-disabled");
+
+    // Open state text
     let openState = (state.status && state.status.isMoving) ? "Closing" : "Closed";
     if (state.status && state.status.isOpen) {
       if (state.status.isMoving) {
@@ -223,7 +249,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
       // Display if enabled
       config.enable ?
         <div className="ScaderElem">
-          <div className="ScaderElem-body">
+          <div className="ScaderElem-section">
             {config.enable && state.status && 
             <div className="ScaderElem-status-grid">
               {/* Status info grid */}
@@ -240,9 +266,27 @@ export default function ScaderOpener(props:ScaderScreenProps) {
             </div>
           }
           </div>
-          <div className="ScaderElem-footer">
+          <div className="ScaderElem-section">
+            {/* in-enabled button */}
+            <button className={inEnabledButtonClass} onClick={
+              () => {
+                scaderManager.sendCommand(`/${restCommandName}/inenable/${state.status && state.status.inEnabled ? "0" : "1"}`)
+              }
+              }>
+              {state.status && state.status.inEnabled ? "In-Enabled" : "In-Disabled"}
+            </button>
+            {/* out-enabled button */}
+            <button className={outEnabledButtonClass} onClick={
+              () => {
+                scaderManager.sendCommand(`/${restCommandName}/outenable/${state.status && state.status.outEnabled ? "0" : "1"}`)
+              }
+              }>
+              {state.status && state.status.outEnabled ? "Out-Enabled" : "Out-Disabled"}
+            </button>
+          </div>
+          <div className="ScaderElem-section">
             {/* Button to open door */}
-            <button className="ScaderElem-button" onClick={
+            <button className="ScaderElem-button button-medium" onClick={
               () => {
                 scaderManager.sendCommand(`/${restCommandName}/open`)
               }
@@ -250,7 +294,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               Open
             </button>
             {/* Button to close door */}
-            <button className="ScaderElem-button" onClick={
+            <button className="ScaderElem-button button-medium" onClick={
               () => {
                 scaderManager.sendCommand(`/${restCommandName}/close`)
               }

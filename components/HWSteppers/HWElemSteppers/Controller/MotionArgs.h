@@ -409,6 +409,9 @@ private:
     // Feedrate is a percentage (unless _feedrateUnitsPerMin is set)
     double _feedrate;
 
+    // Current as percentage of max current
+    double _ampsPercentOfMax;
+
     // Motion tracking index - used to track execution of motion requests
     uint32_t _motionTrackingIdx;
 

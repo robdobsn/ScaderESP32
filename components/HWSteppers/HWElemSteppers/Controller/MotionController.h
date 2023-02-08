@@ -57,10 +57,13 @@ public:
     void pause(bool pauseIt);
 
     // Check if paused
-    bool isPaused()
+    bool isPaused() const
     {
         return _isPaused;
     }
+
+    // Check if busy (moving)
+    bool isBusy() const;
 
     // Set current position as home
     void setCurPositionAsHome(bool allAxes = true, uint32_t axisIdx = 0);

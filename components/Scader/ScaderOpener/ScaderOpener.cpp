@@ -162,6 +162,32 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
             _doorOpener.stopAndDisableDoor();
             rsltStr = "Stopped";
         }
+        // Calibrate
+        else if (params[1] == "calibrate")
+        {
+            _doorOpener.calibrate();
+            rsltStr = "Calibrating";
+        }
+        // Set in-enable
+        else if (params[1] == "inenable")
+        {
+            if (params.size() > 1)
+            {
+                bool enVal = params[2] == "true" || params[2] == "1";
+                _doorOpener.setMode(enVal, _doorOpener.isOutEnabled(), true);
+                rsltStr = enVal ? "In enabled" : "In disabled";
+            }
+        }
+        // Set out-enable
+        else if (params[1] == "outenable")
+        {
+            if (params.size() > 1)
+            {
+                bool enVal = params[2] == "true" || params[2] == "1";
+                _doorOpener.setMode(_doorOpener.isInEnabled(), enVal, true);
+                rsltStr = enVal ? "Out enabled" : "Out disabled";
+            }
+        }
         // Mode
         else if (params[1] == "mode")
         {
@@ -210,7 +236,7 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
                     if (params.size() > 2)
                     {
                         int degrees = params[3].toInt();
-                        _doorOpener.motorMoveToAngle(degrees);
+                        _doorOpener.motorMoveAngle(degrees, true, degrees / 10);
                         rsltStr = "Turned " + String(degrees) + " degrees";
                     }
                     else
@@ -284,8 +310,8 @@ void ScaderOpener::saveMutableData()
 {
     // Save relay states
     String jsonConfig = R"("openerState":{"inEn":__INEN__,"outEn":__OUTEN__})";
-    jsonConfig.replace("__INEN__", String(_doorOpener.getOpenerInEn()));
-    jsonConfig.replace("__OUTEN__", String(_doorOpener.getOpenerOutEn()));
+    jsonConfig.replace("__INEN__", String(_doorOpener.isInEnabled()));
+    jsonConfig.replace("__OUTEN__", String(_doorOpener.isOutEnabled()));
 
     // Add outer brackets
     jsonConfig = "{" + jsonConfig + "}";

@@ -48,6 +48,13 @@ body {
   padding: 7px;
 }
 
+.ScaderElem-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
 .ScaderElem-edit {
   background-color: #505050;
   margin: 7px;
@@ -84,6 +91,24 @@ body {
   font-size: 1.4rem;
   margin: 4px 2px;
   cursor: pointer;
+}
+
+.button-medium {
+  width: 8rem;
+  height: 8rem;
+}
+
+.button-onoff {
+  width: 8rem;
+  height: 4rem;
+}
+
+.inout-enabled {
+  background-color: lightgreen;
+}
+
+.inout-disabled {
+  background-color: #505050;
 }
 
 .ScaderElem-button-text {

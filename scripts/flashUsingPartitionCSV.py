@@ -112,11 +112,11 @@ def main():
         esptool_options += [flashOffset, str(args.build_folder / flashFileName)]
 
     # Form command
-    esptoolPossNames = ['esptool.py.exe','esptool','esptool.py']
+    esptoolPossCmds = [['esptool.py.exe'],['esptool'],['python.exe','-m','esptool']]
     espToolCmdFound = False
     lastExcp = None
-    for espToolName in esptoolPossNames:
-        esptool_command = [espToolName] + esptool_options
+    for espToolCmd in esptoolPossCmds:
+        esptool_command = espToolCmd + esptool_options
         _log.info("Executing '%s'...", " ".join(esptool_command))
         rslt = None
         try:

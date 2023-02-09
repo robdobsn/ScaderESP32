@@ -67,7 +67,6 @@ export class ScaderOpenStatus {
     isOpen: boolean = false;
     inEnabled: boolean = false;
     outEnabled: boolean = false;
-    isOverCurrent: boolean = false;
     inOutMode: string = "";
     kitButtonPressed: boolean = false;
     consButtonPressed: boolean = false;

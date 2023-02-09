@@ -103,8 +103,11 @@ body {
   height: 4rem;
 }
 
-.inout-enabled {
-  background-color: lightgreen;
+.in-enabled {
+  background-color: #808000;
+}
+.out-enabled {
+  background-color: blue;
 }
 
 .inout-disabled {

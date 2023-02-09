@@ -45,7 +45,7 @@ public:
     static const uint32_t OVER_CURRENT_CLEAR_TIME_MS = 5000;
     static const uint32_t OVER_CURRENT_IGNORE_AT_START_OF_OPEN_MS = 5000;
     static const int32_t DEFAULT_DOOR_OPEN_ANGLE = 150;
-    static const int32_t DEFAULT_DOOR_CLOSED_ANGLE = 250;
+    static const int32_t DEFAULT_DOOR_CLOSED_ANGLE = 300;
     static const uint32_t DEFAULT_DOOR_REMAIN_OPEN_TIME_SECS = 45;
     static const uint32_t DEFAULT_DOOR_TIME_TO_OPEN_SECS = 8;
     static const int32_t CAL_DOOR_OPEN_ANGLE_MAX = 150;
@@ -102,6 +102,16 @@ public:
 
     // Calibration
     void calibrate();
+
+    // Set open/closed position
+    void setOpenPosition()
+    {
+        _doorOpenAngleDegrees = _rotationAngleCorrected;
+    }
+    void setClosedPosition()
+    {
+        _doorClosedAngleDegrees = _rotationAngleCorrected;
+    }
 
     // // Default door open angle
     // static const uint32_t DEFAULT_DOOR_OPEN_ANGLE = 30;
@@ -160,7 +170,6 @@ private:
     int32_t _doorClosedAngleDegrees = DEFAULT_DOOR_CLOSED_ANGLE;
     uint32_t _motorOnTimeAfterMoveSecs = 1;
     float _maxMotorCurrentAmps = 0.1;
-    int32_t _doorOpenRotationDirection = 1;
 
     // State
     bool _isOpen = false;
@@ -168,8 +177,6 @@ private:
     bool _inEnabled = false;
     bool _outEnabled = false;
     bool _modeChanged = false;
-    bool _isOverCurrent = false;
-    bool _overCurrentBlinkCurOn = false;
     uint32_t _doorMoveStartTimeMs = 0;
 
     // Button debounce
@@ -192,13 +199,17 @@ private:
     uint32_t _pirSenseOutActiveMs = 0;
 
     // Rotation angle
+    bool _rotationAngleValid = false;
     int32_t _rotationAngleFromMagSensor = 0;
     int32_t _rotationAngleFromMagSensorLast = 0;
     int32_t _rotationAngleFromMagSensorWrapCount = 0;
     int32_t _rotationAngleCorrected = 0;
 
-    // Vissen which is the motor current sense
-    MovingAverage<200> _avgCurrent;
+    // Movement speed
+    double _doorMoveSpeedDegsPerSec = 5;
+
+    // // Vissen which is the motor current sense
+    // MovingAverage<200> _avgCurrent;
 
     // // TinyPICO hardware
     // TinyPICO _tinyPico;
@@ -220,9 +231,13 @@ private:
         CAL_STATE_NONE,
         CAL_STATE_START_ROTATION_1,
         CAL_STATE_WAIT_ROTATION_1,
+        CAL_STATE_WAIT_ROTATION_1A,
         CAL_STATE_WAIT_ROTATION_2,
+        CAL_STATE_WAIT_ROTATION_2A,
         CAL_STATE_WAIT_OPEN_1,
+        CAL_STATE_WAIT_OPEN_1A,
         CAL_STATE_WAIT_ROTATION_3,
+        CAL_STATE_WAIT_ROTATION_3A,
     } _calState = CAL_STATE_NONE;
     uint32_t _calStartTimeMs = 0;
     void setCalState(CalibrationState state)
@@ -230,8 +245,9 @@ private:
         _calState = state;
         _calStartTimeMs = millis();
     }
+    int32_t _calDoorOpenRotationDirection = 1;
 
     // Helpers
-    float calcDoorMoveSpeedDegsPerSec(double angleDegs, double timeSecs);
+    double calcDoorMoveSpeedDegsPerSec(double timeSecs, double angleDegs);
     void serviceCalibration();
 };

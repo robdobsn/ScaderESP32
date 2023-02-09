@@ -225,7 +225,18 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
                 rslt = false;
             }
         }
-
+        // Set open pos
+        else if (params[1] == "setopenpos")
+        {
+            _doorOpener.setOpenPosition();
+            rsltStr = "Open position set";
+        }
+        // Set closed pos
+        else if (params[1] == "setclosedpos")
+        {
+            _doorOpener.setClosedPosition();
+            rsltStr = "Closed position set";
+        }
         // Test
         else if (params[1] == "test")
         {

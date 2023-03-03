@@ -3,7 +3,7 @@
 // Main entry point
 //
 // Scader ESP32 V5 Firmware
-// Rob Dobson 2022
+// Rob Dobson 2023
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.5.3"
+#define SYSTEM_VERSION "5.5.6"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -161,6 +161,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include "ScaderOpener.h"
 // #include "ScaderCat.h"
 #include "ScaderLEDPixels.h"
+#include "ScaderRFID.h"
 // #include "ScaderWaterer.h"
 #endif
 
@@ -390,6 +391,7 @@ void mainTask(void *pvParameters)
     // // _scaderOpener.setup();
     // // ScaderCat _scaderCat("ScaderCat", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
     ScaderLEDPixels _scaderLEDPixels("ScaderLEDPix", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
+    ScaderRFID _scaderRFID("ScaderRFID", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
     // ScaderWaterer _scaderWaterer("ScaderWaterer", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
 #endif
 

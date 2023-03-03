@@ -34,7 +34,7 @@
 		},
 		"NetMan": {
 			"WiFiEnabled": 1,
-			"EthEnabled": 1,
+			"EthEnabled": 0,
 			"WiFiSSID": "",
 			"WiFiPass": "",
 			"logLevel": "D"
@@ -190,6 +190,19 @@
 					"name": "ScaderOpener",
 					"trigger": "Time",
 					"msgID": "ScaderOpener",
+					"rates": [
+						{
+							"if": "scaderOut",
+							"protocol": "RICJSON",
+							"rateHz": 0.1
+						}
+					]
+				},
+				{
+					"type": "HW",
+					"name": "ScaderRFID",
+					"trigger": "Time",
+					"msgID": "ScaderRFID",
 					"rates": [
 						{
 							"if": "scaderOut",
@@ -356,6 +369,9 @@
 			"Pump1": "25",
 			"Pump2": "26",
 			"Pump3": "27"
+		},
+		"ScaderRFID": {
+			"actLedPin": 15
 		}
 	}
 ]

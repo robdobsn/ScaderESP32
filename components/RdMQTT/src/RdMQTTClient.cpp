@@ -205,7 +205,10 @@ void RdMQTTClient::service()
     if (isError || connClosed)
     {
         if (isError)
+        {
             close(_clientHandle);
+            LOG_W(MODULE_PREFIX, "service ERROR socketId %d CLOSED", _clientHandle);
+        }
         // Conn closed so we'll need to retry sometime later
         _connState = MQTT_STATE_DISCONNECTED;
         _lastConnStateChangeMs = millis();
@@ -224,6 +227,9 @@ void RdMQTTClient::disconnect()
 
     // Close socket
     close(_clientHandle);
+#ifdef DEBUG_MQTT_CONNECTION
+    LOG_I(MODULE_PREFIX, "disconnect socketId %d CLOSED", _clientHandle);
+#endif
     _connState = MQTT_STATE_DISCONNECTED;
     _lastConnStateChangeMs = millis();
 }
@@ -322,7 +328,9 @@ void RdMQTTClient::socketConnect()
 
         if (connRslt == 0)
         {
-            LOG_I(MODULE_PREFIX, "socketConnect conn ok %s", _brokerHostname.c_str());
+            LOG_I(MODULE_PREFIX, "socketConnect conn ok socketId %d on %s", 
+                    _clientHandle,
+                    _brokerHostname.c_str());
             _connState = MQTT_STATE_SOCK_CONN_REQD;
             break;
         }

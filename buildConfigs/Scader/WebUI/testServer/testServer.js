@@ -69,6 +69,10 @@ let curSettings = {
       { "name": "Door 1" },
       { "name": "Door 2" }
     ]
+  },
+  "ScaderRFID": {
+    "enable": false,
+    "name": "RFID"
   }
 };
 

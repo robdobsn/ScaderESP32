@@ -32,7 +32,8 @@ LoggerPapertrail::~LoggerPapertrail()
 {
     if (_socketFd >= 0)
     {
-        close(_socketFd);
+        int rslt = close(_socketFd);
+        ESP_LOGI(MODULE_PREFIX, "close socket %d rslt %d", _socketFd, rslt);
     }
 }
 

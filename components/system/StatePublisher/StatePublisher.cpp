@@ -19,6 +19,7 @@
 // Debug
 // #define DEBUG_PUBLISHING_HANDLE
 // #define DEBUG_PUBLISHING_MESSAGE
+// #define DEBUG_PUBLISHING_REASON
 // #define DEBUG_PUBLISHING_HASH
 // #define DEBUG_ONLY_THIS_MSG_ID "ScaderOpener"
 // #define DEBUG_SHOW_ONLY_FIRST_N_BYTES_OF_MSG 16
@@ -163,7 +164,7 @@ void StatePublisher::service()
     for (PubRec& pubRec : _publicationRecs)
     {
         // Check for state change detection callback
-        bool forceMsgGeneration = false;
+        bool publishDueToStateChange = false;
         if (pubRec._stateDetectFn)
         {
             // Check for the mimimum time between publications
@@ -200,7 +201,7 @@ void StatePublisher::service()
                 // Check hash value
                 if(pubRec._stateHash != newStateHash)
                 {
-                    forceMsgGeneration = true;
+                    publishDueToStateChange = true;
                     pubRec._stateHash = newStateHash;
                     LOG_I(MODULE_PREFIX, "Force generation on state change for %s", pubRec._name.c_str());
                 }
@@ -211,9 +212,25 @@ void StatePublisher::service()
         for (InterfaceRateRec& rateRec : pubRec._interfaceRates)
         {
             // Check for time to publish
-            if (forceMsgGeneration || rateRec._forceMsgGen ||
-                        ((rateRec._rateHz != 0) && (Raft::isTimeout(millis(), rateRec._lastPublishMs, 
-                                    reducePublishingRate ? REDUCED_PUB_RATE_WHEN_BUSY_MS : rateRec._betweenPubsMs))))
+            bool publishDueToTimeout = (rateRec._rateHz != 0) && Raft::isTimeout(millis(), rateRec._lastPublishMs, 
+                                    reducePublishingRate ? REDUCED_PUB_RATE_WHEN_BUSY_MS : rateRec._betweenPubsMs);
+
+#ifdef DEBUG_PUBLISHING_REASON
+            if (publishDueToStateChange)
+            {
+                LOG_I(MODULE_PREFIX, "service publish due to state change for %s", pubRec._name.c_str());
+            }
+            else if (rateRec._forceMsgGen)
+            {
+                LOG_I(MODULE_PREFIX, "service publish due to forceMsgGen for %s", pubRec._name.c_str());
+            }
+            else if (publishDueToTimeout)
+            {
+                LOG_I(MODULE_PREFIX, "service publish due to timeout for %s", pubRec._name.c_str());
+            }
+#endif
+            // Check for publish required
+            if (publishDueToStateChange || rateRec._forceMsgGen || publishDueToTimeout)
             {
                 rateRec._lastPublishMs = millis();
                 rateRec._forceMsgGen = false;
@@ -335,18 +352,22 @@ bool StatePublisher::publishData(StatePublisher::PubRec& pubRec, InterfaceRateRe
     // Generate message
     bool msgOk = false;
     if (pubRec._msgGenFn)
+    {
         msgOk = pubRec._msgGenFn(pubRec._msgIDStr.c_str(), endpointMsg);
+    }
 
 #ifdef DEBUG_PUBLISHING_MESSAGE
 #ifdef DEBUG_ONLY_THIS_MSG_ID
     if (pubRec._msgIDStr.equals(DEBUG_ONLY_THIS_MSG_ID))
 #endif
     {
-        LOG_I(MODULE_PREFIX, "MsgGen len %d msgID %s rslt %d", endpointMsg.getBufLen(), pubRec._msgIDStr.c_str(), msgOk);
+        LOG_I(MODULE_PREFIX, "MsgGen len %d msgID %s %s", endpointMsg.getBufLen(), pubRec._msgIDStr.c_str(), msgOk ? "msgGenOk" : "msgGenFail");
     }
 #endif
     if (!msgOk)
         return false;
+    if (endpointMsg.getBufLen() == 0)
+        return true;
 
 #ifdef DEBUG_PUBLISHING_MESSAGE
 #ifdef DEBUG_ONLY_THIS_MSG_ID

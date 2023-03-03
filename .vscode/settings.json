@@ -3,6 +3,9 @@
         "*.ipp": "cpp",
         "istream": "cpp",
         "ostream": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "*.tcc": "cpp",
+        "complex": "cpp",
+        "fstream": "cpp"
     }
 }

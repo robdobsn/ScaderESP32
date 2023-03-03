@@ -87,4 +87,11 @@ export class ScaderConfig {
         name: "ScaderDoors",
         elems: [],
     }
+    ScaderRFID: {
+        enable: boolean,
+        name: string,
+    } = {
+        enable: false,
+        name: "ScaderRFID",
+    }
 }

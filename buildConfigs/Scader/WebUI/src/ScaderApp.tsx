@@ -8,12 +8,12 @@ import ScaderShades from './ScaderShades';
 import ScaderDoors from './ScaderDoors';
 import ScaderLEDPix from './ScaderLEDPix';
 import ScaderOpener from './ScaderOpener';
+import ScaderRFID from './ScaderRFID';
 
 // const testServerPath = "http://localhost:3123";
 const testServerPath = "http://192.168.86.105";
 
-const scaderManager = ScaderManager.getInstance();
-scaderManager.setTestServerPath(testServerPath);
+ScaderManager.getInstance().setTestServerPath(testServerPath);
 
 function ScaderApp() {
 
@@ -21,7 +21,8 @@ function ScaderApp() {
 
   useEffect(() => {
     const initScaderManager = async () => {
-      await scaderManager.init();
+      console.log(`ScaderApp.initScaderManager`);
+      await ScaderManager.getInstance().init();
     };
 
     initScaderManager().catch((err) => {
@@ -32,24 +33,24 @@ function ScaderApp() {
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     console.log("ScaderApp.handleMenuClick");
     if (isEditingMode) {
-      scaderManager.revertConfig();
+      ScaderManager.getInstance().revertConfig();
     }
     setEditingMode(!isEditingMode);
   };
 
   const handleSettingsSave = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(`ScaderApp.handleSettingsSave isChanged ${scaderManager.isConfigChanged()} newConfig ${JSON.stringify(scaderManager.getMutableConfig())}`);
+    console.log(`ScaderApp.handleSettingsSave isChanged ${ScaderManager.getInstance().isConfigChanged()} newConfig ${JSON.stringify(ScaderManager.getInstance().getMutableConfig())}`);
     setEditingMode(false);
-    scaderManager.persistConfig();
+    ScaderManager.getInstance().persistConfig();
   };
 
   const handleSettingsCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
     console.log("ScaderApp.handleSettingsCancel");
     setEditingMode(false);
-    scaderManager.revertConfig();
+    ScaderManager.getInstance().revertConfig();
   }
 
-  const screenProps = new ScaderScreenProps(isEditingMode, scaderManager.getConfig());
+  const screenProps = new ScaderScreenProps(isEditingMode, ScaderManager.getInstance().getConfig());
 
   const bodyClasses = isEditingMode ? "ScaderApp-bodyeditmode" : "ScaderApp-body";
   return (
@@ -67,6 +68,7 @@ function ScaderApp() {
       {<ScaderDoors {...screenProps} />}
       {<ScaderLEDPix {...screenProps} />}
       {<ScaderOpener {...screenProps} />}
+      {<ScaderRFID {...screenProps} />}
     </div>
   </div>
   );

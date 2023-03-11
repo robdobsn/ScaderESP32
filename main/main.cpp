@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.5.6"
+#define SYSTEM_VERSION "5.5.7"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -111,6 +111,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include "freertos/FreeRTOS.h"
 
 // App
+#include "DetectHardware.h"
 #include <ConfigNVS.h>
 #include <CommsChannelManager.h>
 #include <SysTypeManager.h>
@@ -257,7 +258,7 @@ void mainTask(void *pvParameters)
 #endif
 //     // Set hardware revision - ensure this runs early as some methods for determining
 //     // hardware revision may get disabled later on (e.g. GPIO pins later used for output)
-//     ConfigBase::setHwRevision(getHWRevision());
+    ConfigBase::setHwRevision(DetectHardware::getHWRevision());
 
      // Config for hardware
      ConfigBase defaultSystemConfig(defaultConfigJSON);
@@ -302,7 +303,8 @@ void mainTask(void *pvParameters)
 // #endif
 
      // System Module Manager
-     SysManager _SysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig);
+     SysManager _SysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
+            &networkSystem, nullptr);
      _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_SysManager));
 
 // #ifdef FEATURE_INCLUDE_ROBOT_CONTROLLER

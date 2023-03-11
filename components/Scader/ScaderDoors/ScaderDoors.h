@@ -13,6 +13,7 @@
 #include <SysModBase.h>
 #include <ScaderCommon.h>
 #include <DoorStrike.h>
+#include <ThreadSafeQueue.h>
 
 class APISourceInfo;
 
@@ -72,12 +73,16 @@ private:
     uint32_t _mutableDataChangeLastMs = 0;
     bool _mutableDataDirty = false;
 
+    // List of RFID tags read
+    ThreadSafeQueue<String> _tagReadQueue;
+
     // Helpers
     bool applyCurrentState();
 
     // Helper functions
     void deinit();
     void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+    void apiTagRead(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void saveMutableData();
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);

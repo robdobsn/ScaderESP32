@@ -54,7 +54,7 @@ void ScaderShades::setup()
 
     // Configure GPIOs
     ConfigPinMap::PinDef gpioPins[] = {
-        ConfigPinMap::PinDef("HC959_SER", ConfigPinMap::GPIO_OUTPUT, &_hc595_SER),
+        ConfigPinMap::PinDef("HC595_SER", ConfigPinMap::GPIO_OUTPUT, &_hc595_SER),
         ConfigPinMap::PinDef("HC595_SCK", ConfigPinMap::GPIO_OUTPUT, &_hc595_SCK),
         ConfigPinMap::PinDef("HC595_LATCH", ConfigPinMap::GPIO_OUTPUT, &_hc595_LATCH),
         ConfigPinMap::PinDef("HC595_RST", ConfigPinMap::GPIO_OUTPUT, &_hc595_RST),
@@ -67,7 +67,7 @@ void ScaderShades::setup()
     // Check valid
     if ((_hc595_RST < 0) || (_hc595_LATCH < 0) || (_hc595_SCK < 0) || (_hc595_SER < 0))
     {
-        LOG_W(MODULE_PREFIX, "setup invalid parameters for HC595 pins HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
+        LOG_W(MODULE_PREFIX, "setup invalid parameters for HC595 pins HC595_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
                     _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
         return;
     }
@@ -142,7 +142,7 @@ void ScaderShades::setup()
     }
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled name %s HC959_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
+    LOG_I(MODULE_PREFIX, "setup enabled name %s HC595_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
                 _scaderCommon.getFriendlyName().c_str(),
                 _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
 }

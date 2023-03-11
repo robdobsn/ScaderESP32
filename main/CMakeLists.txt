@@ -5,6 +5,7 @@ idf_component_register(
                 SRCS
                     "main.cpp"
                     "SysTypeStatics.cpp"
+                    "DetectHardware.cpp"
                 INCLUDE_DIRS
                     "."
                     ${_custom_headers_dir}

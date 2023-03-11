@@ -12,6 +12,7 @@
 #include <ConfigBase.h>
 #include <SysModBase.h>
 #include <ScaderCommon.h>
+#include <RFIDModuleBase.h>
 
 class APISourceInfo;
 
@@ -19,7 +20,8 @@ class ScaderRFID : public SysModBase
 {
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
-    ScaderRFID(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderRFID(const char *pModuleName, ConfigBase &defaultConfig, 
+                ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
 
 protected:
 
@@ -49,6 +51,14 @@ private:
 
     // ACT LED pin
     int _actLedPin = -1;
+    uint32_t _actLedLastMs = 0;
+    bool _actLedState = false;
+
+    // Tag LED pin
+    int _tagLedPin = -1;
+    
+    // RFID module
+    RFIDModuleBase* _pRFIDModule = nullptr;
 
     // Helpers
     bool applyCurrentState();

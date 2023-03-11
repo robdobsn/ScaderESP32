@@ -49,13 +49,31 @@ void NetworkManager::applySetup()
 {
     // Extract info from config
     bool isWiFiEnabled = configGetBool("WiFiEnabled", false);
-    bool isEthEnabled = configGetBool("EthEnabled", false);
     bool isWiFiAPModeEnabled = configGetBool("WiFiAPModeEn", false);
     bool isWiFiSTAModeEnabled = configGetBool("WiFiSTAModeEn", true);
-    bool isEthWiFiBrided = configGetBool("EthWiFiBridge", false);
+    bool isEthWiFiBridged = configGetBool("EthWiFiBridge", false);
     String defaultHostname = configGetString("defaultHostname", _defaultHostname.c_str());
+
+    // Ethernet settings
+    String ethLanChip = configGetString("EthLanChip", "");
+    NetworkSystem::EthSettings ethSettings(ethLanChip.c_str(), 
+            configGetLong("EthPowerPin", -1),
+            configGetLong("EthMDCPin", -1),
+            configGetLong("EthMDIOPin", -1),
+            configGetLong("EthPhyAddr", 0),
+            configGetLong("EthPhyRstPin", -1));
+    bool isEthEnabled = configGetBool("EthEnabled", false);
+
+    // Setup network system
     networkSystem.setup(isWiFiEnabled, isEthEnabled, defaultHostname.c_str(), 
-                isWiFiSTAModeEnabled, isWiFiAPModeEnabled, isEthWiFiBrided);
+                isWiFiSTAModeEnabled, isWiFiAPModeEnabled, isEthWiFiBridged, &ethSettings);
+
+    // Debug
+    LOG_I(MODULE_PREFIX, "setup Eth enabled:%s powerPin %d mdcPin %d mdioPin %d phyAddr %d phyRstPin %d defaultHostname %s",
+            isEthEnabled ? "Y" : "N",
+            ethSettings._powerPin, ethSettings._smiMDCPin, ethSettings._smiMDIOPin, 
+            ethSettings._phyAddr, ethSettings._phyRstPin,
+            defaultHostname.c_str());
 
     // Get SSID and password
     String ssid = configGetString("WiFiSSID", "");
@@ -63,21 +81,14 @@ void NetworkManager::applySetup()
     String apSSID = configGetString("WiFiAPSSID", "");
     String apPassword = configGetString("WiFiAPPass", "");
 
-    LOG_I(MODULE_PREFIX, "setup WiFi:%s Eth:%s SSID %s defaultHostname %s password %s", 
-            isWiFiEnabled ? "ENABLED" : "NO", 
-            isEthEnabled ? "ENABLED" : "NO",
-            ssid.c_str(),
-            defaultHostname.c_str(),
-            password.c_str());
-
     // Set WiFi credentials
     bool rsltOk = networkSystem.configureWiFi(ssid, password, "", apSSID, apPassword);
 
     // Debug
     LOG_I(MODULE_PREFIX, "setup %s WiFi:%s Eth:%s SSID %s defaultHostname %s", 
             rsltOk ? "OK" : "FAILED",
-            isWiFiEnabled ? "ENABLED" : "NO", 
-            isEthEnabled ? "ENABLED" : "NO",
+            networkSystem.isWiFiEnabled() ? "ENABLED" : "NO", 
+            networkSystem.isEthEnabled() ? "ENABLED" : "NO",
             ssid.c_str(),
             defaultHostname.c_str());
 }

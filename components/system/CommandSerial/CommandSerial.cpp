@@ -153,7 +153,7 @@ void CommandSerial::service()
         uint32_t bytesRead = uart_read_bytes((uart_port_t)_uartNum, charBuf.data(), bytesToGet, 1);
         if (bytesRead != 0)
         {
-            // LOG_D(MODULE_PREFIX, "service charsAvail %d ch %02x", numCharsAvailable, buf[0]);
+            // LOG_I(MODULE_PREFIX, "service charsAvail %d ch %02x", bytesRead, charBuf.size() > 0 ? charBuf.data()[0] : 0);
             // Send to comms channel
             getCommsCore()->handleInboundMessage(_commsChannelID, charBuf.data(), bytesRead);
         }
@@ -195,8 +195,9 @@ void CommandSerial::addCommsChannels(CommsCoreIF& commsCoreIF)
 bool CommandSerial::sendMsg(CommsChannelMsg& msg)
 {
     // Debug
-    // LOG_I(MODULE_PREFIX, "sendMsg channelID %d, msgType %s msgNum %d, len %d",
-    //         msg.getChannelID(), msg.getMsgTypeAsString(msg.getMsgTypeCode()), msg.getMsgNumber(), msg.getBufLen());
+    LOG_I(MODULE_PREFIX, "sendMsg channelID %d, msgType %s msgNum %d, len %d",
+            msg.getChannelID(), msg.getMsgTypeAsString(msg.getMsgTypeCode()), 
+            msg.getMsgNumber(), msg.getBufLen());
 
     if (!_isInitialised)
         return false;

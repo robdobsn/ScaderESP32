@@ -188,6 +188,12 @@ void ScaderDoors::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
     endpointManager.addEndpoint("door", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderDoors::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                             "control doors, door/<door>/<state> where door is 1-based and state is 0 or 1 for off or on");
+
+    // RFID
+    endpointManager.addEndpoint("RFIDTagRead", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
+                            std::bind(&ScaderDoors::apiTagRead, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                            "RFID tag has been read on door, RFIDTagRead?tagID=XXXX tagID is the tag read");
+
     LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader door");
 }
 
@@ -200,7 +206,7 @@ void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISou
     // Check initialised
     if (!_isInitialised)
     {
-        LOG_I(MODULE_PREFIX, "apiControl disabled");
+        LOG_I(MODULE_PREFIX, "apiControl module disabled");
         Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
         return;
     }
@@ -272,6 +278,43 @@ void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISou
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Scader doors
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+{
+    // Check initialised
+    if (!_isInitialised)
+    {
+        LOG_I(MODULE_PREFIX, "apiTagRead module disabled");
+        Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
+        return;
+    }
+
+    // Extract params
+    std::vector<String> params;
+    std::vector<RdJson::NameValuePair> nameValues;
+    RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
+    JSONParams paramsJSON = RdJson::getJSONFromNVPairs(nameValues, true);
+
+    // Publish to MQTT
+    String tagID = paramsJSON.getString("tagID", "");
+    if (tagID.length() > 0)
+    {
+        // Add to tag queue only if it is empty
+        bool queueEmpty = (_tagReadQueue.count() == 0);
+        if (queueEmpty)
+            _tagReadQueue.put(tagID);
+        LOG_I(MODULE_PREFIX, "apiTagRead tagID %s %s", tagID.c_str(), 
+                    queueEmpty ? "added to queue" : "queue not empty");
+    }
+    else
+    {
+        LOG_I(MODULE_PREFIX, "apiTagRead no tagID in req %s", reqStr.c_str());
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -288,11 +331,20 @@ String ScaderDoors::getStatusJSON()
         elemStatus += R"({"name":")" + _elemNames[i] + "\"," + _doorStrikes[i].getStatusJson(false) + "}";
     }
 
+    // Get RFID tag read
+    String rfidTagRead;
+    if (_tagReadQueue.get(rfidTagRead))
+    {
+        rfidTagRead = ",\"RFIDTag\":\"" + rfidTagRead + "\"";
+    }
+
     // Bell status str
     String bellStatus = _bellPressedPin >= 0 ? (digitalRead(_bellPressedPin) == _bellPressedPinLevel ? "Y" : "N") : "K";
 
     // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"bell\":\"" + bellStatus + "\",\"elems\":[" + elemStatus + "]}";
+    return "{" + _scaderCommon.getStatusJSON() + rfidTagRead + 
+            ",\"bell\":\"" + bellStatus + 
+            "\",\"elems\":[" + elemStatus + "]}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -301,9 +353,16 @@ String ScaderDoors::getStatusJSON()
 
 void ScaderDoors::getStatusHash(std::vector<uint8_t>& stateHash)
 {
+    // Clear hash initially
     stateHash.clear();
+
+    // Add door strike status to the hash
     for (const DoorStrike& doorStrike : _doorStrikes)
         doorStrike.getStatusHash(stateHash);
+
+    // Add RFID tag list length to the hash
+    uint8_t tagListLen = _tagReadQueue.count();
+    stateHash.push_back(tagListLen);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

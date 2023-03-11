@@ -14,6 +14,8 @@ idf_component_register(
                   "ScaderDoors/ScaderDoors.cpp"
                   "ScaderDoors/DoorStrike.cpp"
                   "ScaderRFID/ScaderRFID.cpp"
+                  "ScaderRFID/RFIDModuleBase.cpp"
+                  "ScaderRFID/RFIDModule_EccelA1SPI.cpp"
                   "ScaderOpener/ScaderOpener.cpp"
                   "ScaderLEDPixels/ScaderLEDPixels.cpp"
                   "ScaderOpener/DoorOpener.cpp"

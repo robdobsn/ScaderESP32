@@ -1,12 +1,12 @@
-BUILDCONF=${1:-Scader}
-SERIALPORT=${2:-COM3}
-BUILD_IDF_VERS=${3:-esp-idf-v4.4.4}
-IPORHOSTNAME=${4:-}
+SERIALPORT=${1:-COM3}
+BUILD_IDF_VERS=${2:-esp-idf-v4.4.4}
+IPORHOSTNAME=${3:-}
+BUILDCONF=Scader
 FW_IMAGE_NAME=${BUILDCONF}FW.bin
 echo "Building for ${BUILDCONF} FW image is ${FW_IMAGE_NAME}"
 . $HOME/esp/${BUILD_IDF_VERS}/export.sh
 python3 ./scripts/build.py buildConfigs/$BUILDCONF &&\
-if [ -z "$4" ]
+if [ -z "$3" ]
   then
     python.exe scripts/flashUsingPartitionCSV.py buildConfigs/$BUILDCONF/partitions.csv builds/$BUILDCONF $FW_IMAGE_NAME $SERIALPORT -b2000000 -f spiffs.bin
   else

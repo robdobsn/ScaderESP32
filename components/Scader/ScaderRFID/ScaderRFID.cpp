@@ -19,6 +19,8 @@
 #include <ESPUtils.h>
 #include <time.h>
 #include <driver/gpio.h>
+#include <CommsCoreIF.h>
+#include "RFIDModule_EccelA1SPI.h"
 
 static const char *MODULE_PREFIX = "ScaderRFID";
 
@@ -50,12 +52,45 @@ void ScaderRFID::setup()
 
     // ACT LED pin
     _actLedPin = configGetLong("actLedPin", -1);
+    if (_actLedPin >= 0)
+    {
+        pinMode(_actLedPin, OUTPUT);
+        digitalWrite(_actLedPin, LOW);
+    }
+
+    // Tag LED pin
+    _tagLedPin = configGetLong("tagLedPin", -1);
+    if (_tagLedPin >= 0)
+    {
+        pinMode(_tagLedPin, OUTPUT);
+        digitalWrite(_tagLedPin, LOW);
+    }
+
+    // RFID module pins
+    int rfidSPIMOSIPin = configGetLong("rfidSPIMOSIPin", -1);
+    int rfidSPIMISOPin = configGetLong("rfidSPIMISOPin", -1);
+    int rfidSPIClkPin = configGetLong("rfidSPIClkPin", -1);
+    int rfidSPICS0Pin = configGetLong("rfidSPICS0Pin", -1);
+    int rfidNBusyPin = configGetLong("rfidNBusyPin", -1);
+    int rfidResetPin = configGetLong("rfidResetPin", -1);
+    int rfidResetActive = configGetLong("rfidResetActive", LOW);
+    int rfidSPIHostID = configGetLong("rfidSPIHostID", 1);
+
+    // Setup RFID module
+    if (rfidSPIMOSIPin >= 0 && rfidSPIMISOPin >= 0 && rfidSPIClkPin >= 0 && rfidSPICS0Pin >= 0)
+    {
+        // Setup RFID module
+        _pRFIDModule = new RFIDModule_EccelA1SPI(rfidSPIMOSIPin, rfidSPIMISOPin, 
+                    rfidSPIClkPin, rfidSPICS0Pin, 
+                    rfidSPIHostID, rfidNBusyPin,
+                    rfidResetPin, rfidResetActive);
+    }
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup moduleName %s scaderUIName %s ACT LED %d", 
+    LOG_I(MODULE_PREFIX, "setup moduleName %s scaderUIName %s ACT LED %d TAG LED %d", 
             _scaderCommon.getModuleName().c_str(),
             _scaderCommon.getFriendlyName().c_str(),
-            _actLedPin);
+            _actLedPin, _tagLedPin);
 
     // Debug show states
     debugShowCurrentState();
@@ -78,7 +113,7 @@ void ScaderRFID::setup()
     }
 
     // HW Now initialised
-    _isInitialised = true;
+    _isInitialised = _pRFIDModule != nullptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,6 +126,59 @@ void ScaderRFID::service()
     if (!_isInitialised)
         return;
 
+    // Check if connected to WiFi
+    static const uint32_t ACT_LED_FLASH_TOTAL_TIME_MS = 1500;
+    uint32_t actLedFlashOnTime = networkSystem.isIPConnected() ? ACT_LED_FLASH_TOTAL_TIME_MS/2 : ACT_LED_FLASH_TOTAL_TIME_MS/10;
+
+    // Flash ACT led at rate indicated
+    if (Raft::isTimeout(millis(), _actLedLastMs, _actLedState ? actLedFlashOnTime : ACT_LED_FLASH_TOTAL_TIME_MS - actLedFlashOnTime))
+    {
+        _actLedLastMs = millis();
+        if (_actLedPin >= 0)
+        {
+            gpio_set_level((gpio_num_t)_actLedPin, !_actLedState);
+            _actLedState = !_actLedState;
+        }
+
+        // Check if tag present
+        if (_pRFIDModule)
+        {
+            String tagID;
+            uint32_t tagPresentedMs = 0;
+            bool changeOfTagState = false;
+            bool tagPresent = false;
+            _pRFIDModule->getTag(tagID, tagPresent, changeOfTagState, tagPresentedMs);
+            if (changeOfTagState)
+            {
+                LOG_I(MODULE_PREFIX, "service tagID %s", tagID.c_str());
+
+                // Send message over comms serial
+                int channelID = getCommsCore()->getChannelIDByName("CommandSerial", "RICSerial");
+                // LOG_I(MODULE_PREFIX, "service channelID %d", channelID);
+
+                // Send message
+                CommsChannelMsg msg(channelID, MSG_PROTOCOL_RAWCMDFRAME, 0, MSG_TYPE_COMMAND);
+                String cmdStr = R"("cmdName":"RFIDTagRead")";
+                if (tagID.length() > 0)
+                    cmdStr += R"(,"tagID":")" + tagID + R"(")";
+                cmdStr = "{" + cmdStr + "}";
+                msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());
+                getCommsCore()->handleOutboundMessage(msg);
+            }
+            digitalWrite(_tagLedPin, tagPresent ? HIGH : LOW);
+        }
+
+        // // TEST
+        // int channelID = getCommsCore()->getChannelIDByName("CommandSerial", "RICSerial");
+        // LOG_I(MODULE_PREFIX, "service channelID %d", channelID);
+
+        // // Send message
+        // CommsChannelMsg msg(channelID, MSG_PROTOCOL_RAWCMDFRAME, 0, MSG_TYPE_COMMAND);
+        // String cmdStr = R"({"cmdName":"RFIDTagRead","tagID":"1234567890"})";
+        // msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());
+        // getCommsCore()->handleOutboundMessage(msg);
+    }
+
     // Check if mutable data changed
     if (_mutableDataDirty)
     {
@@ -102,6 +190,10 @@ void ScaderRFID::service()
             _mutableDataDirty = false;
         }
     }
+
+    // Service RFID
+    if (_pRFIDModule)
+        _pRFIDModule->service();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

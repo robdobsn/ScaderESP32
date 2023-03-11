@@ -34,10 +34,18 @@
 		},
 		"NetMan": {
 			"WiFiEnabled": 1,
-			"EthEnabled": 0,
+			"EthEnabled": 1,
 			"WiFiSSID": "",
 			"WiFiPass": "",
-			"logLevel": "D"
+			"logLevel": "D",
+			"EthLanChip": "LAN87XX",
+			"EthPowerPin": [
+				{"__hwRevs__": [3,4], "__value__": 12}
+			],
+			"EthMDCPin": 23,
+			"EthMDIOPin": 18,
+			"EthPhyAddr": 0,
+			"EthPhyRstPin": -1
 		},
 		"MQTTMan": {
 			"enable": 1,
@@ -80,12 +88,12 @@
 			"allowOriginAll": 1,
 			"apiPrefix": "api/",
 			"fileServer": 1,
-			"numConnSlots": 20,
+			"numConnSlots": 16,
 			"websockets": [
                 {
                     "pfix": "ws",
                     "pcol": "RICSerial",
-                    "maxConn": 2,
+                    "maxConn": 4,
                     "txQueueMax": 6,
                     "pktMaxBytes": 5000,
                     "pingMs": 2000
@@ -93,7 +101,7 @@
 				{
 					"pfix": "scader",
 					"pcol": "RICJSON",
-					"maxConn": 2,
+					"maxConn": 4,
 					"txQueueMax": 6,
 					"pktMaxBytes": 5000,
 					"pingMs": 2000,
@@ -117,12 +125,18 @@
 			"logLevel": "D"
 		},
 		"CommandSerial": {
-			"enable": 0,
+			"enable": 1,
 			"uartNum": 1,
-			"baudRate": 912600,
+			"baudRate": 115200,
 			"rxBufSize": 1024,
-			"rxPin": 35,
-			"txPin": 12,
+			"rxPin": [
+				{"__hwRevs__": [2], "__value__": 16},
+				{"__hwRevs__": [4], "__value__": 35}
+			],
+			"txPin": [
+				{"__hwRevs__": [2], "__value__": 17},
+				{"__hwRevs__": [4], "__value__": 5}
+			],
 			"protocol": "RICSerial",
 			"logLevel": "D"
 		},
@@ -215,22 +229,46 @@
 		},
 		"ScaderRelays": {
 			"maxElems": 24,
-			"SPI_MOSI": 33,
-			"SPI_MISO": 32,
-			"SPI_CLK": 16,
-			"SPI_CS1": 4,
-			"SPI_CS2": 5,
-			"SPI_CS3": 13,
-			"ONOFF_KEY": 34
+			"SPI_MOSI": [
+				{"__hwRevs__": [3], "__value__": 33}
+			],
+			"SPI_MISO": [
+				{"__hwRevs__": [3], "__value__": 32}
+			],
+			"SPI_CLK": [
+				{"__hwRevs__": [3], "__value__": 16}
+			],
+			"SPI_CS1": [
+				{"__hwRevs__": [3], "__value__": 4}
+			],
+			"SPI_CS2": [
+				{"__hwRevs__": [3], "__value__": 5}
+			],
+			"SPI_CS3": [
+				{"__hwRevs__": [3], "__value__": 13}
+			],
+			"ONOFF_KEY": [
+				{"__hwRevs__": [3], "__value__": 34}
+			]
 		},
 		"ScaderShades": {
 			"maxElems": 5,
-			"HC959_SER": 16,
-			"HC595_SCK": 4,
-			"HC595_LATCH": 14,
-			"HC595_RST": 13,
+			"HC595_SER": [
+				{"__hwRevs__": [4], "__value__": 16}
+			],
+			"HC595_SCK": [
+				{"__hwRevs__": [4], "__value__": 4}
+			],
+			"HC595_LATCH": [
+				{"__hwRevs__": [4], "__value__": 14}
+			],
+			"HC595_RST": [
+				{"__hwRevs__": [4], "__value__": 13}
+			],
 			"LED_OP": -1,
-			"LED_ACT": 15,
+			"LED_ACT": [
+				{"__hwRevs__": [4], "__value__": 15}
+			],
 			"enableLightLevels": 0,
 			"LIGHTLVLPINS": [34, 39, -1]
 		},
@@ -238,14 +276,20 @@
 			"maxElems": 2,
 			"doors": [
 				{
-					"strikePin": 33,
+					"strikePin": [
+						{"__hwRevs__": [4], "__value__": 33}
+					],
 					"strikeOn": 1,
-					"openSensePin": 34,
+					"openSensePin": [
+						{"__hwRevs__": [4], "__value__": 34}
+					],
 					"openSenseLevel": 0,
 					"unlockForSecs": 10
 				},
 				{
-					"strikePin": 32,
+					"strikePin": [
+						{"__hwRevs__": [4], "__value__": 32}
+					],
 					"strikeOn": 1,
 					"openSensePin": -1,
 					"openSenseLevel": 0,
@@ -253,7 +297,9 @@
 				}
 			],
 			"masterDoorIdx": 0,
-			"bellSensePin": 39,
+			"bellSensePin": [
+				{"__hwRevs__": [4], "__value__": 39}
+			],
 			"bellSenseLevel": 1
 		},
 		"ScaderOpener": {
@@ -371,7 +417,36 @@
 			"Pump3": "27"
 		},
 		"ScaderRFID": {
-			"actLedPin": 15
+			"actLedPin": [
+				{"__hwRevs__": [2], "__value__": 15}
+			],
+			"tagLedPin": [
+				{"__hwRevs__": [2], "__value__": 23}
+			],
+			"rfidSPIMOSIPin": [
+				{"__hwRevs__": [2], "__value__": 18}
+			],
+			"rfidSPIMISOPin": [
+				{"__hwRevs__": [2], "__value__": 19}
+			],
+			"rfidSPIClkPin": [
+				{"__hwRevs__": [2], "__value__": 5}
+			],
+			"rfidSPICS0Pin": [
+				{"__hwRevs__": [2], "__value__": 21}
+			],
+			"rfidNBusyPin": [
+				{"__hwRevs__": [2], "__value__": 4}
+			],
+			"rfidResetPin": [
+				{"__hwRevs__": [2], "__value__": 22}
+			],
+			"rfidResetActive": [
+				{"__hwRevs__": [2], "__value__": 0}
+			],
+			"rfidSPIHostID": [
+				{"__hwRevs__": [2], "__value__": 1}
+			]
 		}
 	}
 ]

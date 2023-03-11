@@ -12,11 +12,6 @@ export class DoorConfig {
 }
 
 export class ScaderConfig {
-    NetMan: {
-        EthEnabled: number
-    } = {
-        EthEnabled: 1
-    }
     ScaderCommon: {
         name: string,
         hostname: string

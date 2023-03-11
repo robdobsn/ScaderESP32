@@ -27,7 +27,7 @@ static const char* MODULE_PREFIX = "ProtExchg";
 // Debug
 // #define DEBUG_RICREST_MESSAGES
 // #define DEBUG_RICREST_MESSAGES_RESPONSE
-// #define DEBUG_ENDPOINT_MESSAGES
+#define DEBUG_ENDPOINT_MESSAGES
 // #define DEBUG_ENDPOINT_MESSAGES_DETAIL
 // #define DEBUG_SLOW_PROC_ENDPOINT_MESSAGE_DETAIL
 // #define DEBUG_FILE_STREAM_SESSIONS
@@ -389,7 +389,7 @@ UtilsRetCode::RetCode ProtocolExchange::processRICRESTCmdFrame(RICRESTMsg& ricRE
             }
             break;
         default:
-            // LOG_I(MODULE_PREFIX, "processRICRESTCmdFrame cmdName %s fileStreamMsgType %d", cmdName.c_str(), fileStreamMsgType);
+            LOG_I(MODULE_PREFIX, "processRICRESTCmdFrame cmdName %s fileStreamMsgType %d", cmdName.c_str(), fileStreamMsgType);
             pSession = getFileStreamExistingSession(fileStreamName.c_str(), channelID, streamID);
             break;
     }

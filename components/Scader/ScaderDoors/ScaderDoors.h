@@ -76,6 +76,11 @@ private:
     // List of RFID tags read
     ThreadSafeQueue<String> _tagReadQueue;
 
+    // Any doors currently unlocked
+    static const uint32_t STATE_CHANGE_MIN_MS = 1000;
+    bool _isAnyDoorUnlocked = false;
+    uint32_t _isAnyDoorUnlockedLastMs = 0;
+
     // Helpers
     bool applyCurrentState();
 
@@ -87,4 +92,6 @@ private:
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
     int parseIntList(const String &str, int *pIntList, int maxInts);
+    uint32_t executeUnlockLock(std::vector<int> elemNums, bool unlock);
+    void publishStateChangeToCommandSerial();
 };

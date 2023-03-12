@@ -446,7 +446,14 @@
 			],
 			"rfidSPIHostID": [
 				{"__hwRevs__": [2], "__value__": 1}
-			]
+			],
+			"buzzerPin": [
+				{"__hwRevs__": [2], "__value__": 13}
+			],
+			"buzzerOnLevel": true,
+			"buzzerOnMs": 100,
+			"buzzerShortOffMs": 900,
+			"buzzerLongOffMs": 1800
 		}
 	}
 ]

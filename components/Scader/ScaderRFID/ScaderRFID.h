@@ -13,6 +13,7 @@
 #include <SysModBase.h>
 #include <ScaderCommon.h>
 #include <RFIDModuleBase.h>
+#include <StatusIndicator.h>
 
 class APISourceInfo;
 
@@ -60,14 +61,17 @@ private:
     // RFID module
     RFIDModuleBase* _pRFIDModule = nullptr;
 
+    // Buzzer
+    StatusIndicator _buzzer;
+
     // Helpers
     bool applyCurrentState();
 
     // Helper functions
     void deinit();
-    void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void saveMutableData();
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
     int parseIntList(const String &str, int *pIntList, int maxInts);
+    void apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
 };

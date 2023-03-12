@@ -13,6 +13,7 @@
 #include <RaftUtils.h>
 #include <RestAPIEndpointManager.h>
 #include <SysManager.h>
+#include <CommsCoreIF.h>
 #include <NetworkSystem.h>
 #include <CommsChannelMsg.h>
 #include <JSONParams.h>
@@ -172,9 +173,25 @@ void ScaderDoors::service()
     }
 
     // Service strikes
+    bool isAnyDoorUnlocked = false;
     for (int i = 0; i < _doorStrikes.size(); i++)
     {
         _doorStrikes[i].service();
+        isAnyDoorUnlocked |= !_doorStrikes[i].isLocked();
+    }
+
+    // Check for change of state
+    if (Raft::isTimeout(millis(), _isAnyDoorUnlockedLastMs, STATE_CHANGE_MIN_MS))
+    {
+        _isAnyDoorUnlockedLastMs = millis();
+        if (isAnyDoorUnlocked != _isAnyDoorUnlocked)
+        {
+            // Update state
+            _isAnyDoorUnlocked = isAnyDoorUnlocked;
+
+            // Publish state change to CommandSerial
+            publishStateChangeToCommandSerial();
+        }
     }
 }
 
@@ -214,45 +231,25 @@ void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISou
     // Get list of doors to control
     bool rslt = false;
     String elemNumStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
-    int elemNums[DEFAULT_MAX_ELEMS];    
-    int numElemsInList = 0;
+    std::vector<int> elemNums;
     if (elemNumStr.length() > 0)
     {
         // Get the numbers
-        numElemsInList = parseIntList(elemNumStr, elemNums, _elemNames.size());
+        Raft::parseIntList(elemNumStr.c_str(), elemNums);
     }
     else
     {
         // No numbers so do all
         for (int i = 0; i < _elemNames.size(); i++)
-            elemNums[i] = i + 1;
-        numElemsInList = _elemNames.size();
+            elemNums.push_back(i + 1);
     }
 
     // Get newState
     String elemCmdStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
     bool newState = (elemCmdStr == "1") || (elemCmdStr.equalsIgnoreCase("on") || elemCmdStr.equalsIgnoreCase("unlock"));
 
-    // Execute command
-    uint32_t numElemsSet = 0;
-    for (int i = 0; i < numElemsInList; i++)
-    {
-        int elemIdx = elemNums[i] - 1;
-        if (elemIdx >= 0 && elemIdx < _doorStrikes.size())
-        {
-            // Set state
-            if (newState)
-            {
-                _doorStrikes[elemIdx].unlockWithTimeout("API", _unlockForSecs[elemIdx]);
-            }
-            else
-            {
-                _doorStrikes[elemIdx].lock();
-            }
-            _mutableDataChangeLastMs = millis();
-            numElemsSet++;
-        }
-    }
+    // Execute unlock/lock
+    uint32_t numElemsSet = executeUnlockLock(elemNums, newState);
 
     // Check something changed
     if (numElemsSet > 0)
@@ -262,10 +259,8 @@ void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISou
         rslt = true;
 
         // Debug
-        LOG_I(MODULE_PREFIX, "apiControl req %s numSet %d newState %d doors %s, %s", 
-                    reqStr.c_str(), numElemsSet, newState,
-                    numElemsInList > 0 && (elemNums[0]-1 >= 0) && (elemNums[0]-1) < _elemNames.size() ? _elemNames[elemNums[0]-1] : "-",
-                    numElemsInList > 1 && (elemNums[1]-1 >= 0) && (elemNums[1]-1) < _elemNames.size() ? _elemNames[elemNums[1]-1] : "-");
+        LOG_I(MODULE_PREFIX, "apiControl req %s numSet %d newState %d num doors affected %d", 
+                    reqStr.c_str(), numElemsSet, newState, elemNums.size());
     }
     else
     {
@@ -312,6 +307,41 @@ void ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const APISou
     {
         LOG_I(MODULE_PREFIX, "apiTagRead no tagID in req %s", reqStr.c_str());
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Execute unlock / lock command
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+uint32_t ScaderDoors::executeUnlockLock(std::vector<int> elemNums, bool unlock)
+{
+    // Count number of elements set
+    uint32_t numElemsSet = 0;
+    for (auto elemNum : elemNums)
+    {
+        // Check element number
+        int elemIdx = elemNum - 1;
+        if (elemIdx >= 0 && elemIdx < _doorStrikes.size())
+        {
+            // Set state
+            if (unlock)
+            {
+                _doorStrikes[elemIdx].unlockWithTimeout("API", _unlockForSecs[elemIdx]);
+            }
+            else
+            {
+                _doorStrikes[elemIdx].lock();
+            }
+            _mutableDataChangeLastMs = millis();
+            numElemsSet++;
+        }
+        else
+        {
+            LOG_W(MODULE_PREFIX, "executeUnlockLock invalid door number %d", elemNum);
+        }
+    }
+
+    return numElemsSet;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -390,23 +420,43 @@ void ScaderDoors::debugShowCurrentState()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Parse list of integers
+// Publish state change to CommandSerial
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int ScaderDoors::parseIntList(const String &str, int *pIntList, int maxInts)
+void ScaderDoors::publishStateChangeToCommandSerial()
 {
-    int numInts = 0;
-    int idx = 0;
-    while (idx < str.length())
-    {
-        int nextCommaIdx = str.indexOf(',', idx);
-        if (nextCommaIdx < 0)
-            nextCommaIdx = str.length();
-        String intStr = str.substring(idx, nextCommaIdx);
-        int intVal = intStr.toInt();
-        if (numInts < maxInts)
-            pIntList[numInts++] = intVal;
-        idx = nextCommaIdx + 1;
-    }
-    return numInts;
+    // If any door locked/unlocked then send message over CommandSerial to inform of change
+    int channelID = getCommsCore()->getChannelIDByName("CommandSerial", "RICSerial");
+    // LOG_I(MODULE_PREFIX, "service channelID %d", channelID);
+
+    // Send message
+    CommsChannelMsg msg(channelID, MSG_PROTOCOL_RAWCMDFRAME, 0, MSG_TYPE_COMMAND);
+    String cmdStr = R"("cmdName":"InfoDoorStatusChange","doorStatus":")";
+    cmdStr += _isAnyDoorUnlocked ? "unlocked" : "locked";
+    cmdStr += R"(")";
+    cmdStr = "{" + cmdStr + "}";
+    msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());
+    getCommsCore()->handleOutboundMessage(msg);
 }
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// // Parse list of integers
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// int ScaderDoors::parseIntList(const String &str, int *pIntList, int maxInts)
+// {
+//     int numInts = 0;
+//     int idx = 0;
+//     while (idx < str.length())
+//     {
+//         int nextCommaIdx = str.indexOf(',', idx);
+//         if (nextCommaIdx < 0)
+//             nextCommaIdx = str.length();
+//         String intStr = str.substring(idx, nextCommaIdx);
+//         int intVal = intStr.toInt();
+//         if (numInts < maxInts)
+//             pIntList[numInts++] = intVal;
+//         idx = nextCommaIdx + 1;
+//     }
+//     return numInts;
+// }

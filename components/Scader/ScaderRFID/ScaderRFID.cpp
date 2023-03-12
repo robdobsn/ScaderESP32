@@ -66,6 +66,14 @@ void ScaderRFID::setup()
         digitalWrite(_tagLedPin, LOW);
     }
 
+    // Buzzer
+    int buzzerPin = configGetLong("buzzerPin", -1);
+    int buzzerOnLevel = configGetLong("buzzerOnLevel", 1);
+    int buzzerOnMs = configGetLong("buzzerOnMs", 100);
+    int buzzerShortOffMs = configGetLong("buzzerShortOffMs", 900);
+    int buzzerLongOffMs = configGetLong("buzzerLongOffMs", 1800);
+    _buzzer.setup("Buzzer", buzzerPin, buzzerOnLevel, buzzerOnMs, buzzerShortOffMs, buzzerLongOffMs);
+
     // RFID module pins
     int rfidSPIMOSIPin = configGetLong("rfidSPIMOSIPin", -1);
     int rfidSPIMISOPin = configGetLong("rfidSPIMISOPin", -1);
@@ -152,7 +160,7 @@ void ScaderRFID::service()
             {
                 LOG_I(MODULE_PREFIX, "service tagID %s", tagID.c_str());
 
-                // Send message over comms serial
+                // Send message over command serial
                 int channelID = getCommsCore()->getChannelIDByName("CommandSerial", "RICSerial");
                 // LOG_I(MODULE_PREFIX, "service channelID %d", channelID);
 
@@ -194,6 +202,9 @@ void ScaderRFID::service()
     // Service RFID
     if (_pRFIDModule)
         _pRFIDModule->service();
+
+    // Service indicators
+    _buzzer.service();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,25 +213,50 @@ void ScaderRFID::service()
 
 void ScaderRFID::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 {
+    // Door status change
+    endpointManager.addEndpoint("InfoDoorStatusChange", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
+                            std::bind(&ScaderRFID::apiDoorStatusChange, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                            "InformDoorStatusChange?doorStatus=<locked|unlocked>");
+
     LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader rfid");
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Control via API
+// Door status change
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderRFID::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+void ScaderRFID::apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check initialised
     if (!_isInitialised)
     {
-        LOG_I(MODULE_PREFIX, "apiControl disabled");
+        LOG_I(MODULE_PREFIX, "apiDoorStatusChange module disabled");
         Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
         return;
     }
 
+    // Extract params
+    std::vector<String> params;
+    std::vector<RdJson::NameValuePair> nameValues;
+    RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
+    JSONParams paramsJSON = RdJson::getJSONFromNVPairs(nameValues, true);
+
     // Result
-    bool rslt = false;
+    bool rslt = true;
+
+    // Start beeping to indicate door unlocked if appropriate
+    String doorStatus = paramsJSON.getString("doorStatus", "");
+    if (doorStatus.equalsIgnoreCase("unlocked"))
+    {
+        _buzzer.setStatusCode(20, 10000);
+        LOG_I(MODULE_PREFIX, "apiDoorStatusChange ================================ door unlocked");
+    }
+    else
+    {
+        _buzzer.setStatusCode(0);
+        LOG_I(MODULE_PREFIX, "apiDoorStatusChange ================================ door locked");
+    }
 
     // Set result
     Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);

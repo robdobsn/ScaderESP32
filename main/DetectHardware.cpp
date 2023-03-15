@@ -117,6 +117,16 @@ bool HWDetectConfig::isThisHW(bool forceTestAll)
                 rslt = checkAnalogValues(pinDef._pin, INPUT_PULLDOWN, pinDef._threshold1, pinDef._threshold2);
                 break;
             }
+            case HWDetectPinDef::PIN_EXPECTED_NOT_STRONG_PULLUP:
+            {
+                rslt = checkDigitalValues(pinDef._pin, INPUT_PULLDOWN, LOW);
+                break;
+            }
+            case HWDetectPinDef::PIN_EXPECTED_NOT_STRONG_PULLDOWN:
+            {
+                rslt = checkDigitalValues(pinDef._pin, INPUT_PULLUP, HIGH);
+                break;
+            }
         }
 
         // Restore pin
@@ -144,17 +154,15 @@ int DetectHardware::detectHardware()
     // Turn off Ethernet PHY power
     pinMode(12, OUTPUT);
     digitalWrite(12, LOW);
-    delay(20);
+    delay(200);
 
     // Check for OLIMEX ESP32-POE which has a voltage enable circuit on pin 12
     // Initially pins 18,25,26,27 should be low as power is off
     bool isOlimexESP32PoE = false;
     if (HWDetectConfig(
         {
-            HWDetectPinDef(18, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-            HWDetectPinDef(25, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-            HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-            HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
+            HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_NOT_STRONG_PULLUP),
+            HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_NOT_STRONG_PULLUP),
         }).isThisHW())
     {
         // Turn on Ethernet PHY power

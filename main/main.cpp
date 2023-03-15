@@ -119,7 +119,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include <SerialConsole.h>
 #include <FileManager.h>
 #include <BLEManager.h>
-#ifdef FEATURE_WIFI_FUNCTIONALITY
+#ifdef FEATURE_NETWORK_FUNCTIONALITY
 #include <NetworkManager.h>
 #include <NetDiscovery.h>
 #ifdef FEATURE_WEB_SERVER_OR_WEB_SOCKETS
@@ -260,39 +260,39 @@ void mainTask(void *pvParameters)
 //     // hardware revision may get disabled later on (e.g. GPIO pins later used for output)
     ConfigBase::setHwRevision(DetectHardware::getHWRevision());
 
-     // Config for hardware
-     ConfigBase defaultSystemConfig(defaultConfigJSON);
+    // Config for hardware
+    ConfigBase defaultSystemConfig(defaultConfigJSON);
 
-     // Check defaultConfigJSON is valid
-     int numJsonTokens = 0;
-     if (!RdJson::validateJson(defaultConfigJSON, numJsonTokens))
-     {
-         LOG_E(MODULE_NAME, "mainTask defaultConfigJSON failed to parse");
-     }
+    // Check defaultConfigJSON is valid
+    int numJsonTokens = 0;
+    if (!RdJson::validateJson(defaultConfigJSON, numJsonTokens))
+    {
+        LOG_E(MODULE_NAME, "mainTask defaultConfigJSON failed to parse");
+    }
 
-     ///////////////////////////////////////////////////////////////////////////////////
-     // NOTE: Changing the size or order of the following will affect the layout
-     // of data in the Non-Volatile-Storage partition (see partitions.csv file NVS entry)
-     // This will render data in those areas invalid and this data will be lost when
-     // firmware with different layout is flashed
-     ///////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////
+    // NOTE: Changing the size or order of the following will affect the layout
+    // of data in the Non-Volatile-Storage partition (see partitions.csv file NVS entry)
+    // This will render data in those areas invalid and this data will be lost when
+    // firmware with different layout is flashed
+    ///////////////////////////////////////////////////////////////////////////////////
 
-     // Configuration for the system - including system name
-     ConfigNVS _sysModMutableConfig("system", 500);
+    // Configuration for the system - including system name
+    ConfigNVS _sysModMutableConfig("system", 500);
 
-     // Configuration for system modules
-     ConfigNVS _sysTypeConfig("sys", 10000);
+    // Configuration for system modules
+    ConfigNVS _sysTypeConfig("sys", 10000);
 
 #ifdef FEATURE_INCLUDE_SCADER
     // Configuration for Scader
     ConfigNVS _scaderMutableConfig("scader", 4000);
 #endif
 
-     ///////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////
 
-     // SysTypes
-     SysTypeManager _sysTypeManager(_sysTypeConfig);
-     _sysTypeManager.setup(SYS_TYPE_STATICS, SYS_TYPE_STATICS_LEN);
+    // SysTypes
+    SysTypeManager _sysTypeManager(_sysTypeConfig);
+    _sysTypeManager.setup(SYS_TYPE_STATICS, SYS_TYPE_STATICS_LEN);
 
 //     // Handle power-up LED setting as early as possible
 // #ifdef FEATURE_POWER_UP_LED_ASAP
@@ -302,10 +302,10 @@ void mainTask(void *pvParameters)
 // #endif
 // #endif
 
-     // System Module Manager
-     SysManager _SysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
-            &networkSystem, nullptr);
-     _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_SysManager));
+    // System Module Manager
+    SysManager _SysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
+        &networkSystem, nullptr);
+    _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_SysManager));
 
 // #ifdef FEATURE_INCLUDE_ROBOT_CONTROLLER
 //     // Robot Controller
@@ -321,27 +321,27 @@ void mainTask(void *pvParameters)
 // #endif
 // #endif
 
-     // API Endpoints
-     RestAPIEndpointManager _restAPIEndpointManager;
-     _SysManager.setRestAPIEndpoints(_restAPIEndpointManager);
+    // API Endpoints
+    RestAPIEndpointManager _restAPIEndpointManager;
+    _SysManager.setRestAPIEndpoints(_restAPIEndpointManager);
 
-     // Comms Channel Manager
-     CommsChannelManager _commsChannelManager("CommsMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
-     _SysManager.setCommsCore(&_commsChannelManager);
+    // Comms Channel Manager
+    CommsChannelManager _commsChannelManager("CommsMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    _SysManager.setCommsCore(&_commsChannelManager);
 
-     // SerialConsole
-     SerialConsole _serialConsole("SerialConsole", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    // SerialConsole
+    SerialConsole _serialConsole("SerialConsole", defaultSystemConfig, &_sysTypeConfig, nullptr);
 
-     // FileManager
-     FileManager _fileManager("FileManager", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    // FileManager
+    FileManager _fileManager("FileManager", defaultSystemConfig, &_sysTypeConfig, nullptr);
 
-#ifdef FEATURE_WIFI_FUNCTIONALITY
-     // NetworkManager
-     NetworkManager _networkManager("NetMan", defaultSystemConfig, &_sysTypeConfig, nullptr, DEFAULT_HOSTNAME);
+#ifdef FEATURE_NETWORK_FUNCTIONALITY
+    // NetworkManager
+    NetworkManager _networkManager("NetMan", defaultSystemConfig, &_sysTypeConfig, nullptr, DEFAULT_HOSTNAME);
 #endif
 
-     // ESP OTA Update
-     ESPOTAUpdate _espotaUpdate("ESPOTAUpdate", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    // ESP OTA Update
+    ESPOTAUpdate _espotaUpdate("ESPOTAUpdate", defaultSystemConfig, &_sysTypeConfig, nullptr);
 
     // ProtocolExchange
     ProtocolExchange _protocolExchange("ProtExchg", defaultSystemConfig, &_sysTypeConfig, nullptr);

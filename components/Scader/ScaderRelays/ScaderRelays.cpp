@@ -200,8 +200,8 @@ void ScaderRelays::setup()
     }
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled name %s maxRelays %d MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d onOffKey %d",
-                _scaderCommon.getFriendlyName().c_str(),
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s maxRelays %d MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d onOffKey %d",
+                _scaderCommon.getUIName().c_str(),
                 _maxElems, 
                 _spiMosi, _spiMiso, _spiClk, 
                 _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], 

@@ -228,6 +228,7 @@ export class ScaderManager {
 
     // Persist configuration
     public async persistConfig(): Promise<void> {
+
         // Check if ScaderCommon/hostname is changed
         if (this._mutableConfig.ScaderCommon.hostname !== this._scaderConfig.ScaderCommon.hostname) {
             // Send the new hostname to the server

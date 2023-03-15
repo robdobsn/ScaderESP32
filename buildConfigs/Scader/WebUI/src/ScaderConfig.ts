@@ -12,6 +12,10 @@ export class DoorConfig {
 }
 
 export class ScaderConfig {
+    NetMan: {
+        defaultHostname?: string
+    } = {
+    }
     ScaderCommon: {
         name: string,
         hostname: string

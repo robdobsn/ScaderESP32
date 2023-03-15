@@ -93,7 +93,7 @@ void ScaderRFID::setup()
     // Debug
     LOG_I(MODULE_PREFIX, "setup moduleName %s scaderUIName %s ACT LED %d TAG LED %d", 
             _scaderCommon.getModuleName().c_str(),
-            _scaderCommon.getFriendlyName().c_str(),
+            _scaderCommon.getUIName().c_str(),
             actLedPin, _tagLedPin);
 
     // Debug show states

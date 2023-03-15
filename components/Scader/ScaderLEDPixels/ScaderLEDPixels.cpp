@@ -104,8 +104,8 @@ void ScaderLEDPixels::setup()
     }
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled name %s with %d strips total LEDs %d brightness %d", 
-                _scaderCommon.getFriendlyName().c_str(),
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s with %d strips total LEDs %d brightness %d", 
+                _scaderCommon.getUIName().c_str(),
                 stripInfos.size(), totalNumPix, defaultBrightness);
 
     // HW Now initialised

@@ -11,7 +11,8 @@ if [ -z "$3" ]
     python.exe scripts/flashUsingPartitionCSV.py buildConfigs/$BUILDCONF/partitions.csv builds/$BUILDCONF $FW_IMAGE_NAME $SERIALPORT -b2000000 -f spiffs.bin
   else
     echo Sending to RIC OTA
-    curl -F "file=@./builds/$BUILDCONF/$FW_IMAGE_NAME" "http://$4/api/espFwUpdate"
+    ./scripts/otaWebUIUpdate.sh $BUILDCONF $3
+    curl -F "file=@./builds/$BUILDCONF/$FW_IMAGE_NAME" "http://$3/api/espFwUpdate"
 fi
 if [ $? -eq "0" ]
   then

@@ -29,7 +29,9 @@ public:
         PIN_EXPECTED_HELD_LOW,
         PIN_EXPECTED_BETWEEN_BOUNDS_FLOATING,
         PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_UP,
-        PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN
+        PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN,
+        PIN_EXPECTED_NOT_STRONG_PULLUP,
+        PIN_EXPECTED_NOT_STRONG_PULLDOWN
     };
     HWDetectPinDef(int pin, PinExpectation pinExpectation,
                 int threshold1 = 0, int threshold2 = 0)

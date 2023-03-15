@@ -121,9 +121,6 @@ void ScaderShades::setup()
             );
     }
 
-    // Debug
-    LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderCommon.getFriendlyName().c_str());
-
     // Element names
     std::vector<String> elemInfos;
     if (configGetArrayElems("elems", elemInfos))
@@ -143,7 +140,7 @@ void ScaderShades::setup()
 
     // Debug
     LOG_I(MODULE_PREFIX, "setup enabled name %s HC595_SER %d HC595_SCK %d HC595_LATCH %d HC595_RST %d",
-                _scaderCommon.getFriendlyName().c_str(),
+                _scaderCommon.getUIName().c_str(),
                 _hc595_SER, _hc595_SCK, _hc595_LATCH, _hc595_RST);
 }
 

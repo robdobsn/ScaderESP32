@@ -83,9 +83,6 @@ void ScaderDoors::setup()
     // Master door index
     _masterDoorIndex = configGetLong("masterDoorIdx", 0);
 
-    // Debug
-    LOG_I(MODULE_PREFIX, "setup scaderUIName %s", _scaderCommon.getFriendlyName().c_str());
-
     // Element names
     std::vector<String> elemInfos;
     if (configGetArrayElems("elems", elemInfos))
@@ -122,8 +119,8 @@ void ScaderDoors::setup()
                     i, _strikeControlPins[i], _strikePinUnlockLevel[i], _openSensePins[i], _openSensePinLevel[i], 
                     _closedSensePins[i], _unlockForSecs[i]);
     }
-    LOG_I(MODULE_PREFIX, "setup enabled name %s bellSensePin %d masterDoorIdx %d", 
-                    _scaderCommon.getFriendlyName().c_str(),
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s bellSensePin %d masterDoorIdx %d", 
+                    _scaderCommon.getUIName().c_str(),
                     _bellPressedPin, _masterDoorIndex);
 
     // Debug show states

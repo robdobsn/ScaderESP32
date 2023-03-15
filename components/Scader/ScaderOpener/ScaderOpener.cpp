@@ -58,8 +58,8 @@ void ScaderOpener::setup()
     bool outEnabled = configGetBool("openerState/outEn", false);
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled name %s inEnabled %d outEnabled %d", 
-                _scaderCommon.getFriendlyName().c_str(),
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s inEnabled %d outEnabled %d", 
+                _scaderCommon.getUIName().c_str(),
                 inEnabled, outEnabled);
 
     // Setup publisher with callback functions

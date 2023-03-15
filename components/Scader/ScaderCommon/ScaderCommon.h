@@ -28,7 +28,14 @@ public:
         _isEnabled = _base.configGetLong("enable", false) != 0;
 
         // Name set in UI
-        _scaderFriendlyName = _base.configGetString("/ScaderCommon/name", "Scader");
+        _scaderUIName = _base.configGetString("/ScaderCommon/name", "Scader");
+
+        // Hostname set in UI
+        _scaderHostname = _base.configGetString("/ScaderCommon/hostname", "Scader");
+
+        // Debug
+        LOG_I("ScaderCommon", "setup scaderUIName %s scaderHostname %s", 
+                    _scaderUIName.c_str(), _scaderHostname.c_str());
     }
 
     String getStatusJSON()
@@ -37,7 +44,7 @@ public:
         JSONParams networkJson = _base.sysModGetStatusJSON("NetMan");
 
         // Extract hostname
-        String hostname = networkJson.getString("Hostname", "");
+        String hostname = networkJson.getString("hostname", "");
 
         // Check if ethernet connected
         bool ethConnected = networkJson.getLong("ethConn", false) != 0;
@@ -59,7 +66,7 @@ public:
         // Format base JSON
         String jsonStr =
                         R"("module":")" + _moduleName +
-                        R"(","name":")" + _scaderFriendlyName + 
+                        R"(","name":")" + _scaderUIName + 
                         R"(","version":")" + _base.getSysManager()->getSystemVersion() + 
                         R"(","hostname":")" + hostname + 
                         R"(","IP":")" + ipAddress + 
@@ -78,14 +85,22 @@ public:
         return _moduleName;
     }
 
-    String getFriendlyName()
+    String getUIName()
     {
-        return _scaderFriendlyName;
+        return _scaderUIName;
+    }
+
+    String getScaderHostname()
+    {
+        return _scaderHostname;
     }
 
 private:
     // Name
-    String _scaderFriendlyName;
+    String _scaderUIName;
+
+    // Hostname
+    String _scaderHostname;
 
     // Enabled flag
     bool _isEnabled = false;

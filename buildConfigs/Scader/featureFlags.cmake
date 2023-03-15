@@ -15,7 +15,7 @@ add_compile_definitions(HW_DEFAULT_ADVNAME=Scader)
 
 # Main features
 # add_compile_definitions(FEATURE_POWER_UP_LED_ASAP)
-add_compile_definitions(FEATURE_WIFI_FUNCTIONALITY)
+add_compile_definitions(FEATURE_NETWORK_FUNCTIONALITY)
 add_compile_definitions(FEATURE_WEB_SERVER_OR_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SERVER_STATIC_FILES)

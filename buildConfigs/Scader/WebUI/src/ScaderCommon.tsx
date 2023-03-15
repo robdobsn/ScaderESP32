@@ -35,14 +35,18 @@ export const ScaderCommon = (props: ScaderHeaderProps) => {
     const onTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         console.log(`ScaderCommon.onTitleChange ${event.target.value}`);
         // Update config
-        setConfig({ ...config, ScaderCommon: { ...config.ScaderCommon, name: event.target.value } });
-        ScaderManager.getInstance().getMutableConfig().ScaderCommon = config.ScaderCommon;
+        const newConfig = {...config, ScaderCommon: { ...config.ScaderCommon, name: event.target.value }};
+        setConfig(newConfig);
+        ScaderManager.getInstance().getMutableConfig().ScaderCommon = newConfig.ScaderCommon;
     };
 
     const onHostnameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         console.log(`ScaderCommon.onHostnameChange ${event.target.value}`);
-        setConfig({ ...config, ScaderCommon: { ...config.ScaderCommon, hostname: event.target.value } });
-        ScaderManager.getInstance().getMutableConfig().ScaderCommon = config.ScaderCommon;
+        const newConfig = {...config, ScaderCommon: {...config.ScaderCommon, hostname: event.target.value}};
+        const mutableScaderCommon = ScaderManager.getInstance().getMutableConfig()
+        mutableScaderCommon.ScaderCommon = newConfig.ScaderCommon;
+        setConfig(newConfig);
+        console.log(`ScaderCommon mutable config ${JSON.stringify(mutableScaderCommon)}`);
     };
 
     const onClickSave = (event: React.MouseEvent<HTMLButtonElement>) => {

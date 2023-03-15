@@ -51,15 +51,15 @@ private:
     bool _mutableDataDirty = false;
 
     // ACT LED pin
-    int _actLedPin = -1;
-    uint32_t _actLedLastMs = 0;
-    bool _actLedState = false;
+    StatusIndicator _actLed;
 
     // Tag LED pin
     int _tagLedPin = -1;
     
     // RFID module
     RFIDModuleBase* _pRFIDModule = nullptr;
+    uint32_t _rfidStatusLastMs = 0;
+    static const uint32_t RFID_STATUS_CHECK_MS = 200;
 
     // Buzzer
     StatusIndicator _buzzer;
@@ -72,6 +72,5 @@ private:
     void saveMutableData();
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
-    int parseIntList(const String &str, int *pIntList, int maxInts);
     void apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
 };

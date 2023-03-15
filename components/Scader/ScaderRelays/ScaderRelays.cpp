@@ -285,19 +285,17 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
     // Get list of elems to control
     bool rslt = false;
     String elemNumsStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
-    int elemNums[DEFAULT_MAX_ELEMS];    
-    int numElemsInList = 0;
+    std::vector<int> elemNums;
     if (elemNumsStr.length() > 0)
-    {
+    { 
         // Get the relay numbers
-        numElemsInList = parseIntList(elemNumsStr, elemNums, _elemNames.size());
+        Raft::parseIntList(elemNumsStr.c_str(), elemNums);
     }
     else
     {
         // No relay numbers so do all
         for (int i = 0; i < _elemNames.size(); i++)
-            elemNums[i] = i;
-        numElemsInList = _elemNames.size();
+            elemNums.push_back(i + 1);
     }
 
     // Get newState
@@ -306,14 +304,14 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
 
     // Execute command
     uint32_t numElemsSet = 0;
-    for (int i = 0; i < numElemsInList; i++)
+    for (auto elemNum : elemNums)
     {
-        int elemIdx = elemNums[i] - 1;
+        int elemIdx = elemNum - 1;
         if (elemIdx >= 0 && elemIdx < _elemNames.size())
-    {
-        // Set state
-        _elemStates[elemIdx] = newState;
-        _mutableDataChangeLastMs = millis();
+        {
+            // Set state
+            _elemStates[elemIdx] = newState;
+            _mutableDataChangeLastMs = millis();
             numElemsSet++;
         }
     }
@@ -459,26 +457,4 @@ void ScaderRelays::debugShowCurrentState()
         elemStr += String(_elemStates[i]);
     }
     LOG_I(MODULE_PREFIX, "debugShowCurrentState %s", elemStr.c_str());
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Parse list of integers
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int ScaderRelays::parseIntList(const String &str, int *pIntList, int maxInts)
-{
-    int numInts = 0;
-    int idx = 0;
-    while (idx < str.length())
-    {
-        int nextCommaIdx = str.indexOf(',', idx);
-        if (nextCommaIdx < 0)
-            nextCommaIdx = str.length();
-        String intStr = str.substring(idx, nextCommaIdx);
-        int intVal = intStr.toInt();
-        if (numInts < maxInts)
-            pIntList[numInts++] = intVal;
-        idx = nextCommaIdx + 1;
-    }
-    return numInts;
 }

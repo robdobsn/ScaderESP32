@@ -438,25 +438,3 @@ void ScaderDoors::publishStateChangeToCommandSerial()
     msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());
     getCommsCore()->handleOutboundMessage(msg);
 }
-
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// // Parse list of integers
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// int ScaderDoors::parseIntList(const String &str, int *pIntList, int maxInts)
-// {
-//     int numInts = 0;
-//     int idx = 0;
-//     while (idx < str.length())
-//     {
-//         int nextCommaIdx = str.indexOf(',', idx);
-//         if (nextCommaIdx < 0)
-//             nextCommaIdx = str.length();
-//         String intStr = str.substring(idx, nextCommaIdx);
-//         int intVal = intStr.toInt();
-//         if (numInts < maxInts)
-//             pIntList[numInts++] = intVal;
-//         idx = nextCommaIdx + 1;
-//     }
-//     return numInts;
-// }

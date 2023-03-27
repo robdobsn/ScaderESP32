@@ -19,6 +19,7 @@ idf_component_register(
                   "ScaderOpener/ScaderOpener.cpp"
                   "ScaderLEDPixels/ScaderLEDPixels.cpp"
                   "ScaderOpener/DoorOpener.cpp"
+                  "ScaderOpener/UIModule.cpp"
                   # "ScaderCat/ScaderCat.cpp"
                   # "TinyPICO/TinyPICO.cpp"
                   # "HWElemINA219/HWElemINA219.cpp"

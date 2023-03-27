@@ -222,6 +222,16 @@ int DetectHardware::detectHardware()
         {
             _hardwareRevision = HW_IS_RFID_BOARD;
         }
+
+        // Check for Conservatory opener hardware
+        if (HWDetectConfig(
+            {
+                HWDetectPinDef(4, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
+                HWDetectPinDef(5, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
+            }).isThisHW(true))
+        {
+            _hardwareRevision = HW_IS_CONSV_OPENER_BOARD;
+        }
     }
 
     ESP_LOGI(MODULE_PREFIX, "detectHardware() returning %s (%d)", 

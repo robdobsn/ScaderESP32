@@ -17,12 +17,13 @@
 #include <SimpleMovingAverage.h>
 #include <HWElemSteppers.h>
 #include "stdint.h"
+#include <OpenerStatus.h>
 // #include <TinyPICO.h>
 // #include <ina219.h>
 
 class BusSerial;
 
-class DoorOpener
+class DoorOpener : public OpenerStatus
 {
 public:
     DoorOpener();
@@ -135,8 +136,7 @@ public:
 
 private:
     // Helpers
-    void setLEDs();
-    void servicePIR(const char* pName, uint32_t pirPin, bool& pirActive, 
+    void servicePIR(const char* pName, bool pirValue, bool& pirActive, 
                 uint32_t& pirActiveMs, bool& pirLast, bool dirEnabled);
     void clear();
     uint32_t getSecsBeforeClose()
@@ -153,12 +153,8 @@ private:
     bool _isEnabled = false;
 
     // Pin Settings
-    int _kitchenButtonPin = -1;
     int _conservatoryButtonPin = -1;
-    int _ledOutEnPin = -1;
-    int _ledInEnPin = -1;
-    int _pirSenseInPin = -1;
-    int _pirSenseOutPin = -1;
+    int _consvPirSensePin = -1;
 
     // Other settings
     uint32_t _doorRemainOpenTimeSecs = 0;
@@ -174,13 +170,10 @@ private:
     // State
     bool _isOpen = false;
     uint32_t _doorOpenedTimeMs = 0;
-    bool _inEnabled = false;
-    bool _outEnabled = false;
     bool _modeChanged = false;
     uint32_t _doorMoveStartTimeMs = 0;
 
     // Button debounce
-    DebounceButton _kitchenButton;
     DebounceButton _conservatoryButton;
     uint32_t _buttonPressTimeMs = 0;
     bool _conservatoryButtonState = false;

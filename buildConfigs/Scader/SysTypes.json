@@ -13,7 +13,8 @@
 				"StatsCB"
 			],
 			"pauseWiFiforBLE":1,
-			"slowSysModMs": 50
+			"slowSysModMs": 50,
+			"rebootAfterNHours": 24
 		},
 		"LogManager": {
 			"logDests": [
@@ -309,12 +310,8 @@
 			"DoorClosedAngle": 250,
 			"MotorOnTimeAfterMoveSecs": 1,
 			"MaxMotorCurrentAmps": 0.5,
-			"LED_OUT_EN_PIN": 13,
-			"LED_IN_EN_PIN": 14,
-			"PIR_SENSE_IN_PIN": 2,
-			"PIR_SENSE_OUT_PIN": 32,
-			"KITCHEN_BUTTON_PIN": 33,
-			"CONSV_BUTTON_PIN": 4,
+			"CONSV_PIR_PIN": 32,
+			"CONSV_BUTTON_PIN": 15,
 			"i2cPort": 0,
 			"sdaPin": 21,
 			"sclPin": 22,
@@ -325,8 +322,8 @@
 				"name": "SERA",
 				"type": "serial",
 				"uartNum": 2,
-				"rxPin": "35",
-				"txPin": "5",
+				"rxPin": "19",
+				"txPin": "18",
 				"baudRate": 115200,
 				"minAfterSendMs": 5
 			},
@@ -365,8 +362,8 @@
 							"driver": "TMC2209",
 							"hw": "local",
 							"addr": 0,
-							"stepPin": "15",
-							"dirnPin": "12",
+							"stepPin": "25",
+							"dirnPin": "26",
 							"invDirn": 0,
 							"writeOnly": 0,
 							"extSenseOhms": 0.15,
@@ -381,7 +378,13 @@
 						}
 					}
 				]
-
+			},
+			"uiModule":
+			{
+				"rxPin": "19",
+				"txPin": "18",
+				"uartNum": 1,
+				"baudRate": 115200	
 			}
 
 		},

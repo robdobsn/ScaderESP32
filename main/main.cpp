@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.5.8"
+#define SYSTEM_VERSION "5.5.9"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -202,13 +202,15 @@ extern "C" void app_main(void)
             esp_err_t flashEraseResult = nvs_flash_erase();
             if (flashEraseResult != ESP_OK)
             {
-                ESP_LOGE(MODULE_NAME, "nvs_flash_erase() failed with error %s (%d)", esp_err_to_name(flashEraseResult), flashEraseResult);
+                ESP_LOGE(MODULE_NAME, "nvs_flash_erase() failed with error %s (%d)", 
+                                esp_err_to_name(flashEraseResult), flashEraseResult);
             }
             flashInitResult = nvs_flash_init();
             if (flashInitResult != ESP_OK)
             {
                 // Error message
-                ESP_LOGW(MODULE_NAME, "nvs_flash_init() failed a second time with error %s (%d)", esp_err_to_name(flashInitResult), flashInitResult);
+                ESP_LOGW(MODULE_NAME, "nvs_flash_init() failed a second time with error %s (%d)", 
+                                esp_err_to_name(flashInitResult), flashInitResult);
             }
         }
     }
@@ -226,7 +228,8 @@ extern "C" void app_main(void)
     //     esp_task_wdt_delete(idleTaskOnOtherTaskCore);
 
     // Start the mainTask
-    xTaskCreatePinnedToCore(mainTask, "mainTask", MAIN_TASK_STACK_SIZE, nullptr, MAIN_TASK_PRIORITY, &mainTaskHandle, MAIN_TASK_PROCESSOR_CORE);
+    xTaskCreatePinnedToCore(mainTask, "mainTask", MAIN_TASK_STACK_SIZE, nullptr, MAIN_TASK_PRIORITY, 
+                        &mainTaskHandle, MAIN_TASK_PROCESSOR_CORE);
 }
 #endif
 
@@ -398,7 +401,8 @@ void mainTask(void *pvParameters)
 #endif
 
     // Log out system info
-    ESP_LOGI(MODULE_NAME, SYSTEM_NAME " " SYSTEM_VERSION " (built " __DATE__ " " __TIME__ ") Heap %d", heap_caps_get_free_size(MALLOC_CAP_8BIT));
+    ESP_LOGI(MODULE_NAME, SYSTEM_NAME " " SYSTEM_VERSION " (built " __DATE__ " " __TIME__ ") Heap %d", 
+                        heap_caps_get_free_size(MALLOC_CAP_8BIT));
 
     // SysTypeManager endpoints
     _sysTypeManager.addRestAPIEndpoints(_restAPIEndpointManager);

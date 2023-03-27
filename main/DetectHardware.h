@@ -12,7 +12,8 @@ enum HWRevision {
     HW_IS_GENERIC_BOARD = 1,
     HW_IS_RFID_BOARD = 2,
     HW_IS_LIGHT_SCADER_BOARD = 3,
-    HW_IS_SCADER_SHADES_BOARD = 4
+    HW_IS_SCADER_SHADES_BOARD = 4,
+    HW_IS_CONSV_OPENER_BOARD = 5,
     };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -92,6 +93,8 @@ public:
                 return "LightScader";
             case HW_IS_SCADER_SHADES_BOARD:
                 return "ScaderShades";
+            case HW_IS_CONSV_OPENER_BOARD:
+                return "ConsvOpener";
         }
         return "Unknown";
     }

@@ -14,6 +14,7 @@
 #include <RaftUtils.h>
 #include <SysModBase.h>
 #include <DoorOpener.h>
+#include <UIModule.h>
 
 class APISourceInfo;
 
@@ -53,7 +54,11 @@ private:
     // Mutable data saving
     static const uint32_t MUTABLE_DATA_SAVE_MIN_MS = 5000;
     uint32_t _mutableDataChangeLastMs = 0;
-    
+
+    // UI module
+    UIModule _uiModule;
+
+    // Helpers
     void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void getStatusHash(std::vector<uint8_t>& stateHash);
     void saveMutableData();

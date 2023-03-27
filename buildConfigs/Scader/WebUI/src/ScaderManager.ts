@@ -59,11 +59,11 @@ export class ScaderManager {
         try {
             const sendCommandResponse = await fetch(this._serverAddressPrefix + this._urlPrefix + cmd);
             if (!sendCommandResponse.ok) {
-                console.log(`sendCommand response not ok ${sendCommandResponse.status}`);
+                console.log(`ScaderManager sendCommand response not ok ${sendCommandResponse.status}`);
             }
             return sendCommandResponse.ok;
         } catch (error) {
-            console.log(`sendCommand error ${error}`);
+            console.log(`ScaderManager sendCommand error ${error}`);
             return false;
         }
     }
@@ -134,7 +134,11 @@ export class ScaderManager {
 
     private async connectWebSocket(): Promise<boolean> {
         // Open a websocket to the server
-        this._websocket = null;
+        if (this._websocket) {
+            console.log(`ScaderManager connectWebSocket closing existing websocket`);
+            this._websocket.close();
+            this._websocket = null;   
+        }
         try {
             console.log(`ScaderManager init location.origin ${window.location.origin} ${window.location.protocol} ${window.location.host} ${window.location.hostname} ${window.location.port} ${window.location.pathname} ${window.location.search} ${window.location.hash}`)
             let webSocketURL = this._serverAddressPrefix;
@@ -172,8 +176,14 @@ export class ScaderManager {
                 }            
             }
             this._websocket.onmessage = (event) => {
-                const data = JSON.parse(event.data) as ScaderStateType;
-                console.log(`ScaderManager websocket message ${JSON.stringify(data)}`);
+                let data: ScaderStateType;
+                try {
+                    data = JSON.parse(event.data) as ScaderStateType;
+                    console.log(`ScaderManager websocket message ${JSON.stringify(data)}`);
+                } catch (error) {
+                    console.error(`ScaderManager websocket message error ${error} msg ${event.data}`);
+                    return;
+                }
                 // Check module in message
                 if (!data.module) {
                     console.log(`ScaderManager init websocket message no type`);
@@ -324,11 +334,11 @@ export class ScaderManager {
             console.log(`ScaderManager postAppSettings posted ${JSON.stringify(this._scaderConfig)}`)
 
             if (!postSettingsResponse.ok) {
-                console.error(`postAppSettings response not ok ${postSettingsResponse.status}`);
+                console.error(`ScaderManager postAppSettings response not ok ${postSettingsResponse.status}`);
             }
             return postSettingsResponse.ok;
         } catch (error) {
-            console.error(`postAppSettings error ${error}`);
+            console.error(`ScaderManager postAppSettings error ${error}`);
             return false;
         }
     }

@@ -47,8 +47,11 @@ void ScaderOpener::setup()
         return;
     }
 
-    // Configure
+    // Configure opener
     _doorOpener.setup(configGetConfig());
+
+    // Configure UI module
+    _uiModule.setup(configGetConfig(), &_doorOpener);
 
     // HW Now initialised
     _isInitialised = true;
@@ -92,6 +95,9 @@ void ScaderOpener::service()
 
     // Service door opener
     _doorOpener.service();
+
+    // Service UI module
+    _uiModule.service();
 
     // Check if mutable data changed
     if (_doorOpener.modeHasChanged())

@@ -82,20 +82,11 @@ void DoorOpener::setup(ConfigBase& config)
 
     // Configure GPIOs
     ConfigPinMap::PinDef gpioPins[] = {
-        // ConfigPinMap::PinDef("H_BRIDGE_EN_PIN", ConfigPinMap::GPIO_OUTPUT, &_hBridgeEn),
-        // ConfigPinMap::PinDef("H_BRIDGE_PHASE_PIN", ConfigPinMap::GPIO_OUTPUT, &_hBridgePhase),
-        // ConfigPinMap::PinDef("H_BRIDGE_VISSEN_PIN", ConfigPinMap::GPIO_INPUT, &_hBridgeVissen),
-        ConfigPinMap::PinDef("KITCHEN_BUTTON_PIN", ConfigPinMap::GPIO_INPUT_PULLUP, &_kitchenButtonPin),
         ConfigPinMap::PinDef("CONSV_BUTTON_PIN", ConfigPinMap::GPIO_INPUT_PULLUP, &_conservatoryButtonPin),
-        ConfigPinMap::PinDef("LED_OUT_EN_PIN", ConfigPinMap::GPIO_OUTPUT, &_ledOutEnPin),
-        ConfigPinMap::PinDef("LED_IN_EN_PIN", ConfigPinMap::GPIO_OUTPUT, &_ledInEnPin),
-        ConfigPinMap::PinDef("PIR_SENSE_IN_PIN", ConfigPinMap::GPIO_INPUT_PULLDOWN, &_pirSenseInPin),
-        ConfigPinMap::PinDef("PIR_SENSE_OUT_PIN", ConfigPinMap::GPIO_INPUT_PULLDOWN, &_pirSenseOutPin)
+        ConfigPinMap::PinDef("CONSV_PIR_PIN", ConfigPinMap::GPIO_INPUT_PULLDOWN, &_consvPirSensePin)
     };
     ConfigPinMap::configMultiple(config, gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
 
-    _kitchenButton.setup(_kitchenButtonPin, true, 0, 
-                std::bind(&DoorOpener::onKitchenButtonPressed, this, std::placeholders::_1));
     _conservatoryButton.setup(_conservatoryButtonPin, true, 0, 
                 std::bind(&DoorOpener::onConservatoryButtonPressed, this, std::placeholders::_1));
 
@@ -135,12 +126,8 @@ void DoorOpener::setup(ConfigBase& config)
 
     // Debug
     // LOG_I(MODULE_PREFIX, "setup HBridgeEn=%d HBridgePhase=%d HBridgeVissen=%d", _hBridgeEn, _hBridgePhase, _hBridgeVissen);
-    LOG_I(MODULE_PREFIX, "setup KitchenButtonPin %d ConservatoryButtonPin %d",
-                _kitchenButtonPin, _conservatoryButtonPin);
-    LOG_I(MODULE_PREFIX, "setup LedDownPin %d LedUpPin %d", 
-                _ledOutEnPin, _ledInEnPin);
-    LOG_I(MODULE_PREFIX, "setup PirSenseInPin %d PirSenseOutPin %d", 
-                _pirSenseInPin, _pirSenseOutPin);
+    LOG_I(MODULE_PREFIX, "setup Conservatory: buttonPin %d pirPin %d",
+                _conservatoryButtonPin, _consvPirSensePin);
     LOG_I(MODULE_PREFIX, "setup DoorOpenAngle %ddegs DoorClosedAngle %ddegs DoorTimeToOpen %ds DoorRemainOpenTime %ds", 
                 _doorOpenAngleDegrees, _doorClosedAngleDegrees, _doorTimeToOpenSecs, _doorRemainOpenTimeSecs);
     LOG_I(MODULE_PREFIX, "setup DoorMoveSpeed %.2fdegs/s MaxMotorCurrent %.2fA MotorOnTimeAfterMove %ds", 
@@ -171,7 +158,6 @@ void DoorOpener::service()
         _pStepper->service();
 
     // Service the buttons
-    _kitchenButton.service();
     _conservatoryButton.service();
 
     // Handle opener mode changes - these are made using the OUT button
@@ -192,8 +178,9 @@ void DoorOpener::service()
     }
 
     // Service PIRs
-    servicePIR("IN", _pirSenseInPin, _pirSenseInActive, _pirSenseInActiveMs, _pirSenseInLast, _inEnabled);
-    servicePIR("OUT", _pirSenseOutPin, _pirSenseOutActive, _pirSenseOutActiveMs, _pirSenseOutLast, _outEnabled);
+    bool pinVal = digitalRead(_consvPirSensePin);
+    servicePIR("IN", pinVal, _pirSenseInActive, _pirSenseInActiveMs, _pirSenseInLast, _inEnabled);
+    servicePIR("OUT", _pirOutValue, _pirSenseOutActive, _pirSenseOutActiveMs, _pirSenseOutLast, _outEnabled);
 
     // Handle closing after a time period
     if (_isOpen && (_doorOpenedTimeMs != 0) && Raft::isTimeout(millis(), _doorOpenedTimeMs, _doorRemainOpenTimeSecs*1000) && (_inEnabled || _outEnabled))
@@ -300,6 +287,11 @@ void DoorOpener::service()
         }
     }
 
+    // Update opener status
+    setOpenCloseStatus(!isBusy() && _isOpen, !isBusy() && !_isOpen, isBusy());
+
+    // Update UI with angle, etc
+    setStatusString(1, String(_rotationAngleCorrected));
 
     // Debug
     if (Raft::isTimeout(millis(), _debugLastDisplayMs, 5000))
@@ -310,8 +302,8 @@ void DoorOpener::service()
             _isOpen ? "OPEN " : "CLOSED ", 
             _rotationAngleCorrected,
             _pStepper ? _pStepper->getNamedValue("x", isValid) : 0,
-            digitalRead(_pirSenseInPin), _pirSenseInActive, _pirSenseInLast, _inEnabled, 
-            digitalRead(_pirSenseOutPin), _pirSenseOutActive, _pirSenseOutLast, _outEnabled,
+            digitalRead(_consvPirSensePin), _pirSenseInActive, _pirSenseInLast, _inEnabled, 
+            _pirOutValue, _pirSenseOutActive, _pirSenseOutLast, _outEnabled,
             _openerInOutMode,
             _conservatoryButtonState,
             _doorOpenedTimeMs != 0 ? Raft::timeElapsed(millis(), _doorOpenedTimeMs) : 0,
@@ -375,37 +367,21 @@ void DoorOpener::onConservatoryButtonPressed(int val)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Set LEDs
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void DoorOpener::setLEDs()
-{
-    digitalWrite(_ledInEnPin, _inEnabled ? HIGH : LOW);
-    digitalWrite(_ledOutEnPin, _outEnabled ? HIGH : LOW);
-
-    // Echo onto TinyPico LED
-    // uint32_t dotStarColor = _inEnabled ? 0x005000 : 0x000000;
-    // dotStarColor |= _outEnabled ? 0x000050 : 0x000000;
-    // _tinyPico.DotStar_SetPixelColor(dotStarColor);
-    // LOG_I(MODULE_PREFIX, "setLEDs in=%d out=%d", _inEnabled, _outEnabled);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Service PIRs
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::servicePIR(const char* pName, uint32_t pirPin, bool& pirActive, 
+void DoorOpener::servicePIR(const char* pName, bool pirValue, bool& pirActive, 
             uint32_t& pirActiveMs, bool& pirLast, bool dirEnabled)
 {
     // Debug
-    if (digitalRead(pirPin) != pirLast)
+    if (pirValue != pirLast)
     {
         LOG_I(MODULE_PREFIX, "servicePIR %s PIR now %d", pName, !pirLast);
         pirLast = !pirLast;
     }
     
     // Handle PIRs
-    if (digitalRead(pirPin) && dirEnabled)
+    if (pirValue && dirEnabled)
     {
         if (!pirActive && !isBusy())
         {
@@ -450,7 +426,6 @@ void DoorOpener::setMode(bool enIntoKitchen, bool enOutOfKitchen, bool recordCha
     _outEnabled = enOutOfKitchen;
     if (recordChange)
         _modeChanged = true;
-    setLEDs();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -597,13 +572,12 @@ String DoorOpener::getStatusJSON(bool includeBraces)
     json += ",\"isOpen\":" + String(_isOpen ? 1 : 0);
     json += ",\"inEnabled\":" + String(_inEnabled ? 1 : 0);
     json += ",\"outEnabled\":" + String(_outEnabled ? 1 : 0);
-    json += ",\"inOutMode\":\"" + String(getOpenerInOutModeStr(_openerInOutMode));
-    json += "\",\"kitButtonPressed\":" + String(_kitchenButton.isButtonPressed() ? 1 : 0);
+    json += ",\"inOutMode\":\"" + String(getOpenerInOutModeStr(_openerInOutMode)) + "\"";
     json += ",\"consButtonPressed\":" + String(_conservatoryButton.isButtonPressed() ? 1 : 0);
     json += ",\"pirSenseInActive\":" + String(_pirSenseInActive ? 1 : 0);
-    json += ",\"pirSenseInTriggered\":" + String(digitalRead(_pirSenseInPin) ? 1 : 0);
+    json += ",\"pirSenseInTriggered\":" + String(digitalRead(_consvPirSensePin) ? 1 : 0);
     json += ",\"pirSenseOutActive\":" + String(_pirSenseOutActive ? 1 : 0);
-    json += ",\"pirSenseOutTriggered\":" + String(digitalRead(_pirSenseOutPin) ? 1 : 0);
+    json += ",\"pirSenseOutTriggered\":" + String(_pirOutValue ? 1 : 0);
     json += ",\"rotationAngleDegs\":" + String(_rotationAngleCorrected);
     json += ",\"stepperCurAngle\":" + String(_pStepper ? _pStepper->getNamedValue("x", isValid) : 0);
     json += ",\"doorOpenAngleDegs\":" + String(_doorOpenAngleDegrees);
@@ -625,13 +599,12 @@ void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
     stateHash.push_back(_isOpen ? 1 : 0);
     stateHash.push_back(_inEnabled ? 1 : 0);
     stateHash.push_back(_outEnabled ? 1 : 0);
-    stateHash.push_back(_kitchenButton.isButtonPressed() ? 1 : 0);
     stateHash.push_back(_openerInOutMode);
     stateHash.push_back(_conservatoryButton.isButtonPressed() ? 1 : 0);
     stateHash.push_back(_conservatoryButtonState);
-    stateHash.push_back(digitalRead(_pirSenseInPin) ? 1 : 0);
+    stateHash.push_back(digitalRead(_consvPirSensePin) ? 1 : 0);
     stateHash.push_back(_pirSenseInActive ? 1 : 0);
-    stateHash.push_back(digitalRead(_pirSenseOutPin) ? 1 : 0);
+    stateHash.push_back(_pirOutValue ? 1 : 0);
     stateHash.push_back(_pirSenseOutActive ? 1 : 0);
     stateHash.push_back(getSecsBeforeClose() & 0xFF);
     stateHash.push_back(_rotationAngleCorrected & 0xff);

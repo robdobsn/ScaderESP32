@@ -49,10 +49,10 @@ export default function ScaderOpener(props:ScaderScreenProps) {
 
   const editModeScreen = () => {
     // Check for change in open/closed position
-    if (state.status && state.status.doorOpenAngleDegs !== config.DoorOpenAngle) {
-      updateConfigValue("DoorOpenAngle", state.status.doorOpenAngleDegs);
-    } else if (state.status && state.status.doorClosedAngleDegs !== config.DoorClosedAngle) {
-      updateConfigValue("DoorClosedAngle", state.status.doorClosedAngleDegs);
+    if (state.status && state.status.doorSwingAngleDegrees !== config.doorSwingAngleDegrees) {
+      updateConfigValue("doorSwingAngleDegrees", state.status.doorSwingAngleDegrees);
+    } else if (state.status && state.status.doorClosedAngleOffsetDegrees !== config.doorClosedAngleOffsetDegrees) {
+      updateConfigValue("doorClosedAngleOffsetDegrees", state.status.doorClosedAngleOffsetDegrees);
     }
 
     return (
@@ -70,18 +70,19 @@ export default function ScaderOpener(props:ScaderScreenProps) {
           <div className="ScaderElem-editmode">
             {/* Status info */}
             <div className="ScaderElem-status">
-              {state.status.isOpen ? <div>OPEN</div> : <div>CLOSED</div>}
-              {state.status.inEnabled ? <div>INEn</div> : null}
-              {state.status.outEnabled ? <div>OUTEn</div> : null}
-              <div>{state.status.inOutMode}</div>
+              {state.status.inEnabled ? <div className="Scader-enabled">IN</div> : <div className="Scader-disabled">IN</div>}
+              {state.status.outEnabled ? <div className="Scader-enabled">OUT</div> : <div className="Scader-disabled">OUT</div>}
               {state.status.kitButtonPressed ? <div>KitBut</div> : null}
               {state.status.consButtonPressed ? <div>CONSBut</div> : null}
               {state.status.pirSenseInActive ? <div>PIR_IN</div> : null}
               {state.status.pirSenseOutActive ? <div>PIR_OUT</div> : null}
-              <div>{state.status.rotationAngleDegs.toString() + "°"}</div>
-              <div>{"Step:" + state.status.stepperCurAngle.toString() + "°"}</div>
-              <div>{"Open:" + state.status.doorOpenAngleDegs.toString() + "°"}</div>
-              <div>{"Closed:" + state.status.doorClosedAngleDegs.toString() + "°"}</div>
+              <div>{"FromClosed: " + state.status.angleFromClosed.toString() + "°"}</div>
+              <div>{"RawCorr: " + state.status.rawSensorAngleCorrected.toString() + "°"}</div>
+              <div>{"Step: " + state.status.stepperCurAngle.toString() + "°"}</div>
+              <div>{"Swing: " + state.status.doorSwingAngleDegrees.toString() + "°"}</div>
+              <div>{"ClosedOffset: " + state.status.doorClosedAngleOffsetDegrees.toString() + "°"}</div>
+              <div>{"ClosedTol: " + state.status.closedAngleTolerance.toString() + "°"}</div>
+              <div>{"OpenEnough: " + state.status.openEnoughForCatAccessAngle.toString() + "°"}</div>
             </div>
           </div>
         }
@@ -97,19 +98,24 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                     }>
                   Calibrate (assume door closed initially)
                 </button>
-                {/* Button to set open position */}
-                <button className="ScaderElem-button-editmode" onClick={
-                      () => {
-                        scaderManager.sendCommand(`/${restCommandName}/setopenpos`)
-                      }}>
-                  Set Open Position
-                </button>
+              </div>
+              <div className="ScaderElem-edit-line">
+                <p>Closed position must be set before open position and both sensor and stepper rotation must be increasingly positive as door is opening</p>
+              </div>
+              <div className="ScaderElem-edit-line">
                 {/* Button to set closed position */}
                 <button className="ScaderElem-button-editmode" onClick={
                       () => {
                         scaderManager.sendCommand(`/${restCommandName}/setclosedpos`)
                       }}>
                   Set Closed Position
+                </button>
+                {/* Button to set open position */}
+                <button className="ScaderElem-button-editmode" onClick={
+                      () => {
+                        scaderManager.sendCommand(`/${restCommandName}/setopenpos`)
+                      }}>
+                  Set Open Position
                 </button>
               </div>
               <div className="ScaderElem-edit-line">
@@ -231,9 +237,9 @@ export default function ScaderOpener(props:ScaderScreenProps) {
           (state.status && state.status.inEnabled ? "in-enabled" : "inout-disabled");
 
     // Open state text
-    let openState = (state.status && state.status.isMoving) ? "Closing" : "Closed";
-    if (state.status && state.status.isOpen) {
-      if (state.status.isMoving) {
+    let openState = (state.status && state.status.motorActive) ? "Closing" : "Closed";
+    if (state.status && (state.status.angleFromClosed > state.status.closedAngleTolerance)) {
+      if (state.status.motorActive) {
         openState = "Opening";
       }
       else if (state.status.timeBeforeCloseSecs === 0) {
@@ -259,7 +265,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.pirSenseInTriggered ? <div>Kitchen PIR Trig</div> : null}
               {state.status.pirSenseOutActive ? <div>Consv PIR Actv</div> : null}
               {state.status.pirSenseOutTriggered ? <div>Consv PIR Trig</div> : null}
-              <div>{state.status.rotationAngleDegs ? state.status.rotationAngleDegs.toString() + "°" : ""}</div>
+              <div>{state.status.angleFromClosed ? state.status.angleFromClosed.toString() + "°" : ""}</div>
               <div>{state.status.stepperCurAngle ? "Step:" + state.status.stepperCurAngle.toString() + "°" : ""}</div>
             </div>
           }

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Script to flash firmware elements to ESP32 using partitions.csv as the guide
+# to where to flash each element.
+# Rob Dobson 2021-2022
 import argparse
 import csv
 import logging
@@ -30,6 +33,8 @@ def parse_args():
                         help="Name of the firmware binary (excluding path)")
     parser.add_argument('port',
                         help="Serial port")
+    parser.add_argument('targetChip',
+                        help="Target chip: esp32 or esp32s3")
     parser.add_argument('-b', '--baud', default='2000000',
                         help="Baud rate for serial port")
     parser.add_argument('-f', '--filesysimage', default='',
@@ -51,7 +56,7 @@ def parse_partitions_csv(partitions_csv_file):
     return partitions
 
 def convert_arg_str(args, strToConv):
-    if strToConv[0] == '$':
+    if len(strToConv) > 0 and strToConv[0] == '$':
         # print(strToConv[1:] in args)
         return vars(args)[strToConv[1:]]
     return strToConv
@@ -73,7 +78,7 @@ def main():
 
     # Parse partitions file
     partitions = parse_partitions_csv(args.partitions_csv)
-    print(partitions)
+    # print(partitions)
 
     # Flash files and offsets
     filesToFlash = [
@@ -82,7 +87,17 @@ def main():
         ["ota_data_initial.bin", "$otadata"],
         ["$firmware_binary_name", "$app0"],
         ["$filesysimage", "$spiffs"]
+    ] if args.targetChip == "esp32" else [
+        ["bootloader/bootloader.bin","0x0000"],
+        ["partition_table/partition-table.bin", "0x8000"],
+        ["ota_data_initial.bin", "$otadata"],
+        ["$firmware_binary_name", "$app0"],
+        ["$filesysimage", "$spiffs"]
     ]
+
+    for fileToFlash in filesToFlash:
+        fileToFlash[0] = convert_arg_str(args, fileToFlash[0])
+        fileToFlash[1] = convert_offset_str(partitions, fileToFlash[1])
 
     # Run esptool using partition info
     esptool_options = ['-p', f'{args.port}']
@@ -90,11 +105,11 @@ def main():
         esptool_options += ['-b', args.baud]
     esptool_options += ['--before', "default_reset"]
     esptool_options += ['--after', "hard_reset"]
-    esptool_options += ['--chip', "esp32"]
+    esptool_options += ['--chip', args.targetChip]
     esptool_options += ['write_flash']
     esptool_options += ['--flash_mode', "dio"]
     esptool_options += ['--flash_size', "detect"]
-    esptool_options += ['--flash_freq', "40m"]
+    esptool_options += ['--flash_freq', "40m" if args.targetChip == "esp32" else "80m"]
 
     # Check build folder contains all the files to flash 
     # and partitions table likewise for partitions to flash into
@@ -112,11 +127,11 @@ def main():
         esptool_options += [flashOffset, str(args.build_folder / flashFileName)]
 
     # Form command
-    esptoolPossCmds = [['esptool.py.exe'],['python.exe','-m','esptool']]
+    esptoolPossNames = ['esptool.py.exe','esptool','esptool.py']
     espToolCmdFound = False
     lastExcp = None
-    for espToolCmd in esptoolPossCmds:
-        esptool_command = espToolCmd + esptool_options
+    for espToolName in esptoolPossNames:
+        esptool_command = [espToolName] + esptool_options
         _log.info("Executing '%s'...", " ".join(esptool_command))
         rslt = None
         try:

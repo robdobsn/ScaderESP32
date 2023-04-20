@@ -19,8 +19,6 @@
 
 static const char *MODULE_PREFIX = "ScaderOpener";
 
-#define DEBUG_OPENER_MUTABLE_DATA
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -56,14 +54,9 @@ void ScaderOpener::setup()
     // HW Now initialised
     _isInitialised = true;
 
-    // Get mutable data
-    bool inEnabled = configGetBool("openerState/inEn", false);
-    bool outEnabled = configGetBool("openerState/outEn", false);
-
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s inEnabled %d outEnabled %d", 
-                _scaderCommon.getUIName().c_str(),
-                inEnabled, outEnabled);
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s", 
+                _scaderCommon.getUIName().c_str());
 
     // Setup publisher with callback functions
     SysManager* pSysManager = getSysManager();
@@ -98,27 +91,6 @@ void ScaderOpener::service()
 
     // Service UI module
     _uiModule.service();
-
-    // Check if mutable data changed
-    if (_doorOpener.modeHasChanged())
-    {
-        // Check if min time has passed
-        if (Raft::isTimeout(millis(), _mutableDataChangeLastMs, MUTABLE_DATA_SAVE_MIN_MS))
-        {
-            // Save mutable data
-            saveMutableData();
-            _doorOpener.modeChangeClear();
-        }
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// isBusy
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool ScaderOpener::isBusy()
-{
-    return _doorOpener.isBusy();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +152,7 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
             if (params.size() > 1)
             {
                 bool enVal = params[2] == "true" || params[2] == "1";
-                _doorOpener.setMode(enVal, _doorOpener.isOutEnabled(), true);
+                _doorOpener.setInEnabled(enVal);
                 rsltStr = enVal ? "In enabled" : "In disabled";
             }
         }
@@ -190,45 +162,8 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
             if (params.size() > 1)
             {
                 bool enVal = params[2] == "true" || params[2] == "1";
-                _doorOpener.setMode(_doorOpener.isInEnabled(), enVal, true);
+                _doorOpener.setOutEnabled(enVal);
                 rsltStr = enVal ? "Out enabled" : "Out disabled";
-            }
-        }
-        // Mode
-        else if (params[1] == "mode")
-        {
-            if (params.size() > 1)
-            {
-                if (params[2] == "in")
-                {
-                    _doorOpener.setMode(true, false, true);
-                    rsltStr = "Mode set to IN";
-                }
-                else if (params[2] == "out")
-                {
-                    _doorOpener.setMode(false, true, true);
-                    rsltStr = "Mode set to OUT";
-                }
-                else if (params[2] == "both")
-                {
-                    _doorOpener.setMode(true, true, true);
-                    rsltStr = "Mode set to BOTH";
-                }
-                else if (params[2] == "none")
-                {
-                    _doorOpener.setMode(false, false, true);
-                    rsltStr = "Mode set to NONE";
-                }
-                else
-                {
-                    rsltStr = "Invalid mode";
-                    rslt = false;
-                }
-            }
-            else
-            {
-                rsltStr = "Mode not specified";
-                rslt = false;
             }
         }
         // Set open pos
@@ -317,23 +252,4 @@ String ScaderOpener::getStatusJSON()
 void ScaderOpener::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     _doorOpener.getStatusHash(stateHash);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Write the mutable config
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void ScaderOpener::saveMutableData()
-{
-    // Save relay states
-    String jsonConfig = R"("openerState":{"inEn":__INEN__,"outEn":__OUTEN__})";
-    jsonConfig.replace("__INEN__", String(_doorOpener.isInEnabled()));
-    jsonConfig.replace("__OUTEN__", String(_doorOpener.isOutEnabled()));
-
-    // Add outer brackets
-    jsonConfig = "{" + jsonConfig + "}";
-#ifdef DEBUG_OPENER_MUTABLE_DATA
-    LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
-#endif
-    SysModBase::configSaveData(jsonConfig);
 }

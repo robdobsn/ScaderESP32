@@ -17,6 +17,7 @@ idf_component_register(
                   "ScaderRFID/RFIDModuleBase.cpp"
                   "ScaderRFID/RFIDModule_EccelA1SPI.cpp"
                   "ScaderOpener/ScaderOpener.cpp"
+                  "ScaderOpener/OpenerStatus.cpp"
                   "ScaderLEDPixels/ScaderLEDPixels.cpp"
                   "ScaderOpener/DoorOpener.cpp"
                   "ScaderOpener/UIModule.cpp"
@@ -50,4 +51,3 @@ idf_component_register(
                   hardware
                   rafti2c-src
                 )
-

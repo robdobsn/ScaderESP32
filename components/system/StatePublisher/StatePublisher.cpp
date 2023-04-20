@@ -26,6 +26,7 @@
 // #define DEBUG_API_SUBSCRIPTION
 // #define DEBUG_STATE_PUBLISHER_SETUP
 // #define DEBUG_REDUCED_PUBLISHING_RATE_WHEN_BUSY
+// #define DEBUG_FORCE_GENERATION_OF_PUBLISH_MSGS
 
 // Logging
 static const char* MODULE_PREFIX = "StatePub";
@@ -203,7 +204,9 @@ void StatePublisher::service()
                 {
                     publishDueToStateChange = true;
                     pubRec._stateHash = newStateHash;
+#ifdef DEBUG_FORCE_GENERATION_OF_PUBLISH_MSGS
                     LOG_I(MODULE_PREFIX, "Force generation on state change for %s", pubRec._name.c_str());
+#endif
                 }
             }
         }

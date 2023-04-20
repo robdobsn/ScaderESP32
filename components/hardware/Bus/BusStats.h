@@ -41,10 +41,10 @@ public:
         char outStr[150];
             snprintf(outStr, sizeof(outStr), R"("%s":{"cnt":%d,"reqF":%d,"reqQ":%d,"reqQPk":%d,"rspF":%d,"rspQ":%d,"rspQPk":%d,"rspE":%d,"poll":%d,"cmds":%d})",
                 busName.c_str(),
-                _busInteractionCount, 
-                _reqBufferFulls, _reqQueueCount, _reqQueuePeak,
-                _respBufferFulls, _respQueueCount, _respQueuePeak, 
-                _respLengthError, _pollCompletes, _cmdCompletes);
+                (unsigned int)_busInteractionCount, 
+                (unsigned int)_reqBufferFulls, (unsigned int)_reqQueueCount, (unsigned int)_reqQueuePeak,
+                (unsigned int)_respBufferFulls, (unsigned int)_respQueueCount, (unsigned int)_respQueuePeak, 
+                (unsigned int)_respLengthError, (unsigned int)_pollCompletes, (unsigned int)_cmdCompletes);
         return outStr;
     }
     

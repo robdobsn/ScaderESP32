@@ -61,6 +61,7 @@ private:
 
     // Master door index
     uint32_t _masterDoorIndex = 0;
+    bool _reportMasterDoorOnly = false;
 
     // Names of control elements
     std::vector<String> _elemNames;
@@ -76,10 +77,10 @@ private:
     // List of RFID tags read
     ThreadSafeQueue<String> _tagReadQueue;
 
-    // Any doors currently unlocked
+    // State change reporting
     static const uint32_t STATE_CHANGE_MIN_MS = 1000;
-    bool _isAnyDoorUnlocked = false;
-    uint32_t _isAnyDoorUnlockedLastMs = 0;
+    uint32_t _lockedStateChangeTestLastMs = 0;
+    bool _lockedStateChangeLastLocked = false;
 
     // Helpers
     bool applyCurrentState();

@@ -33,9 +33,11 @@ def parseArgs():
                         help='gzip the resulting files')
     parser.add_argument('--deletefirst', action='store_true', dest='deleteFirst',
                         help='delete the react UI destination files first')
+    parser.add_argument('--npminstall', action='store_false', dest='npmInstall',
+                        help='npm install in the source folder first')
     return parser.parse_args()
 
-def generateWebUI(sourceFolder, destFolder, gzipContent, deleteFirst):
+def generateWebUI(sourceFolder, destFolder, gzipContent, deleteFirst, npmInstall):
 
     _log.info("GenWebUI source '%s' dest '%s' gzip %s", sourceFolder, destFolder, "Y" if gzipContent else "N")
 
@@ -61,6 +63,13 @@ def generateWebUI(sourceFolder, destFolder, gzipContent, deleteFirst):
             os.remove(os.path.join(destFolder, fname))
             _log.info(f"GenWebUI deleted {fname}")
 
+    # If npmInstall is true, execute npm install in the source folder
+    if npmInstall:
+        rslt = subprocess.run(["npm", "install"], cwd=sourceFolder)
+        if rslt.returncode != 0:
+            _log.error("GenWebUI failed to npm install")
+            return rslt.returncode
+        
     # Execute npm run build in the source folder
     # Copy the resulting files to the destination folder
     # If gzipContent is true, gzip the files
@@ -88,7 +97,7 @@ def generateWebUI(sourceFolder, destFolder, gzipContent, deleteFirst):
 
 def main():
     args = parseArgs()
-    return generateWebUI(args.source, args.dest, args.gzipContent, args.deleteFirst)
+    return generateWebUI(args.source, args.dest, args.gzipContent, args.deleteFirst, args.npmInstall)
 
 if __name__ == '__main__':
     rslt = main()

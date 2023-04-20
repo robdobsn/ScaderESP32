@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.5.9"
+#define SYSTEM_VERSION "5.6.2"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -56,8 +56,8 @@ static const char *defaultConfigJSON =
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Main task parameters
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 static const int MAIN_TASK_PRIORITY = 20;
 static const int PRO_TASK_PROCESSOR_CORE = 0;
 static const int MAIN_TASK_PROCESSOR_CORE = 1;
@@ -103,12 +103,12 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 
 // C, ESP32 and RTOS
 #include <stdio.h>
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include "esp_event.h"
-#include "esp_task_wdt.h"
-#include "esp_heap_caps.h"
-#include "freertos/FreeRTOS.h"
+#include <esp_log.h>
+#include <nvs_flash.h>
+#include <esp_event.h>
+#include <esp_task_wdt.h>
+#include <esp_heap_caps.h>
+#include <freertos/FreeRTOS.h>
 
 // App
 #include "DetectHardware.h"
@@ -175,20 +175,6 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 // Entry point
 extern "C" void app_main(void)
 {
-    // // Initialise the platform
-    // platformInit();
-
-    // Start the main task
-    // TODO - decide if WDTs should be enabled
-    // TODO - look at esp32-arduino startup code and decide if NVS init there is necessary
-    // TODO also note there is a setting enable app rollback support currently unchecked - maybe relates to OTA etc?
-    // TODO LWIP_IP_FRAG flag is turned on - check ok
-    // TODO LWIP_SO_RECVBUF is turned on - check ok
-    // TODO MBEDTLS_HARDWARE_MPI is turned on - check ok
-    // TODO - BLE stack runs on core 0 in the menuconfig - check ok
-    // TODO - check stack sizes in menuconfig
-    // Review stack size
-
     // Initialize flash
     esp_err_t flashInitResult = nvs_flash_init();
     if (flashInitResult != ESP_OK)
@@ -222,7 +208,7 @@ extern "C" void app_main(void)
     if (idleTaskOnMainTaskCore)
         esp_task_wdt_delete(idleTaskOnMainTaskCore);
 
-    // TODO - decide if this is necessary - seems to be on new hardware??
+    // This seems not to be necessary
     // TaskHandle_t idleTaskOnOtherTaskCore = xTaskGetIdleTaskHandleForCPU(MAIN_TASK_PROCESSOR_CORE == 0 ? 1 : 0);
     // if (idleTaskOnOtherTaskCore)
     //     esp_task_wdt_delete(idleTaskOnOtherTaskCore);
@@ -259,8 +245,8 @@ void mainTask(void *pvParameters)
 #ifdef DEBUG_HEAP_ALLOCATION
     heap_trace_init_standalone(trace_record, NUM_RECORDS);
 #endif
-//     // Set hardware revision - ensure this runs early as some methods for determining
-//     // hardware revision may get disabled later on (e.g. GPIO pins later used for output)
+    // Set hardware revision - ensure this runs early as some methods for determining
+    // hardware revision may get disabled later on (e.g. GPIO pins later used for output)
     ConfigBase::setHwRevision(DetectHardware::getHWRevision());
 
     // Config for hardware
@@ -306,9 +292,9 @@ void mainTask(void *pvParameters)
 // #endif
 
     // System Module Manager
-    SysManager _SysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
+    SysManager _sysModManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
         &networkSystem, nullptr);
-    _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_SysManager));
+    _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_sysModManager));
 
 // #ifdef FEATURE_INCLUDE_ROBOT_CONTROLLER
 //     // Robot Controller
@@ -326,11 +312,11 @@ void mainTask(void *pvParameters)
 
     // API Endpoints
     RestAPIEndpointManager _restAPIEndpointManager;
-    _SysManager.setRestAPIEndpoints(_restAPIEndpointManager);
+    _sysModManager.setRestAPIEndpoints(_restAPIEndpointManager);
 
     // Comms Channel Manager
     CommsChannelManager _commsChannelManager("CommsMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
-    _SysManager.setCommsCore(&_commsChannelManager);
+    _sysModManager.setCommsCore(&_commsChannelManager);
 
     // SerialConsole
     SerialConsole _serialConsole("SerialConsole", defaultSystemConfig, &_sysTypeConfig, nullptr);
@@ -409,7 +395,7 @@ void mainTask(void *pvParameters)
 
     // Initialise the system module manager here so that API endpoints are registered
     // before file system ones
-    _SysManager.setup();
+    _sysModManager.setup();
 
 #ifdef FEATURE_WEB_SERVER_STATIC_FILES
     // Web server add files
@@ -430,7 +416,7 @@ void mainTask(void *pvParameters)
         vTaskDelay(1);
 
         // Service all the system modules
-        _SysManager.service();
+        _sysModManager.service();
 
         // Test and Monitoring
 #ifdef DEBUG_SHOW_TASK_INFO
@@ -447,9 +433,6 @@ void mainTask(void *pvParameters)
             laststatsdumpms = millis();
         }
 #endif
-
-        // TODO - handle XON/XOFF support in serial console or similar - so typing in a command like w/.../...
-        // stops logging to serial when the user is entering the command
     }
 }
 
@@ -458,7 +441,7 @@ void mainTask(void *pvParameters)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
-#include "freertos/task.h"
+#include <freertos/task.h>
 
 #ifdef DEBUG_SHOW_TASK_INFO
 int tasks_info()

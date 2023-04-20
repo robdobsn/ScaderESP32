@@ -104,10 +104,10 @@ body {
 }
 
 .in-enabled {
-  background-color: #808000;
+  background-color: green;
 }
 .out-enabled {
-  background-color: blue;
+  background-color: green;
 }
 
 .inout-disabled {
@@ -199,7 +199,7 @@ body {
 }
 
 .ScaderElem-status {
-  font-size: calc(8px + 2vmin);
+  font-size: calc(4px + 1vmin);
   margin-left: 10px;
   margin-right: 10px;
   background-color: #303030;
@@ -254,6 +254,12 @@ body {
   margin: 0;
 }
 
+.Scader-enabled {
+  color: green;
+}
+.Scader-disabled {
+  color: red;
+}
 .ScaderHeader {
   width: 100%;
 }

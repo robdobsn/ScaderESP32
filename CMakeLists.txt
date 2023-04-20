@@ -30,9 +30,8 @@ unset(buildConfigName)
 FetchContent_Declare(
   raftcore
   # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  # GIT_TAG        16a95d23bcc9025176e647e3c87dc447c1a2cc50
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        v0.2.11
+  GIT_TAG        v0.2.16
 )
 
 # Fetch the RaftWebServer library
@@ -46,7 +45,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   rafti2c
   GIT_REPOSITORY https://github.com/robdobsn/RaftI2C
-  GIT_TAG        v0.0.3
+  GIT_TAG        v0.0.6
 )
 
 # Populate first so we have a folder that we can add in EXTRA_COMPONENT_DIRS

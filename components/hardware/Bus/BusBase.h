@@ -77,7 +77,7 @@ public:
     }
 
     // isOperatingOk
-    virtual BusOperationStatus isOperatingOk()
+    virtual BusOperationStatus isOperatingOk() const
     {
         return BusOperationStatus::BUS_OPERATION_OK;
     }
@@ -135,6 +135,30 @@ public:
     {
         return 0;
     }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get the bus operation status as a string
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static const char *busOperationStatusToString(BusOperationStatus busOperationStatus)
+    {
+        switch (busOperationStatus)
+        {
+        case BUS_OPERATION_OK: return "Ok";
+        case BUS_OPERATION_FAILING: return "Failing";
+        default: return "Unknown";
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get the bus element address as a string
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static String busElemAddrAndStatusToString(BusElemAddrAndStatus busElemAddr)
+    {
+        return "0x" + String(busElemAddr.address, 16) + ":" +
+                                (busElemAddr.isChangeToOnline ? "Online" : "Offline");
+    }    
 
 protected:
     BusStats _busStats;

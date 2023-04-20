@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# Script for keyboard access
 import threading
 import time
 
@@ -54,14 +56,16 @@ class KeyboardUtils:
         try:
             self.keybd = _KeybdWindows()
             self._isWindows = True
-            self._multiSeqStart = 0
+            self._multiSeqStart = 0xe0
             self._multiSeqLookupPos = 1
             self._multiSeqCodes = self.windowsKeyCodes
+            # print(f"Using Windows keyboard")
         except ImportError:
             self.keybd = _KeybdUnix()
             self._multiSeqStart = 27
             self._multiSeqLookupPos = 2
             self._multiSeqCodes = self.ansiEscSeqCodes
+            # print(f"Using Unix keyboard")
 
         # Start threads
         self._running = True
@@ -99,6 +103,7 @@ class KeyboardUtils:
                 self._keyHandler(char)
             else:
                 self._handleControlKeys(ord(char))
+            time.sleep(0.05)
 
     def _KeyEscThreadFn(self):
         while self._running:
@@ -141,12 +146,15 @@ class _KeybdWindows:
     def getch(self, blocking):
         import msvcrt
         # Check if there is a character waiting
+        ch = None
         if blocking:
-            return msvcrt.getwch()
+            ch = msvcrt.getwch()
         else:
             if msvcrt.kbhit():
-                return msvcrt.getwch()
-        return None
+                ch = msvcrt.getwch()
+        # if ch is not None:
+        #     print(f"Got char {ord(ch[0]):02x}")
+        return ch
 
     def close(self):
         pass
@@ -188,4 +196,3 @@ class _KeybdUnix:
         import sys, tty, termios
         from select import select
         termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, self.old_settings)
-

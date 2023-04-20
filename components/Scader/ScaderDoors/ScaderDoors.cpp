@@ -80,8 +80,9 @@ void ScaderDoors::setup()
     // Bell pressed pin sense
     _bellPressedPinLevel = configGetBool("bellSenseLevel", false);
 
-    // Master door index
+    // Master door index and reporting
     _masterDoorIndex = configGetLong("masterDoorIdx", 0);
+    _reportMasterDoorOnly = configGetBool("reportMasterDoorOnly", false);
 
     // Element names
     std::vector<String> elemInfos;
@@ -169,23 +170,26 @@ void ScaderDoors::service()
         }
     }
 
-    // Service strikes
-    bool isAnyDoorUnlocked = false;
-    for (int i = 0; i < _doorStrikes.size(); i++)
-    {
-        _doorStrikes[i].service();
-        isAnyDoorUnlocked |= !_doorStrikes[i].isLocked();
-    }
-
     // Check for change of state
-    if (Raft::isTimeout(millis(), _isAnyDoorUnlockedLastMs, STATE_CHANGE_MIN_MS))
+    if (Raft::isTimeout(millis(), _lockedStateChangeTestLastMs, STATE_CHANGE_MIN_MS))
     {
-        _isAnyDoorUnlockedLastMs = millis();
-        if (isAnyDoorUnlocked != _isAnyDoorUnlocked)
-        {
-            // Update state
-            _isAnyDoorUnlocked = isAnyDoorUnlocked;
+        _lockedStateChangeTestLastMs = millis();
 
+        // Determine if door lock state reporting is required
+        bool changeDetected = false;
+        for (int i = 0; i < _doorStrikes.size(); i++)
+        {
+            _doorStrikes[i].service();
+            if (_reportMasterDoorOnly && (i != _masterDoorIndex))
+                continue;
+            if (_lockedStateChangeLastLocked != _doorStrikes[i].isLocked())
+                changeDetected = true;
+            _lockedStateChangeLastLocked = _doorStrikes[i].isLocked();
+        }
+
+        // Report if required
+        if (changeDetected)
+        {
             // Publish state change to CommandSerial
             publishStateChangeToCommandSerial();
         }
@@ -429,7 +433,7 @@ void ScaderDoors::publishStateChangeToCommandSerial()
     // Send message
     CommsChannelMsg msg(channelID, MSG_PROTOCOL_RAWCMDFRAME, 0, MSG_TYPE_COMMAND);
     String cmdStr = R"("cmdName":"InfoDoorStatusChange","doorStatus":")";
-    cmdStr += _isAnyDoorUnlocked ? "unlocked" : "locked";
+    cmdStr += _lockedStateChangeLastLocked ? "locked" : "unlocked";
     cmdStr += R"(")";
     cmdStr = "{" + cmdStr + "}";
     msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());

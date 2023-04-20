@@ -22,6 +22,7 @@ enum BusReqType
     BUS_REQ_TYPE_FW_UPDATE,
     BUS_REQ_TYPE_SLOW_SCAN,
     BUS_REQ_TYPE_FAST_SCAN,
+    BUS_REQ_TYPE_SEND_IF_PAUSED    
 };
 
 // Bus request info

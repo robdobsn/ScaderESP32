@@ -1,7 +1,7 @@
 #
 # Serial Monitor Utility
 #
-# Rob Dobson 2020-21
+# Rob Dobson 2020-23
 #
 
 import threading
@@ -77,7 +77,7 @@ class SerialIO:
         if self._running:
             raise RuntimeError("reader already running")
         self._serialThread = threading.Thread(target=threadFn)
-        self._serialThread.setDaemon(True)
+        self._serialThread.daemon = True
         self._running = True
         self._serialThread.start()
 
@@ -92,18 +92,23 @@ class SerialIO:
     def _serialRxThreadFn(self):
         while self._running:
             try:
-                numWaiting = self._serial.in_waiting
-                if numWaiting < 1:
-                    time.sleep(0.001)
-                    continue
-                rxBytes = self._serial.read(numWaiting)
-                self._dataCallback(rxBytes)
+                if self._serial is not None:
+                    numWaiting = self._serial.in_waiting
+                    if numWaiting < 1:
+                        time.sleep(0.001)
+                        continue
+                    rxBytes = self._serial.read(numWaiting)
+                    self._dataCallback(rxBytes)
+                else:
+                    # Try to reopen port
+                    self._openSerial()
             except SerialException as excp:
-                print("Error in serial " + str(excp))
+                if str(excp).find("ClearCommError") != -1:
+                    print("Serial connection reset .. trying to reopen ..")
+                else:
+                    print("Error in serial " + str(excp))
                 try:
                     # Try to reopen port
-                    time.sleep(2)
-                    self.close()
                     self._openSerial()
                 except Exception as excp2:
                     print("Error reopening serial " + str(excp2))
@@ -112,17 +117,29 @@ class SerialIO:
 
     def _openSerial(self):
         # Open the serial connection
-        try:
-            self._serial = serial.Serial(
-                port=self._serialPort,
-                baudrate=self._serialBaud,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS
-            )
-        except Exception as excp:
-            print("Serial Port " + str(self._serialPort) + " " + str(excp))
+        nowTime = time.time()
+        errStr = ""
+        if self._serial is not None:
+            self._serial.close()
+            self._serial = None
+        while time.time() - nowTime < 2:
+            try:
+                self._serial = serial.Serial(
+                    port=self._serialPort,
+                    baudrate=self._serialBaud,
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                    bytesize=serial.EIGHTBITS
+                )
+                break
+            except Exception as excp:
+                errStr = str(excp)
+                time.sleep(0.01)
+
+        if self._serial is None:
+            print(f"Failed to open serial port {self._serialPort} error {errStr}")
             return False
+            
         try:
             self._serial.set_buffer_size(20000, None)
         except Exception:

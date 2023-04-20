@@ -30,23 +30,14 @@ public:
     virtual ~DoorOpener();
     void setup(ConfigBase& config);
     void service();
-    void motorMoveToPosition(bool open);
-    void motorMoveAngle(int32_t angleDegs, bool relative, uint32_t moveTimeSecs);
-    void stopAndDisableDoor();
-    void onKitchenButtonPressed(int val);
-    void onConservatoryButtonPressed(int val);
-    bool isBusy();
-    void setMode(bool enIntoKitchen, bool enOutOfKitchen, bool recordChange);
-    String getStatusJSON(bool includeBraces);
-    void getStatusHash(std::vector<uint8_t>& stateHash);
 
     // Timing
     static const uint32_t MOVE_PENDING_TIME_MS = 500;
     static const uint32_t OVER_CURRENT_BLINK_TIME_MS = 200;
     static const uint32_t OVER_CURRENT_CLEAR_TIME_MS = 5000;
     static const uint32_t OVER_CURRENT_IGNORE_AT_START_OF_OPEN_MS = 5000;
-    static const int32_t DEFAULT_DOOR_OPEN_ANGLE = 150;
-    static const int32_t DEFAULT_DOOR_CLOSED_ANGLE = 300;
+    static const int32_t DEFAULT_DOOR_SWING_ANGLE = 150;
+    static const int32_t DEFAULT_DOOR_CLOSED_OFFSET_DEGREES = 0;
     static const uint32_t DEFAULT_DOOR_REMAIN_OPEN_TIME_SECS = 45;
     static const uint32_t DEFAULT_DOOR_TIME_TO_OPEN_SECS = 8;
     static const int32_t CAL_DOOR_OPEN_ANGLE_MAX = 150;
@@ -58,66 +49,33 @@ public:
     // Rotation angle
     static const uint32_t ROTATION_ANGLE_SAMPLE_TIME_MS = 100;
 
-    // Button state (works like a menu)
-    enum OpenerInOutMode_t
-    {
-        OPENER_IN_OUT_MODE_IDLE,
-        OPENER_IN_OUT_MODE_TOGGLE,
-        OPENER_IN_OUT_MODE_OUT_ONLY,
-        OPENER_IN_OUT_MODE_IN_AND_OUT,
-        OPENER_IN_OUT_MODE_IN_ONLY,
-        OPENER_IN_OUT_MODE_DISABLED,
-    };
-
-    static const char* getOpenerInOutModeStr(uint32_t mode)
-    {
-        switch(mode)
-        {
-            case OPENER_IN_OUT_MODE_IDLE: return "Idle";
-            case OPENER_IN_OUT_MODE_TOGGLE: return "Toggle";
-            case OPENER_IN_OUT_MODE_OUT_ONLY: return "OutOnly";
-            case OPENER_IN_OUT_MODE_IN_AND_OUT: return "InAndOut";
-            case OPENER_IN_OUT_MODE_IN_ONLY: return "InOnly";
-            case OPENER_IN_OUT_MODE_DISABLED: return "Disabled";
-        }
-        return "Unknown";
-    }
-
-    // Enable modes
-    bool isInEnabled()
-    {
-        return _inEnabled;
-    }
-    bool isOutEnabled()
-    {
-        return _outEnabled;
-    }
-    bool modeHasChanged()
-    {
-        return _modeChanged;
-    }
-    void modeChangeClear()
-    {
-        _modeChanged = false;
-    }
-
     // Calibration
     void calibrate();
 
     // Set open/closed position
     void setOpenPosition()
     {
-        _doorOpenAngleDegrees = _rotationAngleCorrected;
+        // This assumes _rotationAngleCorrected is set
+        _doorSwingAngleDegrees = calculateDegreesFromClosed(_rotationAngleCorrected);
     }
     void setClosedPosition()
     {
-        _doorClosedAngleDegrees = _rotationAngleCorrected;
+        _doorClosedAngleOffsetDegrees = _rotationAngleCorrected;
     }
+
+    // Door motion
+    void motorMoveToPosition(bool open);
+    void stopAndDisableDoor();
+    void motorMoveAngle(int32_t angleDegs, bool relative, uint32_t moveTimeSecs);
+
+    // Status
+    String getStatusJSON(bool includeBraces);
+    void getStatusHash(std::vector<uint8_t>& stateHash);
 
     // // Default door open angle
     // static const uint32_t DEFAULT_DOOR_OPEN_ANGLE = 30;
-    // void setOpenAngleDegrees(uint32_t angleDegrees) { _doorOpenAngleDegrees = angleDegrees; }
-    // uint32_t getOpenAngleDegrees() { return _doorOpenAngleDegrees; }
+    // void setOpenAngleDegrees(uint32_t angleDegrees) { _doorSwingAngleDegrees = angleDegrees; }
+    // uint32_t getOpenAngleDegrees() { return _doorSwingAngleDegrees; }
 
     // // Motor on time
     // static const uint32_t DEFAULT_MOTOR_ON_TIME_SECS = 1;
@@ -141,7 +99,7 @@ private:
     void clear();
     uint32_t getSecsBeforeClose()
     {
-        return _isOpen && (_doorOpenedTimeMs != 0) && (_inEnabled || _outEnabled) ? 
+        return !isClosed() && (_doorOpenedTimeMs != 0) && (_inEnabled || _outEnabled) ? 
                 Raft::timeToTimeout(millis(), _doorOpenedTimeMs, _doorRemainOpenTimeSecs*1000) / 1000 : 0;
     }
 
@@ -162,26 +120,29 @@ private:
     uint32_t _currentLastSampleMs = 0;
     uint32_t _overCurrentBlinkTimeMs = 0;
     uint32_t _overCurrentStartTimeMs = 0;
-    int32_t _doorOpenAngleDegrees = DEFAULT_DOOR_OPEN_ANGLE;
-    int32_t _doorClosedAngleDegrees = DEFAULT_DOOR_CLOSED_ANGLE;
+    int32_t _doorSwingAngleDegrees = DEFAULT_DOOR_SWING_ANGLE;
+    int32_t _doorClosedAngleOffsetDegrees = DEFAULT_DOOR_CLOSED_OFFSET_DEGREES;
     uint32_t _motorOnTimeAfterMoveSecs = 1;
     float _maxMotorCurrentAmps = 0.1;
+    float _doorClosedAngleTolerance = 5.0;
+    float _doorOpenEnoughForCatAccessAngle = 10.0;
 
     // State
-    bool _isOpen = false;
+    bool isClosed()
+    {
+        return abs(calculateDegreesFromClosed(_rotationAngleCorrected)) < _doorClosedAngleTolerance;
+    }
+    bool isOpenSufficientlyForCatAccess()
+    {
+        return calculateDegreesFromClosed(_rotationAngleCorrected) > _doorOpenEnoughForCatAccessAngle;
+    }
     uint32_t _doorOpenedTimeMs = 0;
-    bool _modeChanged = false;
     uint32_t _doorMoveStartTimeMs = 0;
 
     // Button debounce
     DebounceButton _conservatoryButton;
     uint32_t _buttonPressTimeMs = 0;
     bool _conservatoryButtonState = false;
-
-    // Button press looping while going through modes
-    static const uint32_t OPENER_IN_OUT_MODE_LOOP_START = OPENER_IN_OUT_MODE_OUT_ONLY;
-    static const uint32_t OPENER_IN_OUT_MODE_LOOP_END = OPENER_IN_OUT_MODE_DISABLED;
-    uint32_t _openerInOutMode = OPENER_IN_OUT_MODE_IDLE;
 
     // PIR
     bool _pirSenseInLast = false;
@@ -191,21 +152,12 @@ private:
     bool _pirSenseOutLast = false;
     uint32_t _pirSenseOutActiveMs = 0;
 
-    // Rotation angle
-    bool _rotationAngleValid = false;
+    // // Rotation angle
     int32_t _rotationAngleFromMagSensor = 0;
-    int32_t _rotationAngleFromMagSensorLast = 0;
-    int32_t _rotationAngleFromMagSensorWrapCount = 0;
     int32_t _rotationAngleCorrected = 0;
 
     // Movement speed
     double _doorMoveSpeedDegsPerSec = 5;
-
-    // // Vissen which is the motor current sense
-    // MovingAverage<200> _avgCurrent;
-
-    // // TinyPICO hardware
-    // TinyPICO _tinyPico;
 
     // I2C bus
     RaftI2CCentral _i2cCentral;
@@ -214,6 +166,7 @@ private:
     // Magnetic rotation sensor MT6701 address and timing
     uint32_t _mt6701Addr = 0x06;
     uint32_t _lastRotationAngleMs = 0;
+    bool _reverseSensorAngle = false;
 
     // Debug
     uint32_t _debugLastDisplayMs = 0;
@@ -241,6 +194,32 @@ private:
     int32_t _calDoorOpenRotationDirection = 1;
 
     // Helpers
+    void onConservatoryButtonPressed(int val);
+    bool isMotorActive();
     double calcDoorMoveSpeedDegsPerSec(double timeSecs, double angleDegs);
     void serviceCalibration();
+    void handleClosingDoorAfterTimePeriod();
+    void updateRotationAngleFromSensor();
+    int32_t calculateDegreesFromClosed(int32_t measuredAngleDegrees)
+    {
+        // This calculation assumes:
+        // - that _doorClosedAngleOffsetDegrees has already been set
+        // - sensor values are increasingly positive as door opens
+        // - stepper rotation values are increasingly positive as door opens
+        if (measuredAngleDegrees < _doorClosedAngleOffsetDegrees)
+        {
+            // Wrap around has occurred
+            // Check for small angle difference (if so return 0)
+            if (_doorClosedAngleOffsetDegrees - measuredAngleDegrees < _doorClosedAngleTolerance)
+                return 0;
+
+            // Return angle difference
+            return 360.0 - (_doorClosedAngleOffsetDegrees - measuredAngleDegrees);
+        }
+        else
+        {
+            // No wrap around
+            return measuredAngleDegrees - _doorClosedAngleOffsetDegrees;
+        }
+    }
 };

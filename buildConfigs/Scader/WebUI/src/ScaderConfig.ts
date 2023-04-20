@@ -42,16 +42,16 @@ export class ScaderConfig {
     }
     ScaderOpener: {
         enable: boolean,
-        DoorOpenAngle: number,
-        DoorClosedAngle: number,
+        doorSwingAngleDegrees: number,
+        doorClosedAngleOffsetDegrees: number,
         DoorRemainOpenTimeSecs: number,
         DoorTimeToOpenSecs: number,
         MotorOnTimeAfterMoveSecs: number,
         MaxMotorCurrentAmps: number,
     } = {
         enable: false,
-        DoorOpenAngle: 150,
-        DoorClosedAngle: 250,
+        doorSwingAngleDegrees: 150,
+        doorClosedAngleOffsetDegrees: 250,
         DoorRemainOpenTimeSecs: 30,
         DoorTimeToOpenSecs: 30,
         MotorOnTimeAfterMoveSecs: 30,

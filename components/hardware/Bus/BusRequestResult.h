@@ -10,7 +10,6 @@
 
 #include <ArduinoOrAlt.h>
 #include <vector>
-
 #include <BusRequestInfo.h>
 
 class BusRequestResult

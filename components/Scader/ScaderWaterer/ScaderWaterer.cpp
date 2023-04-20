@@ -133,67 +133,6 @@ void ScaderWaterer::apiControl(const String &reqStr, String &respStr, const APIS
                 _pumpControl.setFlow(pumpNum-1, flowRate, durationSecs);
             }
         }
-    //     // Open
-    //     if (params[1] == "open")
-    //     {
-    //         _doorOpener.moveDoor(true);
-    //         rsltStr = "Opened";
-    //     }
-    //     // Close
-    //     else if (params[1] == "close")
-    //     {
-    //         _doorOpener.moveDoor(false);
-    //         rsltStr = "Closed";
-    //     }
-    //     // Stop
-    //     else if (params[1] == "stop")
-    //     {
-    //         _doorOpener.stopDoor();
-    //         rsltStr = "Stopped";
-    //     }
-    //     // Mode
-    //     else if (params[1] == "mode")
-    //     {
-    //         if (params.size() > 1)
-    //         {
-    //             if (params[2] == "in")
-    //             {
-    //                 _doorOpener.setMode(true, false);
-    //                 rsltStr = "Mode set to IN";
-    //             }
-    //             else if (params[2] == "out")
-    //             {
-    //                 _doorOpener.setMode(false, true);
-    //                 rsltStr = "Mode set to OUT";
-    //             }
-    //             else if (params[2] == "both")
-    //             {
-    //                 _doorOpener.setMode(true, true);
-    //                 rsltStr = "Mode set to BOTH";
-    //             }
-    //             else if (params[2] == "none")
-    //             {
-    //                 _doorOpener.setMode(false, false);
-    //                 rsltStr = "Mode set to NONE";
-    //             }
-    //             else
-    //             {
-    //                 rsltStr = "Invalid mode";
-    //                 rslt = false;
-    //             }
-    //         }
-    //         else
-    //         {
-    //             rsltStr = "Mode not specified";
-    //             rslt = false;
-    //         }
-    //     }
-    //     // Unknown
-    //     else
-    //     {
-    //         rsltStr = "Unknown command";
-    //         rslt = false;
-    //     }
     }
     else
     {
@@ -234,4 +173,3 @@ void ScaderWaterer::getStatusHash(std::vector<uint8_t>& stateHash)
     for (uint32_t i = 0; i < _moistureSensors.getCount(); i++)
         stateHash.push_back(_moistureSensors.getMoisturePercentageHash(i));
 }
-

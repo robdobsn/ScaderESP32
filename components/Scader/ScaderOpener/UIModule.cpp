@@ -182,7 +182,7 @@ void UIModule::service()
 
     // Check status update to UI required
     if (_pOpenerStatus && 
-            (_pOpenerStatus->_isDirty || 
+            (_pOpenerStatus->uiUpdateRequired() || 
                 Raft::isTimeout(millis(), _statusUpdateLastMs, STATUS_UPDATE_INTERVAL_MS))
         )
     {
@@ -199,7 +199,7 @@ void UIModule::service()
 
         // Now done
         _statusUpdateLastMs = millis();
-        _pOpenerStatus->_isDirty = false;
+        _pOpenerStatus->uiUpdateDone();
     }
 }
 
@@ -236,4 +236,3 @@ void UIModule::processStatus(const String &status)
         }
     }
 }
-

@@ -126,7 +126,9 @@
 			"logLevel": "D"
 		},
 		"CommandSerial": {
-			"enable": 1,
+			"enable": [
+				{"__hwRevs__": [2,4], "__value__": 1}
+			],
 			"uartNum": 1,
 			"baudRate": 115200,
 			"rxBufSize": 1024,
@@ -298,6 +300,7 @@
 				}
 			],
 			"masterDoorIdx": 0,
+			"reportMasterDoorOnly": true,
 			"bellSensePin": [
 				{"__hwRevs__": [4], "__value__": 39}
 			],
@@ -306,24 +309,25 @@
 		"ScaderOpener": {
 			"DoorRemainOpenTimeSecs": 45,
 			"DoorTimeToOpenSecs": 20,
-			"DoorOpenAngle": 150,
-			"DoorClosedAngle": 250,
+			"doorSwingAngleDegrees": 0,
+			"doorClosedAngleOffsetDegrees": 0,
 			"MotorOnTimeAfterMoveSecs": 1,
 			"MaxMotorCurrentAmps": 0.5,
-			"CONSV_PIR_PIN": 32,
-			"CONSV_BUTTON_PIN": 15,
+			"consvPirPin": 32,
+			"consvButtonPin": 15,
 			"i2cPort": 0,
 			"sdaPin": 21,
 			"sclPin": 22,
 			"i2cBusFreqHz": 100000,
 			"mt6701addr": "0x06",
+			"reverseSensorAngle": 1,
 			"bus":
 			{
 				"name": "SERA",
 				"type": "serial",
 				"uartNum": 2,
-				"rxPin": "19",
-				"txPin": "18",
+				"rxPin": "23",
+				"txPin": "4",
 				"baudRate": 115200,
 				"minAfterSendMs": 5
 			},

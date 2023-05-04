@@ -10,7 +10,7 @@ import sys
 import os
 import logging
 import serial
-from serial.serialutil import SerialException
+from serial.serialutil import SerialException, SerialTimeoutException
 import argparse
 import KeyboardUtils
 
@@ -70,8 +70,11 @@ class SerialIO:
             print("Test sending", toSend)
         else:
             asciiOut = (toSend + '\n').encode("ascii")
-            # print(asciiOut)
-            self._serial.write(asciiOut)
+            # print(f"SerialIO send {asciiOut}")
+            try:
+                self._serial.write(asciiOut)
+            except SerialTimeoutException as excp:
+                pass
 
     def _serialThreadStart(self, threadFn):
         if self._running:
@@ -129,7 +132,8 @@ class SerialIO:
                     baudrate=self._serialBaud,
                     parity=serial.PARITY_NONE,
                     stopbits=serial.STOPBITS_ONE,
-                    bytesize=serial.EIGHTBITS
+                    bytesize=serial.EIGHTBITS,
+                    write_timeout=0.01
                 )
                 break
             except Exception as excp:
@@ -335,7 +339,11 @@ class Terminal:
         elif rslt == InputLine.RET_ENTER:
             # Send to serial
             outLine = self._inputLine.getLine()
-            # print("Sending " + outLine)
+            # Debug
+            # if len(outLine) == 0:
+            #     print("_handleKey sending empty line")
+            # else:
+            #     print("_handleKey sending " + outLine)
             self._outputConn.send(outLine)
             self._inputLine.clear()
 

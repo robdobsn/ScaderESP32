@@ -87,10 +87,17 @@ class KeyboardUtils:
         self.lastKeyChecked = True
         self.lastKeyTime = time.time()
         self.multiSeqChars = []
+        # lastDebugTime = time.time()
         while self._running:
+
+            # Get character (blocking)
             char = self.getch(True)
             if char is None:
+                # if time.time() - lastDebugTime > 5:
+                #    print("Nothing on keyboard")
+                #    lastDebugTime = time.time()
                 continue
+
             # Check if we're in an escape sequence
             if len(self.multiSeqChars) > 0:
                 self._handleEscSeq(ord(char))
@@ -109,7 +116,7 @@ class KeyboardUtils:
         while self._running:
             time.sleep(1)
             if not self.lastKeyChecked:
-                # print(time.time() - self.lastKeyTime, len(self.multiSeqChars))
+                # print(f"KeyESC check timeSinceKey {time.time() - self.lastKeyTime} multiSeqLen {len(self.multiSeqChars)}")
                 if time.time() - self.lastKeyTime > 0.1:
                     if not self._isWindows and len(self.multiSeqChars) == 1:
                         self._keyHandler("ESC")

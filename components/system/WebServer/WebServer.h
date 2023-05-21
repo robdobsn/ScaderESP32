@@ -11,7 +11,7 @@
 #include <ConfigBase.h>
 #include <RestAPIEndpointManager.h>
 #include <SysModBase.h>
-#include <RdWebInterface.h>
+#include <RaftWebInterface.h>
 #include <CommsChannelSettings.h>
 
 class WebServerResource;
@@ -59,8 +59,8 @@ private:
     void configChanged();
     void applySetup();
     void setupEndpoints();
-    bool restAPIMatchEndpoint(const char* url, RdWebServerMethod method,
-                    RdWebServerRestEndpoint& endpoint);
+    bool restAPIMatchEndpoint(const char* url, RaftWebServerMethod method,
+                    RaftWebServerRestEndpoint& endpoint);
     void webSocketSetup();
 
     // Server config
@@ -73,7 +73,7 @@ private:
     bool _isWebServerSetup;
 
     // Server
-    RaftWebServer _rdWebServer;
+    RaftWebServer _raftWebServer;
 
     // Singleton
     static WebServer* _pThisWebServer;
@@ -82,7 +82,7 @@ private:
     std::vector<String> _webSocketConfigs;
 
     // Mapping from web-server method to RESTAPI method enums
-    RestAPIEndpoint::EndpointMethod convWebToRESTAPIMethod(RdWebServerMethod method)
+    RestAPIEndpoint::EndpointMethod convWebToRESTAPIMethod(RaftWebServerMethod method)
     {
         switch(method)
         {

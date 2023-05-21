@@ -15,9 +15,9 @@
 #include <RaftWebServer.h>
 #include <CommsCoreIF.h>
 #include <CommsChannelMsg.h>
-#include <RdWebHandlerStaticFiles.h>
-#include <RdWebHandlerRestAPI.h>
-#include <RdWebHandlerWS.h>
+#include <RaftWebHandlerStaticFiles.h>
+#include <RaftWebHandlerRestAPI.h>
+#include <RaftWebHandlerWS.h>
 WebServer* WebServer::_pThisWebServer = NULL;
 
 static const char* MODULE_PREFIX = "WebServer";
@@ -107,7 +107,7 @@ void WebServer::applySetup()
             RaftWebServerSettings settings(_port, numConnSlots, _webSocketConfigs.size() > 0, 
                     enableFileServer, taskCore, taskPriority, taskStackSize, sendBufferMaxLen,
                     CommsCoreIF::CHANNEL_ID_REST_API);
-            _rdWebServer.setup(settings);
+            _raftWebServer.setup(settings);
         }
         _isWebServerSetup = true;
     }
@@ -126,7 +126,7 @@ void WebServer::beginServer()
 {
     // Add headers
     if (_accessControlAllowOriginAll)
-        _rdWebServer.addResponseHeader({"Access-Control-Allow-Origin", "*"});
+        _raftWebServer.addResponseHeader({"Access-Control-Allow-Origin", "*"});
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,7 +136,7 @@ void WebServer::beginServer()
 void WebServer::service()
 {
     // Service
-    _rdWebServer.service();
+    _raftWebServer.service();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,10 +154,10 @@ void WebServer::setupEndpoints()
     LOG_I(MODULE_PREFIX, "setupEndpoints serverEnabled %s port %d apiPrefix %s accessControlAllowOriginAll %s", 
             _webServerEnabled ? "Y" : "N", _port, 
             _restAPIPrefix.c_str(), _accessControlAllowOriginAll ? "Y" : "N");
-    RdWebHandlerRestAPI* pHandler = new RdWebHandlerRestAPI(_restAPIPrefix,
+    RaftWebHandlerRestAPI* pHandler = new RaftWebHandlerRestAPI(_restAPIPrefix,
                 std::bind(&WebServer::restAPIMatchEndpoint, this, std::placeholders::_1, 
                         std::placeholders::_2, std::placeholders::_3));
-    if (!_rdWebServer.addHandler(pHandler))
+    if (!_raftWebServer.addHandler(pHandler))
         delete pHandler;
 }
 
@@ -181,8 +181,8 @@ void WebServer::addStaticResource(const WebServerResource *pResource, const char
 void WebServer::serveStaticFiles(const char* baseUrl, const char* baseFolder, const char* cacheControl)
 {
     // Handle file systems
-    RdWebHandlerStaticFiles* pHandler = new RdWebHandlerStaticFiles(baseUrl, baseFolder, cacheControl, "index.html");
-    bool handlerAddOk = _rdWebServer.addHandler(pHandler);
+    RaftWebHandlerStaticFiles* pHandler = new RaftWebHandlerStaticFiles(baseUrl, baseFolder, cacheControl, "index.html");
+    bool handlerAddOk = _raftWebServer.addHandler(pHandler);
     LOG_I(MODULE_PREFIX, "serveStaticFiles url %s folder %s addResult %s", baseUrl, baseFolder, 
                 handlerAddOk ? "OK" : "FILE SERVER DISABLED");
     if (!handlerAddOk)
@@ -225,7 +225,7 @@ void WebServer::webSocketSetup()
         ConfigBase jsonConfig = _webSocketConfigs[wsIdx];
 
         // Setup WebHandler for Websockets    
-        RdWebHandlerWS* pHandler = new RdWebHandlerWS(jsonConfig, 
+        RaftWebHandlerWS* pHandler = new RaftWebHandlerWS(jsonConfig, 
                 std::bind(&CommsCoreIF::canAcceptInbound, pCommsCore, 
                         std::placeholders::_1),
                 std::bind(&CommsCoreIF::handleInboundMessage, pCommsCore, 
@@ -235,7 +235,7 @@ void WebServer::webSocketSetup()
             continue;
 
         // Add handler
-        if (!_rdWebServer.addHandler(pHandler))
+        if (!_raftWebServer.addHandler(pHandler))
         {
             delete pHandler;
             continue;
@@ -254,11 +254,11 @@ void WebServer::webSocketSetup()
                     interfaceName.c_str(),
                     wsName.c_str(),
                     [this](CommsChannelMsg& msg) { 
-                        return _rdWebServer.sendMsg(msg.getBuf(), msg.getBufLen(), 
+                        return _raftWebServer.sendMsg(msg.getBuf(), msg.getBufLen(), 
                                 false, msg.getChannelID());
                     },
                     [this](uint32_t channelID, bool& noConn) {
-                        return _rdWebServer.canSend(channelID, noConn); 
+                        return _raftWebServer.canSend(channelID, noConn); 
                     },
                     &commsChannelSettings);
 
@@ -283,8 +283,8 @@ void WebServer::webSocketSetup()
 // Callback used to match endpoints
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool WebServer::restAPIMatchEndpoint(const char* url, RdWebServerMethod method,
-                    RdWebServerRestEndpoint& endpoint)
+bool WebServer::restAPIMatchEndpoint(const char* url, RaftWebServerMethod method,
+                    RaftWebServerRestEndpoint& endpoint)
 {
     // Check valid
     if (!getRestAPIEndpointManager())

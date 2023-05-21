@@ -31,14 +31,14 @@ FetchContent_Declare(
   raftcore
   # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        v0.2.16
+  GIT_TAG        v0.3.6
 )
 
 # Fetch the RaftWebServer library
 FetchContent_Declare(
   raftwebserver
   GIT_REPOSITORY https://github.com/robdobsn/RaftWebServer
-  GIT_TAG        v0.0.7
+  GIT_TAG        v0.1.0
 )
 
 # Fetch the RaftI2C library

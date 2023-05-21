@@ -65,7 +65,7 @@ FileStreamSession::FileStreamSession(const String& filename, uint32_t channelID,
     {
         _pFileChunker = new FileSystemChunker();
         if (_pFileChunker)
-            _pFileChunker->start(filename, 0, false, true, true);
+            _pFileChunker->start(filename, 0, false, true, true, false);
     }
 
     // Construct file/stream handling protocol

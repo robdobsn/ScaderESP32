@@ -17,6 +17,5 @@ idf_component_register(
                   "HWElemSteppers"
                 REQUIRES 
                   raftcore-src
-                  system
                   hardware
 )

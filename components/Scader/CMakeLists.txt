@@ -44,8 +44,6 @@ idf_component_register(
                   # "ScaderWaterer"
                 REQUIRES
                   raftcore-src
-                  comms
-                  system
                   FastLED-idf
                   HWSteppers
                   hardware

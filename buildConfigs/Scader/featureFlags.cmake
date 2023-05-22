@@ -9,6 +9,7 @@ add_compile_definitions(FEATURE_NETWORK_FUNCTIONALITY)
 add_compile_definitions(FEATURE_WEB_SERVER_OR_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SERVER_STATIC_FILES)
+add_compile_definitions(FEATURE_MQTT_MANAGER)
 
 # LittleFS configuration
 add_compile_definitions(CONFIG_LITTLEFS_MAX_PARTITIONS=3)

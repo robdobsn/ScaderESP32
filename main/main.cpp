@@ -121,7 +121,6 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include <BLEManager.h>
 #ifdef FEATURE_NETWORK_FUNCTIONALITY
 #include <NetworkManager.h>
-#include <NetDiscovery.h>
 #ifdef FEATURE_WEB_SERVER_OR_WEB_SOCKETS
 #include <WebServer.h>
 #endif
@@ -336,9 +335,6 @@ void mainTask(void *pvParameters)
     ProtocolExchange _protocolExchange("ProtExchg", defaultSystemConfig, &_sysTypeConfig, nullptr);
     _protocolExchange.setHandlers(&_espotaUpdate);
     _fileManager.setProtocolExchange(_protocolExchange);
-
-//     // NetDiscovery
-//     // NetDiscovery _netDiscovery("NetDiscovery", defaultSystemConfig, &_sysTypeConfig, nullptr);
 
 #ifdef FEATURE_WEB_SERVER_OR_WEB_SOCKETS
     // WebServer

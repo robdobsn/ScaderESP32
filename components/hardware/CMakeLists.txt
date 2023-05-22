@@ -51,5 +51,4 @@ idf_component_register(
                   # "HWElemRoboticalStandardAddOn"
                 REQUIRES
                   raftcore-src
-                  system
 )

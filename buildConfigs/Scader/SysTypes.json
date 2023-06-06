@@ -1,96 +1,96 @@
 [
-	{
-		"SysType": "Scader",
-		"CmdsAtStart": "",
-		"WebUI": "",
-		"SysManager": {
-			"monitorPeriodMs":30000,
-			"reportList":[
-				"NetMan",
-				"BLEMan",
-				"SysMan",
-				"ProtExchg",
-				"StatsCB"
-			],
-			"pauseWiFiforBLE":1,
-			"slowSysModMs": 50,
-			"rebootAfterNHours": 24
-		},
-		"LogManager": {
-			"logDests": [
-				{
-					"enable": true,
-					"type": "Papertrail",
-					"host": "logs2.papertrailapp.com",
-					"port": 48992,
-					"sysName": "Scader"
-				}
-			]
-		},
-		"ProtExchg": {
-			"RICSerial":{
-				"FrameBound":"0xE7",
-				"CtrlEscape":"0xD7"
-			}
-		},
-		"NetMan": {
-			"WiFiEnabled": 1,
-			"EthEnabled": 1,
-			"WiFiSSID": "",
-			"WiFiPass": "",
-			"logLevel": "D",
-			"EthLanChip": "LAN87XX",
-			"EthPowerPin": [
-				{"__hwRevs__": [3,4], "__value__": 12}
-			],
-			"EthMDCPin": 23,
-			"EthMDIOPin": 18,
-			"EthPhyAddr": 0,
-			"EthPhyRstPin": -1
-		},
-		"MQTTMan": {
-			"enable": 1,
-			"brokerHostname": "192.168.86.247",
-			"brokerPort": 1883,
-			"clientID": "Scader",
-			"topics": [
-				{
-					"name": "scaderIn",
-					"inbound": 1,
-					"path": "scader/in",
-					"qos": 1
-				},
-				{
-					"name": "scaderOut",
-					"inbound": 0,
-					"path": "scader/out",
-					"qos": 1
-				}
-			]
-		},
-		"NTPClient": {
-			"enable": 1,
-			"NTPServer": "pool.ntp.org",
-			"GMTOffsetSecs": 0,
-			"DSTOffsetSecs": 0
-		},
-		"ESPOTAUpdate": {
-			"OTADirect": 1
-		},
-		"BLEMan": {
-			"enable": 0,
-			"maxPktLen": 180,
-			"logLevel": "D",
-			"nimLogLev": "E"
-		},
-		"WebServer": {
-			"enable": 1,
-			"webServerPort": 80,
-			"allowOriginAll": 1,
-			"apiPrefix": "api/",
-			"fileServer": 1,
-			"numConnSlots": 16,
-			"websockets": [
+    {
+        "SysType": "Scader",
+        "CmdsAtStart": "",
+        "WebUI": "",
+        "SysManager": {
+            "monitorPeriodMs":30000,
+            "reportList":[
+                "NetMan",
+                "BLEMan",
+                "SysMan",
+                "ProtExchg",
+                "StatsCB"
+            ],
+            "pauseWiFiforBLE":1,
+            "slowSysModMs": 50,
+            "rebootAfterNHours": 24
+        },
+        "LogManager": {
+            "logDests": [
+                {
+                    "enable": true,
+                    "type": "Papertrail",
+                    "host": "logs2.papertrailapp.com",
+                    "port": 48992,
+                    "sysName": "Scader"
+                }
+            ]
+        },
+        "ProtExchg": {
+            "RICSerial":{
+                "FrameBound":"0xE7",
+                "CtrlEscape":"0xD7"
+            }
+        },
+        "NetMan": {
+            "WiFiEnabled": 1,
+            "EthEnabled": 1,
+            "WiFiSSID": "",
+            "WiFiPass": "",
+            "logLevel": "D",
+            "EthLanChip": "LAN87XX",
+            "EthPowerPin": [
+                {"__hwRevs__": [3,4], "__value__": 12}
+            ],
+            "EthMDCPin": 23,
+            "EthMDIOPin": 18,
+            "EthPhyAddr": 0,
+            "EthPhyRstPin": -1
+        },
+        "MQTTMan": {
+            "enable": 1,
+            "brokerHostname": "192.168.86.247",
+            "brokerPort": 1883,
+            "clientID": "Scader",
+            "topics": [
+                {
+                    "name": "scaderIn",
+                    "inbound": 1,
+                    "path": "scader/in",
+                    "qos": 1
+                },
+                {
+                    "name": "scaderOut",
+                    "inbound": 0,
+                    "path": "scader/out",
+                    "qos": 1
+                }
+            ]
+        },
+        "NTPClient": {
+            "enable": 1,
+            "NTPServer": "pool.ntp.org",
+            "GMTOffsetSecs": 0,
+            "DSTOffsetSecs": 0
+        },
+        "ESPOTAUpdate": {
+            "OTADirect": 1
+        },
+        "BLEMan": {
+            "enable": 0,
+            "maxPktLen": 180,
+            "logLevel": "D",
+            "nimLogLev": "E"
+        },
+        "WebServer": {
+            "enable": 1,
+            "webServerPort": 80,
+            "allowOriginAll": 1,
+            "apiPrefix": "api/",
+            "fileServer": 1,
+            "numConnSlots": 16,
+            "websockets": [
                 {
                     "pfix": "ws",
                     "pcol": "RICSerial",
@@ -99,368 +99,368 @@
                     "pktMaxBytes": 5000,
                     "pingMs": 2000
                 },
-				{
-					"pfix": "scader",
-					"pcol": "RICJSON",
-					"maxConn": 4,
-					"txQueueMax": 6,
-					"pktMaxBytes": 5000,
-					"pingMs": 2000,
-					"noPongMs": 0,
-					"content": "text"
-				}
+                {
+                    "pfix": "scader",
+                    "pcol": "RICJSON",
+                    "maxConn": 4,
+                    "txQueueMax": 6,
+                    "pktMaxBytes": 5000,
+                    "pingMs": 2000,
+                    "noPongMs": 0,
+                    "content": "text"
+                }
             ],
-			"logLevel": "D",
-			"sendMax": 500,
-			"taskCore": 0,
-			"taskStack": 3000,
-			"taskPriority": 9
-		},
-		"SerialConsole": {
-			"enable": 1,
-			"uartNum": 0,
-			"rxBuf": 256,
-			"txBuf": 2048,
-			"crlfOnTx": 1,
-			"protocol": "RICSerial",
-			"logLevel": "D"
-		},
-		"CommandSerial": {
-			"enable": [
-				{"__hwRevs__": [2,4], "__value__": 1}
-			],
-			"uartNum": 1,
-			"baudRate": 115200,
-			"rxBufSize": 1024,
-			"rxPin": [
-				{"__hwRevs__": [2], "__value__": 16},
-				{"__hwRevs__": [4], "__value__": 35}
-			],
-			"txPin": [
-				{"__hwRevs__": [2], "__value__": 17},
-				{"__hwRevs__": [4], "__value__": 5}
-			],
-			"protocol": "RICSerial",
-			"logLevel": "D"
-		},
-		"CommandSocket": {
-			"enable": 0,
-			"socketPort": 24,
-			"protocol": "RICSerial",
-			"logLevel": "D"
-		},
-		"FileManager": {
-			"SPIFFSEnabled": 1,
-			"LittleFSEnabled": 0,
-			"LocalFSFormatIfCorrupt": 1,
-			"CacheFileSysInfo": 0,
-			"SDEnabled": 0,
-			"DefaultSD": 1,
-			"SDMOSI": 15,
-			"SDMISO": 4,
-			"SDCLK": 14,
-			"SDCS": 13
-		},
-		"Publish": {
-			"pubList": [
-				{
-					"type": "HW",
-					"name": "ScaderRelays",
-					"trigger": "Time",
-					"msgID": "ScaderRelays",
-					"rates": [
-						{
-							"if": "scaderOut",
-							"protocol": "RICJSON",
-							"rateHz": 0.1
-						}
-					]
-				},
-				{
-					"type": "HW",
-					"name": "ScaderShades",
-					"trigger": "Time",
-					"msgID": "ScaderShades",
-					"rates": [
-						{
-							"if": "scaderOut",
-							"protocol": "RICJSON",
-							"rateHz": 0.1
-						}
-					]
-				},
-				{
-					"type": "HW",
-					"name": "ScaderDoors",
-					"trigger": "Time",
-					"msgID": "ScaderDoors",
-					"rates": [
-						{
-							"if": "scaderOut",
-							"protocol": "RICJSON",
-							"rateHz": 0.1
-						}
-					]
-				},
-				{
-					"type": "HW",
-					"name": "ScaderOpener",
-					"trigger": "Time",
-					"msgID": "ScaderOpener",
-					"rates": [
-						{
-							"if": "scaderOut",
-							"protocol": "RICJSON",
-							"rateHz": 0.1
-						}
-					]
-				},
-				{
-					"type": "HW",
-					"name": "ScaderRFID",
-					"trigger": "Time",
-					"msgID": "ScaderRFID",
-					"rates": [
-						{
-							"if": "scaderOut",
-							"protocol": "RICJSON",
-							"rateHz": 0.1
-						}
-					]
-				}
-			]
-		},
-		"ScaderRelays": {
-			"maxElems": 24,
-			"SPI_MOSI": [
-				{"__hwRevs__": [3], "__value__": 33}
-			],
-			"SPI_MISO": [
-				{"__hwRevs__": [3], "__value__": 32}
-			],
-			"SPI_CLK": [
-				{"__hwRevs__": [3], "__value__": 16}
-			],
-			"SPI_CS1": [
-				{"__hwRevs__": [3], "__value__": 4}
-			],
-			"SPI_CS2": [
-				{"__hwRevs__": [3], "__value__": 5}
-			],
-			"SPI_CS3": [
-				{"__hwRevs__": [3], "__value__": 13}
-			],
-			"ONOFF_KEY": [
-				{"__hwRevs__": [3], "__value__": 34}
-			]
-		},
-		"ScaderShades": {
-			"maxElems": 5,
-			"HC595_SER": [
-				{"__hwRevs__": [4], "__value__": 16}
-			],
-			"HC595_SCK": [
-				{"__hwRevs__": [4], "__value__": 4}
-			],
-			"HC595_LATCH": [
-				{"__hwRevs__": [4], "__value__": 14}
-			],
-			"HC595_RST": [
-				{"__hwRevs__": [4], "__value__": 13}
-			],
-			"LED_OP": -1,
-			"LED_ACT": [
-				{"__hwRevs__": [4], "__value__": 15}
-			],
-			"enableLightLevels": 0,
-			"LIGHTLVLPINS": [34, 39, -1]
-		},
-		"ScaderDoors": {
-			"maxElems": 2,
-			"doors": [
-				{
-					"strikePin": [
-						{"__hwRevs__": [4], "__value__": 33}
-					],
-					"strikeOn": 1,
-					"openSensePin": [
-						{"__hwRevs__": [4], "__value__": 34}
-					],
-					"openSenseLevel": 0,
-					"unlockForSecs": 10
-				},
-				{
-					"strikePin": [
-						{"__hwRevs__": [4], "__value__": 32}
-					],
-					"strikeOn": 1,
-					"openSensePin": -1,
-					"openSenseLevel": 0,
-					"unlockForSecs": 30
-				}
-			],
-			"masterDoorIdx": 0,
-			"reportMasterDoorOnly": true,
-			"bellSensePin": [
-				{"__hwRevs__": [4], "__value__": 39}
-			],
-			"bellSenseLevel": 1
-		},
-		"ScaderOpener": {
-			"DoorRemainOpenTimeSecs": 45,
-			"DoorTimeToOpenSecs": 20,
-			"doorSwingAngleDegrees": 0,
-			"doorClosedAngleOffsetDegrees": 0,
-			"MotorOnTimeAfterMoveSecs": 1,
-			"MaxMotorCurrentAmps": 0.5,
-			"consvPirPin": 32,
-			"consvButtonPin": 15,
-			"i2cPort": 0,
-			"sdaPin": 21,
-			"sclPin": 22,
-			"i2cBusFreqHz": 100000,
-			"mt6701addr": "0x06",
-			"reverseSensorAngle": 1,
-			"bus":
-			{
-				"name": "SERA",
-				"type": "serial",
-				"uartNum": 2,
-				"rxPin": "23",
-				"txPin": "4",
-				"baudRate": 115200,
-				"minAfterSendMs": 5
-			},
-			"stepper":
-			{
-				"name": "DoorMotor",
-				"type": "Steppers",
-				"bus": "SERA",
-				"motion": {
-					"geom": "XYZ",
-					"blockDist": 10,
-					"allowOutOfBounds": 0,
-					"homeBeforeMove": 0,
-					"junctionDeviation": 0.05
-				},
-				"ramp": {
-					"rampTimerEn": 1,
-					"rampTimerUs": 100,
-					"pipelineLen": 100
-				},
-				"motorEn": {
-					"stepEnablePin": "27",
-					"stepEnLev": 0,
-					"stepDisableSecs": 1
-				},
-				"axes": [
-					{
-						"name": "X",
-						"params": {
-							"unitsPerRot": 360,
-							"stepsPerRot": 3800,
-							"maxSpeed": 50,
-							"maxAcc": 50
-						},
-						"driver": {
-							"driver": "TMC2209",
-							"hw": "local",
-							"addr": 0,
-							"stepPin": "25",
-							"dirnPin": "26",
-							"invDirn": 0,
-							"writeOnly": 0,
-							"extSenseOhms": 0.15,
-							"extVRef": 0,
-							"extMStep": 0,
-							"intpol": 1,
-							"microsteps": 1,
-							"rmsAmps": 0.01,
-							"holdModeOrFactor": 0.5,
-							"holdDelay": 1,
-							"pwmFreqKHz": 35
-						}
-					}
-				]
-			},
-			"uiModule":
-			{
-				"rxPin": "19",
-				"txPin": "18",
-				"uartNum": 1,
-				"baudRate": 115200	
-			}
+            "logLevel": "D",
+            "sendMax": 500,
+            "taskCore": 0,
+            "taskStack": 3000,
+            "taskPriority": 9
+        },
+        "SerialConsole": {
+            "enable": 1,
+            "uartNum": 0,
+            "rxBuf": 256,
+            "txBuf": 2048,
+            "crlfOnTx": 1,
+            "protocol": "RICSerial",
+            "logLevel": "D"
+        },
+        "CommandSerial": {
+            "enable": [
+                {"__hwRevs__": [2,4], "__value__": 1}
+            ],
+            "uartNum": 1,
+            "baudRate": 115200,
+            "rxBufSize": 1024,
+            "rxPin": [
+                {"__hwRevs__": [2], "__value__": 16},
+                {"__hwRevs__": [4], "__value__": 35}
+            ],
+            "txPin": [
+                {"__hwRevs__": [2], "__value__": 17},
+                {"__hwRevs__": [4], "__value__": 5}
+            ],
+            "protocol": "RICSerial",
+            "logLevel": "D"
+        },
+        "CommandSocket": {
+            "enable": 0,
+            "socketPort": 24,
+            "protocol": "RICSerial",
+            "logLevel": "D"
+        },
+        "FileManager": {
+            "SPIFFSEnabled": 1,
+            "LittleFSEnabled": 0,
+            "LocalFSFormatIfCorrupt": 1,
+            "CacheFileSysInfo": 0,
+            "SDEnabled": 0,
+            "DefaultSD": 1,
+            "SDMOSI": 15,
+            "SDMISO": 4,
+            "SDCLK": 14,
+            "SDCS": 13
+        },
+        "Publish": {
+            "pubList": [
+                {
+                    "type": "HW",
+                    "name": "ScaderRelays",
+                    "trigger": "Time",
+                    "msgID": "ScaderRelays",
+                    "rates": [
+                        {
+                            "if": "scaderOut",
+                            "protocol": "RICJSON",
+                            "rateHz": 0.1
+                        }
+                    ]
+                },
+                {
+                    "type": "HW",
+                    "name": "ScaderShades",
+                    "trigger": "Time",
+                    "msgID": "ScaderShades",
+                    "rates": [
+                        {
+                            "if": "scaderOut",
+                            "protocol": "RICJSON",
+                            "rateHz": 0.1
+                        }
+                    ]
+                },
+                {
+                    "type": "HW",
+                    "name": "ScaderDoors",
+                    "trigger": "Time",
+                    "msgID": "ScaderDoors",
+                    "rates": [
+                        {
+                            "if": "scaderOut",
+                            "protocol": "RICJSON",
+                            "rateHz": 0.1
+                        }
+                    ]
+                },
+                {
+                    "type": "HW",
+                    "name": "ScaderOpener",
+                    "trigger": "Time",
+                    "msgID": "ScaderOpener",
+                    "rates": [
+                        {
+                            "if": "scaderOut",
+                            "protocol": "RICJSON",
+                            "rateHz": 0.1
+                        }
+                    ]
+                },
+                {
+                    "type": "HW",
+                    "name": "ScaderRFID",
+                    "trigger": "Time",
+                    "msgID": "ScaderRFID",
+                    "rates": [
+                        {
+                            "if": "scaderOut",
+                            "protocol": "RICJSON",
+                            "rateHz": 0.1
+                        }
+                    ]
+                }
+            ]
+        },
+        "ScaderRelays": {
+            "maxElems": 24,
+            "SPI_MOSI": [
+                {"__hwRevs__": [3], "__value__": 33}
+            ],
+            "SPI_MISO": [
+                {"__hwRevs__": [3], "__value__": 32}
+            ],
+            "SPI_CLK": [
+                {"__hwRevs__": [3], "__value__": 16}
+            ],
+            "SPI_CS1": [
+                {"__hwRevs__": [3], "__value__": 4}
+            ],
+            "SPI_CS2": [
+                {"__hwRevs__": [3], "__value__": 5}
+            ],
+            "SPI_CS3": [
+                {"__hwRevs__": [3], "__value__": 13}
+            ],
+            "ONOFF_KEY": [
+                {"__hwRevs__": [3], "__value__": 34}
+            ]
+        },
+        "ScaderShades": {
+            "maxElems": 5,
+            "HC595_SER": [
+                {"__hwRevs__": [4], "__value__": 16}
+            ],
+            "HC595_SCK": [
+                {"__hwRevs__": [4], "__value__": 4}
+            ],
+            "HC595_LATCH": [
+                {"__hwRevs__": [4], "__value__": 14}
+            ],
+            "HC595_RST": [
+                {"__hwRevs__": [4], "__value__": 13}
+            ],
+            "LED_OP": -1,
+            "LED_ACT": [
+                {"__hwRevs__": [4], "__value__": 15}
+            ],
+            "enableLightLevels": 0,
+            "LIGHTLVLPINS": [34, 39, -1]
+        },
+        "ScaderDoors": {
+            "maxElems": 2,
+            "doors": [
+                {
+                    "strikePin": [
+                        {"__hwRevs__": [4], "__value__": 33}
+                    ],
+                    "strikeOn": 1,
+                    "openSensePin": [
+                        {"__hwRevs__": [4], "__value__": 34}
+                    ],
+                    "openSenseLevel": 0,
+                    "unlockForSecs": 10
+                },
+                {
+                    "strikePin": [
+                        {"__hwRevs__": [4], "__value__": 32}
+                    ],
+                    "strikeOn": 1,
+                    "openSensePin": -1,
+                    "openSenseLevel": 0,
+                    "unlockForSecs": 30
+                }
+            ],
+            "masterDoorIdx": 0,
+            "reportMasterDoorOnly": true,
+            "bellSensePin": [
+                {"__hwRevs__": [4], "__value__": 39}
+            ],
+            "bellSenseLevel": 1
+        },
+        "ScaderOpener": {
+            "DoorRemainOpenTimeSecs": 45,
+            "DoorTimeToOpenSecs": 20,
+            "doorSwingAngleDegrees": 0,
+            "doorClosedAngleOffsetDegrees": 0,
+            "MotorOnTimeAfterMoveSecs": 1,
+            "MaxMotorCurrentAmps": 0.5,
+            "consvPirPin": 32,
+            "consvButtonPin": 15,
+            "i2cPort": 0,
+            "sdaPin": 21,
+            "sclPin": 22,
+            "i2cBusFreqHz": 100000,
+            "mt6701addr": "0x06",
+            "reverseSensorAngle": 1,
+            "bus":
+            {
+                "name": "SERA",
+                "type": "serial",
+                "uartNum": 2,
+                "rxPin": "23",
+                "txPin": "4",
+                "baudRate": 115200,
+                "minAfterSendMs": 5
+            },
+            "stepper":
+            {
+                "name": "DoorMotor",
+                "type": "Steppers",
+                "bus": "SERA",
+                "motion": {
+                    "geom": "XYZ",
+                    "blockDist": 10,
+                    "allowOutOfBounds": 0,
+                    "homeBeforeMove": 0,
+                    "junctionDeviation": 0.05
+                },
+                "ramp": {
+                    "rampTimerEn": 1,
+                    "rampTimerUs": 100,
+                    "pipelineLen": 100
+                },
+                "motorEn": {
+                    "stepEnablePin": "27",
+                    "stepEnLev": 0,
+                    "stepDisableSecs": 1
+                },
+                "axes": [
+                    {
+                        "name": "X",
+                        "params": {
+                            "unitsPerRot": 360,
+                            "stepsPerRot": 3800,
+                            "maxSpeed": 50,
+                            "maxAcc": 50
+                        },
+                        "driver": {
+                            "driver": "TMC2209",
+                            "hw": "local",
+                            "addr": 0,
+                            "stepPin": "25",
+                            "dirnPin": "26",
+                            "invDirn": 0,
+                            "writeOnly": 0,
+                            "extSenseOhms": 0.15,
+                            "extVRef": 0,
+                            "extMStep": 0,
+                            "intpol": 1,
+                            "microsteps": 1,
+                            "rmsAmps": 0.01,
+                            "holdModeOrFactor": 0.5,
+                            "holdDelay": 1,
+                            "pwmFreqKHz": 35
+                        }
+                    }
+                ]
+            },
+            "uiModule":
+            {
+                "rxPin": "19",
+                "txPin": "18",
+                "uartNum": 1,
+                "baudRate": 115200	
+            }
 
-		},
-		"ScaderCat": {
-			"LIGHT_CTRL": 23,
-			"VALVE_CTRL": 19,
-			"FET_1": 18,
-			"FET_2": 5
-		},
-		"ScaderLEDPix": {
-			"brightness": 96,
-			"strips": [
-				{
-					"pixPin": "32",
-					"numPix": 500
-				},
-				{
-					"pixPin": "33",
-					"numPix": 500
-				}
-			]
-		},
-		"ScaderWaterer": {
-			"i2cPort": 0,
-			"sdaPin": "21",
-			"sclPin": "22",
-			"i2cFreq": 100000,
-			"adcI2CAddr": "0x48",
-			"reportSecs": 10,
-			"Pump0": "23",
-			"Pump1": "25",
-			"Pump2": "26",
-			"Pump3": "27"
-		},
-		"ScaderRFID": {
-			"actLedPin": [
-				{"__hwRevs__": [2], "__value__": 15}
-			],
-			"tagLedPin": [
-				{"__hwRevs__": [2], "__value__": 23}
-			],
-			"rfidSPIMOSIPin": [
-				{"__hwRevs__": [2], "__value__": 18}
-			],
-			"rfidSPIMISOPin": [
-				{"__hwRevs__": [2], "__value__": 19}
-			],
-			"rfidSPIClkPin": [
-				{"__hwRevs__": [2], "__value__": 5}
-			],
-			"rfidSPICS0Pin": [
-				{"__hwRevs__": [2], "__value__": 21}
-			],
-			"rfidNBusyPin": [
-				{"__hwRevs__": [2], "__value__": 4}
-			],
-			"rfidResetPin": [
-				{"__hwRevs__": [2], "__value__": 22}
-			],
-			"rfidResetActive": [
-				{"__hwRevs__": [2], "__value__": 0}
-			],
-			"rfidSPIHostID": [
-				{"__hwRevs__": [2], "__value__": 1}
-			],
-			"buzzerPin": [
-				{"__hwRevs__": [2], "__value__": 13}
-			],
-			"buzzerOnLevel": true,
-			"buzzerOnMs": 100,
-			"buzzerShortOffMs": 900,
-			"buzzerLongOffMs": 1800
-		}
-	}
+        },
+        "ScaderCat": {
+            "LIGHT_CTRL": 23,
+            "VALVE_CTRL": 19,
+            "FET_1": 18,
+            "FET_2": 5
+        },
+        "ScaderLEDPix": {
+            "brightness": 96,
+            "strips": [
+                {
+                    "pixPin": "32",
+                    "numPix": 500
+                },
+                {
+                    "pixPin": "33",
+                    "numPix": 500
+                }
+            ]
+        },
+        "ScaderWaterer": {
+            "i2cPort": 0,
+            "sdaPin": "21",
+            "sclPin": "22",
+            "i2cFreq": 100000,
+            "adcI2CAddr": "0x48",
+            "reportSecs": 10,
+            "Pump0": "23",
+            "Pump1": "25",
+            "Pump2": "26",
+            "Pump3": "27"
+        },
+        "ScaderRFID": {
+            "actLedPin": [
+                {"__hwRevs__": [2], "__value__": 15}
+            ],
+            "tagLedPin": [
+                {"__hwRevs__": [2], "__value__": 23}
+            ],
+            "rfidSPIMOSIPin": [
+                {"__hwRevs__": [2], "__value__": 18}
+            ],
+            "rfidSPIMISOPin": [
+                {"__hwRevs__": [2], "__value__": 19}
+            ],
+            "rfidSPIClkPin": [
+                {"__hwRevs__": [2], "__value__": 5}
+            ],
+            "rfidSPICS0Pin": [
+                {"__hwRevs__": [2], "__value__": 21}
+            ],
+            "rfidNBusyPin": [
+                {"__hwRevs__": [2], "__value__": 4}
+            ],
+            "rfidResetPin": [
+                {"__hwRevs__": [2], "__value__": 22}
+            ],
+            "rfidResetActive": [
+                {"__hwRevs__": [2], "__value__": 0}
+            ],
+            "rfidSPIHostID": [
+                {"__hwRevs__": [2], "__value__": 1}
+            ],
+            "buzzerPin": [
+                {"__hwRevs__": [2], "__value__": 13}
+            ],
+            "buzzerOnLevel": true,
+            "buzzerOnMs": 100,
+            "buzzerShortOffMs": 900,
+            "buzzerLongOffMs": 1800
+        }
+    }
 ]

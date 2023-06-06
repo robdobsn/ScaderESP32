@@ -118,7 +118,9 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include <SysManager.h>
 #include <SerialConsole.h>
 #include <FileManager.h>
+#ifdef FEATURE_BLE_FUNCTIONALITY
 #include <BLEManager.h>
+#endif
 #ifdef FEATURE_NETWORK_FUNCTIONALITY
 #include <NetworkManager.h>
 #ifdef FEATURE_WEB_SERVER_OR_WEB_SOCKETS
@@ -293,6 +295,8 @@ void mainTask(void *pvParameters)
     // System Module Manager
     SysManager _sysModManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
         &networkSystem, nullptr);
+
+    // Add the system restart callback to the SysTypeManager
     _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_sysModManager));
 
 // #ifdef FEATURE_INCLUDE_ROBOT_CONTROLLER
@@ -341,8 +345,10 @@ void mainTask(void *pvParameters)
     WebServer _webServer("WebServer", defaultSystemConfig, &_sysTypeConfig, nullptr);
 #endif
 
-//     // BLEManager
-//     BLEManager _bleManager("BLEMan", defaultSystemConfig, &_sysTypeConfig, nullptr, DEFAULT_ADVNAME);
+#ifdef FEATURE_BLE_FUNCTIONALITY
+    // BLEManager
+    BLEManager _bleManager("BLEMan", defaultSystemConfig, &_sysTypeConfig, nullptr, DEFAULT_ADVNAME);
+#endif
 
     // Command Serial
     CommandSerial _commandSerial("CommandSerial", defaultSystemConfig, &_sysTypeConfig, nullptr);

@@ -126,22 +126,28 @@
             "logLevel": "D"
         },
         "CommandSerial": {
-            "enable": [
-                {"__hwRevs__": [2,4], "__value__": 1}
-            ],
-            "uartNum": 1,
-            "baudRate": 115200,
-            "rxBufSize": 1024,
-            "rxPin": [
-                {"__hwRevs__": [2], "__value__": 16},
-                {"__hwRevs__": [4], "__value__": 35}
-            ],
-            "txPin": [
-                {"__hwRevs__": [2], "__value__": 17},
-                {"__hwRevs__": [4], "__value__": 5}
-            ],
-            "protocol": "RICSerial",
-            "logLevel": "D"
+            "logLevel": "D",
+            "ports": [
+                {
+                    "name": "Serial1",
+                    "enable": [
+                        {"__hwRevs__": [2,4], "__value__": 1}
+                    ],
+                    "uartNum": 1,
+                    "baudRate": 115200,
+                    "rxBufSize": 1024,
+                    "rxPin": [
+                        {"__hwRevs__": [2], "__value__": 16},
+                        {"__hwRevs__": [4], "__value__": 35}
+                    ],
+                    "txPin": [
+                        {"__hwRevs__": [2], "__value__": 17},
+                        {"__hwRevs__": [4], "__value__": 5}
+                    ],
+                    "protocol": "RICSerial",
+                    "logLevel": "D"
+                }
+            ]
         },
         "CommandSocket": {
             "enable": 0,

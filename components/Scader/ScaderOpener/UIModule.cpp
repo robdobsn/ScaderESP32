@@ -80,7 +80,11 @@ void UIModule::setup(ConfigBase &config, OpenerStatus* pOpenerParams)
                 .stop_bits = UART_STOP_BITS_1,
                 .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
                 .rx_flow_ctrl_thresh = 10,
+#if ESP_IDF_VERSION <= ESP_IDF_VERSION_VAL(5, 0, 0)
                 .use_ref_tick = false,
+#else
+                .source_clk = UART_SCLK_APB,
+#endif                
         };
         esp_err_t err = uart_param_config((uart_port_t)_uartNum, &uart_config);
         if (err != ESP_OK)

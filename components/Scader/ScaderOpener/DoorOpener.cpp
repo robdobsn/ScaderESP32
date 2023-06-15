@@ -8,7 +8,7 @@
 
 #include "DoorOpener.h"
 #include "ConfigPinMap.h"
-#include <HWElemSteppers.h>
+#include <MotorControl.h>
 #include <BusSerial.h>
 #include <HWElemConsts.h>
 
@@ -57,7 +57,7 @@ void DoorOpener::setup(ConfigBase& config)
     }
 
     // Configure stepper
-    _pStepper = new HWElemSteppers();
+    _pStepper = new MotorControl();
     if (_pStepper)
     {
         _pStepper->setup(config, nullptr, "stepper");

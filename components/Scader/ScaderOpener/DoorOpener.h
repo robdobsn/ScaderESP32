@@ -15,7 +15,7 @@
 #include <RaftI2CCentral.h>
 #include <ConfigBase.h>
 #include <SimpleMovingAverage.h>
-#include <HWElemSteppers.h>
+#include <MotorControl.h>
 #include "stdint.h"
 #include <OpenerStatus.h>
 // #include <TinyPICO.h>
@@ -104,7 +104,7 @@ private:
     }
 
     // Stepper motor
-    HWElemSteppers* _pStepper = nullptr;
+    MotorControl* _pStepper = nullptr;
     BusSerial* _pBusSerial = nullptr;
 
     // Enabled

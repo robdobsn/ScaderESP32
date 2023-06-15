@@ -31,7 +31,7 @@ FetchContent_Declare(
   raftcore
   # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        v0.4.4
+  GIT_TAG        v0.4.11
 )
 
 # Fetch the RaftWebServer library
@@ -52,7 +52,14 @@ FetchContent_Declare(
 FetchContent_Declare(
   raftsysmods
   GIT_REPOSITORY https://github.com/robdobsn/RaftSysMods
-  GIT_TAG        v0.1.9
+  GIT_TAG        v0.1.13
+)
+
+# Fetch the RaftMotorControl library
+FetchContent_Declare(
+  raftmotorcontrol
+  GIT_REPOSITORY https://github.com/robdobsn/RaftMotorControl
+  GIT_TAG        v0.1.2
 )
 
 # Populate first so we have a folder that we can add in EXTRA_COMPONENT_DIRS
@@ -61,10 +68,11 @@ FetchContent_Populate(raftcore)
 FetchContent_Populate(raftwebserver)
 FetchContent_Populate(rafti2c)
 FetchContent_Populate(raftsysmods)
+FetchContent_Populate(raftmotorcontrol)
 
 # Fetch raftwebserver and raftcore
-set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${raftcore_SOURCE_DIR} ${raftwebserver_SOURCE_DIR} ${rafti2c_SOURCE_DIR} ${raftsysmods_SOURCE_DIR})
-FetchContent_MakeAvailable(raftcore raftwebserver rafti2c raftsysmods)
+set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${raftcore_SOURCE_DIR} ${raftwebserver_SOURCE_DIR} ${rafti2c_SOURCE_DIR} ${raftsysmods_SOURCE_DIR} ${raftmotorcontrol_SOURCE_DIR})
+FetchContent_MakeAvailable(raftcore raftwebserver rafti2c raftsysmods raftmotorcontrol)
 
 # Add optional component folders
 set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${OPTIONAL_COMPONENTS})
@@ -73,7 +81,7 @@ set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${OPTIONAL_COMPONENTS})
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 # Define the project name
-project(${FW_IMAGE_NAME} DEPENDS esp_littlefs raftcore raftwebserver rafti2c raftsysmods)
+project(${FW_IMAGE_NAME} DEPENDS esp_littlefs raftcore raftwebserver rafti2c raftsysmods raftmotorcontrol)
 
 # This makes it easy for VS Code to access the compile commands for the most
 # recently built FW revision.

@@ -45,7 +45,6 @@ idf_component_register(
                 REQUIRES
                   raftcore-src
                   FastLED-idf
-                  HWSteppers
-                  hardware
                   rafti2c-src
+                  raftmotorcontrol-src
                 )

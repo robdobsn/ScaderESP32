@@ -13,7 +13,7 @@
                 "StatsCB"
             ],
             "pauseWiFiforBLE":1,
-            "slowSysModMs": 50,
+            "slowSysModMs": 100,
             "rebootAfterNHours": 24
         },
         "LogManager": {
@@ -86,26 +86,28 @@
         "WebServer": {
             "enable": 1,
             "webServerPort": 80,
-            "allowOriginAll": 1,
+            "stdRespHeaders": [
+                "Access-Control-Allow-Origin: *"
+            ],
             "apiPrefix": "api/",
             "fileServer": 1,
-            "numConnSlots": 16,
+            "numConnSlots": 12,
             "websockets": [
                 {
                     "pfix": "ws",
                     "pcol": "RICSerial",
                     "maxConn": 4,
-                    "txQueueMax": 6,
+                    "txQueueMax": 20,
                     "pktMaxBytes": 5000,
-                    "pingMs": 2000
+                    "pingMs": 30000
                 },
                 {
                     "pfix": "scader",
                     "pcol": "RICJSON",
                     "maxConn": 4,
-                    "txQueueMax": 6,
+                    "txQueueMax": 20,
                     "pktMaxBytes": 5000,
-                    "pingMs": 2000,
+                    "pingMs": 30000,
                     "noPongMs": 0,
                     "content": "text"
                 }
@@ -113,7 +115,7 @@
             "logLevel": "D",
             "sendMax": 500,
             "taskCore": 0,
-            "taskStack": 3000,
+            "taskStack": 5000,
             "taskPriority": 9
         },
         "SerialConsole": {

@@ -401,9 +401,10 @@ void mainTask(void *pvParameters)
 
 #ifdef FEATURE_WEB_SERVER_STATIC_FILES
     // Web server add files
-    _webServer.serveStaticFiles("/files/local", "/local/");
-    _webServer.serveStaticFiles("/files/sd", "/sd/");
-    _webServer.serveStaticFiles("/", ("/" + fileSystem.getDefaultFSRoot()).c_str());
+    String servePaths = String("/=/") + fileSystem.getDefaultFSRoot();
+    servePaths += ",/files/local=/local";
+    servePaths += ",/files/sd=/sd";
+    _webServer.serveStaticFiles(servePaths.c_str());
 #endif
 
 #ifdef FEATURE_WEB_SERVER_OR_WEB_SOCKETS

@@ -27,8 +27,8 @@ message(STATUS "Configuring a build system for ${buildConfigName} from ${BUILD_C
 unset(buildConfigName)
 
 # Set the web server to use mongoose
-add_compile_definitions(FEATURE_WEB_SERVER_USE_MONGOOSE)
-# add_compile_definitions(FEATURE_WEB_SERVER_USE_ORIGINAL)
+# add_compile_definitions(FEATURE_WEB_SERVER_USE_MONGOOSE)
+add_compile_definitions(FEATURE_WEB_SERVER_USE_ORIGINAL)
 
 # Fetch the RaftCore library
 FetchContent_Declare(
@@ -42,7 +42,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   raftwebserver
   GIT_REPOSITORY https://github.com/robdobsn/RaftWebServer
-  GIT_TAG        v0.2.5
+  GIT_TAG        v0.2.7
 )
 
 # Fetch the RaftI2C library

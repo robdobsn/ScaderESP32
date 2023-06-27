@@ -63,7 +63,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   raftmotorcontrol
   GIT_REPOSITORY https://github.com/robdobsn/RaftMotorControl
-  GIT_TAG        v0.1.4
+  GIT_TAG        v0.1.5
 )
 
 # Fetch the mongoose web library

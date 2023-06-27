@@ -65,7 +65,7 @@ private:
     uint32_t _patternLen = 0;
 
     // Helper functions
-    void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+    RaftRetCode apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void getStatusHash(std::vector<uint8_t>& stateHash);
     void setAllPixels(const CRGB& colour);
 

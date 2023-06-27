@@ -177,14 +177,13 @@ void ScaderLEDPixels::addRestAPIEndpoints(RestAPIEndpointManager &endpointManage
 // Control via API
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check init
     if (!_isInitialised)
     {
         LOG_I(MODULE_PREFIX, "apiControl disabled");
-        Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
-        return;
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
     }
 
     bool rslt = true;
@@ -265,7 +264,7 @@ void ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const AP
     }
 
     // Set result
-    Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt, reasonStr.c_str());
+    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt, reasonStr.c_str());
 }
 
 String ScaderLEDPixels::getStatusJSON()

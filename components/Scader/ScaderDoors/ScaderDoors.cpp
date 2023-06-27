@@ -219,14 +219,13 @@ void ScaderDoors::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Control via API
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check initialised
     if (!_isInitialised)
     {
         LOG_I(MODULE_PREFIX, "apiControl module disabled");
-        Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
-        return;
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
     }
 
     // Get list of doors to control
@@ -270,21 +269,20 @@ void ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISou
     }
 
     // Set result
-    Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
+    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Scader doors
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check initialised
     if (!_isInitialised)
     {
         LOG_I(MODULE_PREFIX, "apiTagRead module disabled");
-        Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
-        return;
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
     }
 
     // Extract params
@@ -308,6 +306,7 @@ void ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const APISou
     {
         LOG_I(MODULE_PREFIX, "apiTagRead no tagID in req %s", reqStr.c_str());
     }
+    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, true);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

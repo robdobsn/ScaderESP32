@@ -520,7 +520,7 @@ void ScaderShades::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Control shades via API
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderShades::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderShades::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     String shadeNumStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
     int shadeNum = shadeNumStr.toInt();
@@ -529,10 +529,9 @@ void ScaderShades::apiControl(const String &reqStr, String &respStr, const APISo
 
     if ((shadeNum < 1) || (shadeNum > _maxElems))
     {
-        Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
-        return;
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
     }
     int shadeIdx = shadeNum - 1;
     bool rslt = doCommand(shadeIdx, shadeCmdStr, shadeDurationStr);
-    Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
+    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
 }

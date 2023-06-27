@@ -397,14 +397,14 @@ void DoorOpener::motorMoveToPosition(bool open)
     moveCmd.replace("__SPEED__", String(_doorMoveSpeedDegsPerSec));
 
     // Send command
-    UtilsRetCode::RetCode retc = _pStepper->sendCmdJSON(moveCmd.c_str());
+    RaftRetCode retc = _pStepper->sendCmdJSON(moveCmd.c_str());
 
     // Time movement started
     _doorMoveStartTimeMs = millis();
 
     // Debug
     LOG_I(MODULE_PREFIX, "motorMoveToPosition target=%ddegs speed=%.2fdegs/s doorTimeToOpen %ds cmd %s retc %s", 
-                targetDegrees, _doorMoveSpeedDegsPerSec, _doorTimeToOpenSecs, moveCmd.c_str(), UtilsRetCode::getRetcStr(retc));
+                targetDegrees, _doorMoveSpeedDegsPerSec, _doorTimeToOpenSecs, moveCmd.c_str(), Raft::getRetCodeStr(retc));
 
 }
 
@@ -436,7 +436,7 @@ void DoorOpener::motorMoveAngle(int32_t angleDegs, bool relative, uint32_t moveT
     moveCmd.replace("__SPEED__", String(_doorMoveSpeedDegsPerSec));
 
     // Send command
-    UtilsRetCode::RetCode retc = _pStepper->sendCmdJSON(moveCmd.c_str());
+    RaftRetCode retc = _pStepper->sendCmdJSON(moveCmd.c_str());
 
     // Time movement started
     _doorMoveStartTimeMs = millis();
@@ -444,7 +444,7 @@ void DoorOpener::motorMoveAngle(int32_t angleDegs, bool relative, uint32_t moveT
     // Debug
     LOG_I(MODULE_PREFIX, "motorMoveAngle angle=%d %s speed=%.2fdegs/s moveTime %ds cmd %s retc %s", 
                 angleDegs, relative ? "relative" : "absolute",
-                _doorMoveSpeedDegsPerSec, moveTimeSecs, moveCmd.c_str(), UtilsRetCode::getRetcStr(retc));
+                _doorMoveSpeedDegsPerSec, moveTimeSecs, moveCmd.c_str(), Raft::getRetCodeStr(retc));
 
 }
 

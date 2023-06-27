@@ -35,14 +35,14 @@ FetchContent_Declare(
   raftcore
   # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        v0.4.12
+  GIT_TAG        v0.4.18
 )
 
 # Fetch the RaftWebServer library
 FetchContent_Declare(
   raftwebserver
   GIT_REPOSITORY https://github.com/robdobsn/RaftWebServer
-  GIT_TAG        v0.2.1
+  GIT_TAG        v0.2.5
 )
 
 # Fetch the RaftI2C library
@@ -56,14 +56,14 @@ FetchContent_Declare(
 FetchContent_Declare(
   raftsysmods
   GIT_REPOSITORY https://github.com/robdobsn/RaftSysMods
-  GIT_TAG        v0.1.14
+  GIT_TAG        v0.1.19
 )
 
 # Fetch the RaftMotorControl library
 FetchContent_Declare(
   raftmotorcontrol
   GIT_REPOSITORY https://github.com/robdobsn/RaftMotorControl
-  GIT_TAG        v0.1.2
+  GIT_TAG        v0.1.4
 )
 
 # Fetch the mongoose web library

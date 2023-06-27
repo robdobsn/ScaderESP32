@@ -272,14 +272,13 @@ void ScaderRelays::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Control via API
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check init
     if (!_isInitialised)
     {
         LOG_I(MODULE_PREFIX, "apiControl disabled");
-        Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
-        return;
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
     }
 
     // Get list of elems to control
@@ -338,7 +337,7 @@ void ScaderRelays::apiControl(const String &reqStr, String &respStr, const APISo
     }
 
     // Set result
-    Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
+    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

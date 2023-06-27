@@ -209,14 +209,13 @@ void ScaderRFID::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Door status change
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderRFID::apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderRFID::apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check initialised
     if (!_isInitialised)
     {
         LOG_I(MODULE_PREFIX, "apiDoorStatusChange module disabled");
-        Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
-        return;
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
     }
 
     // Extract params
@@ -242,7 +241,7 @@ void ScaderRFID::apiDoorStatusChange(const String &reqStr, String &respStr, cons
     }
 
     // Set result
-    Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
+    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

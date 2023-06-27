@@ -72,5 +72,5 @@ private:
     void saveMutableData();
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
-    void apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+    RaftRetCode apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
 };

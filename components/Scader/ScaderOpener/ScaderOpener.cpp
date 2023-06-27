@@ -109,7 +109,7 @@ void ScaderOpener::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Control via API
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Extract params
     std::vector<String> params;
@@ -225,14 +225,11 @@ void ScaderOpener::apiControl(const String &reqStr, String &respStr, const APISo
     // Result
     if (rslt)
     {
-        Raft::setJsonBoolResult(reqStr.c_str(), respStr, true);
         LOG_I(MODULE_PREFIX, "apiControl: reqStr %s rslt %s", reqStr.c_str(), rsltStr.c_str());
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, true);
     }
-    else
-    {
-        Raft::setJsonErrorResult(reqStr.c_str(), respStr, rsltStr.c_str());
-        LOG_E(MODULE_PREFIX, "apiControl: FAILED reqStr %s rslt %s", reqStr.c_str(), rsltStr.c_str());
-    }
+    LOG_E(MODULE_PREFIX, "apiControl: FAILED reqStr %s rslt %s", reqStr.c_str(), rsltStr.c_str());
+    return Raft::setJsonErrorResult(reqStr.c_str(), respStr, rsltStr.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

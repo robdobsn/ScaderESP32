@@ -54,6 +54,6 @@ private:
     UIModule _uiModule;
 
     // Helpers
-    void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+    RaftRetCode apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void getStatusHash(std::vector<uint8_t>& stateHash);
 };

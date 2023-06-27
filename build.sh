@@ -13,20 +13,24 @@ if [[ $SERIALPORT_OR_IP =~ ^[[:digit:]] ]]
     ./scripts/otaWebUIUpdate.sh $BUILDCONF $1
     curl -F "file=@./builds/$BUILDCONF/$FW_IMAGE_NAME" "http://$1/api/espFwUpdate"
   else
+    SCRIPTS_FOLDER=./builds/$BUILDCONF/_deps/raftcore-src/scripts
+    SERIAL_MONITOR=${SCRIPTS_FOLDER}/SerialMonitor.py
+    FLASHER=${SCRIPTS_FOLDER}/flashUsingPartitionCSV.py
+    PARTITIONS_CSV=./buildConfigs/$BUILDCONF/partitions.csv
     if uname -r | grep -q "icrosoft"
     then
         echo "Running on Windows WSL"
-        python.exe ./scripts/flashUsingPartitionCSV.py buildConfigs/$BUILDCONF/partitions.csv builds/$BUILDCONF $FW_IMAGE_NAME $SERIALPORT_OR_IP $TARGET_CHIP -b$FLASHBAUD -f spiffs.bin
+        python.exe ${FLASHER} ${PARTITIONS_CSV} builds/$BUILDCONF $FW_IMAGE_NAME $SERIALPORT_OR_IP $TARGET_CHIP -b$FLASHBAUD -f spiffs.bin
         if [ $? -eq "0" ]
           then
-            python.exe ./scripts/SerialMonitor.py $SERIALPORT_OR_IP -g
+            python.exe ${SERIAL_MONITOR} $SERIALPORT_OR_IP -g
           fi
     else
         echo "Running on Linux or OSX"
-        python3 ./scripts/flashUsingPartitionCSV.py buildConfigs/$BUILDCONF/partitions.csv builds/$BUILDCONF $FW_IMAGE_NAME $SERIALPORT_OR_IP $TARGET_CHIP -b$FLASHBAUD -f spiffs.bin
+        python3 ${FLASHER} ${PARTITIONS_CSV} builds/$BUILDCONF $FW_IMAGE_NAME $SERIALPORT_OR_IP $TARGET_CHIP -b$FLASHBAUD -f spiffs.bin
         if [ $? -eq "0" ]
           then
-            python3 ./scripts/SerialMonitor.py $SERIALPORT_OR_IP -g
+            python3 ${SERIAL_MONITOR} $SERIALPORT_OR_IP -g
           fi
     fi
 fi

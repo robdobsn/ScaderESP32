@@ -161,5 +161,5 @@ private:
     void sequenceRun();
     void sequenceStartStep(int stepIdx);
     void sequenceStepComplete();
-    void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+    RaftRetCode apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
 };

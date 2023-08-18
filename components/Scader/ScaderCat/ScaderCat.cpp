@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderCat.h"
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <ConfigPinMap.h>
 #include <RaftUtils.h>
 #include <RestAPIEndpointManager.h>

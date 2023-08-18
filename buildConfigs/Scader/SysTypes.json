@@ -34,11 +34,17 @@
             }
         },
         "NetMan": {
-            "WiFiEnabled": 1,
-            "EthEnabled": 1,
-            "WiFiSSID": "",
-            "WiFiPass": "",
-            "logLevel": "D",
+            "wifiSTAEn": 1,
+            "wifiAPEn": 0,
+            "ethEn": 1,
+            "wifiSSID": "",
+            "wifiPW": "",
+            "wifiSTAScanThreshold": "OPEN",
+            "wifiAPSSID": "",
+            "wifiAPPW": "",
+            "wifiAPChannel": 1,
+            "wifiAPMaxConn": 4,
+            "wifiAPAuthMode": "WPA2_PSK",
             "EthLanChip": "LAN87XX",
             "EthPowerPin": [
                 {"__hwRevs__": [3,4], "__value__": 12}
@@ -46,7 +52,11 @@
             "EthMDCPin": 23,
             "EthMDIOPin": 18,
             "EthPhyAddr": 0,
-            "EthPhyRstPin": -1
+            "EthPhyRstPin": -1,
+            "logLevel": "D",
+            "NTPServer": "pool.ntp.org",
+            "timezone": "UTC",
+            "logLevel": "D"
         },
         "MQTTMan": {
             "enable": 1,
@@ -79,7 +89,8 @@
         },
         "BLEMan": {
             "enable": 0,
-            "maxPktLen": 180,
+            "outQSize": 15,
+            "sendUseInd": 1,
             "logLevel": "D",
             "nimLogLev": "E"
         },
@@ -98,7 +109,6 @@
                     "pcol": "RICSerial",
                     "maxConn": 4,
                     "txQueueMax": 20,
-                    "pktMaxBytes": 5000,
                     "pingMs": 30000
                 },
                 {
@@ -106,14 +116,12 @@
                     "pcol": "RICJSON",
                     "maxConn": 4,
                     "txQueueMax": 20,
-                    "pktMaxBytes": 5000,
                     "pingMs": 30000,
-                    "noPongMs": 0,
                     "content": "text"
                 }
             ],
             "logLevel": "D",
-            "sendMax": 500,
+            "sendMax": 5000,
             "taskCore": 0,
             "taskStack": 5000,
             "taskPriority": 9
@@ -121,8 +129,8 @@
         "SerialConsole": {
             "enable": 1,
             "uartNum": 0,
-            "rxBuf": 256,
-            "txBuf": 2048,
+            "rxBuf": 5000,
+            "txBuf": 1500,
             "crlfOnTx": 1,
             "protocol": "RICSerial",
             "logLevel": "D"
@@ -137,7 +145,7 @@
                     ],
                     "uartNum": 1,
                     "baudRate": 115200,
-                    "rxBufSize": 1024,
+                    "rxBufSize": 8192,
                     "rxPin": [
                         {"__hwRevs__": [2], "__value__": 16},
                         {"__hwRevs__": [4], "__value__": 35}

@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.8.3"
+#define SYSTEM_VERSION "5.9.0"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -19,6 +19,7 @@
 #define DEFAULT_FRIENDLY_NAME MACRO_TOSTRING(HW_DEFAULT_FRIENDLY_NAME)
 #define DEFAULT_HOSTNAME MACRO_TOSTRING(HW_DEFAULT_HOSTNAME)
 #define DEFAULT_ADVNAME MACRO_TOSTRING(HW_DEFAULT_ADVNAME)
+#define DEFAULT_SERIAL_SET_MAGIC_STR MACRO_TOSTRING(HW_SERIAL_SET_MAGIC_STR)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Default system config
@@ -38,7 +39,6 @@ static const char *defaultConfigJSON =
         R"("SystemVersion":")" SYSTEM_VERSION R"(",)"
         R"("IDFVersion":")" IDF_VER R"(",)"
         R"("DefaultName":")" DEFAULT_FRIENDLY_NAME R"(",)"
-        R"("DefaultNameIsSet":0,)"
         R"("SysManager":{)"
             R"("monitorPeriodMs":10000,)"
             R"("reportList":["NetMan","BLEMan","SysMan","StatsCB"],)"
@@ -56,8 +56,8 @@ static const char *defaultConfigJSON =
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Main task parameters
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 static const int MAIN_TASK_PRIORITY = 20;
 static const int PRO_TASK_PROCESSOR_CORE = 0;
 static const int MAIN_TASK_PROCESSOR_CORE = 1;
@@ -103,12 +103,12 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 
 // C, ESP32 and RTOS
 #include <stdio.h>
-#include <esp_log.h>
-#include <nvs_flash.h>
-#include <esp_event.h>
-#include <esp_task_wdt.h>
-#include <esp_heap_caps.h>
-#include <freertos/FreeRTOS.h>
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "esp_event.h"
+#include "esp_task_wdt.h"
+#include "esp_heap_caps.h"
+#include "freertos/FreeRTOS.h"
 
 // App
 #include "DetectHardware.h"
@@ -118,7 +118,7 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include <SysManager.h>
 #include <SerialConsole.h>
 #include <FileManager.h>
-#ifdef FEATURE_BLE_FUNCTIONALITY
+#ifdef CONFIG_BT_ENABLED
 #include <BLEManager.h>
 #endif
 #ifdef FEATURE_NETWORK_FUNCTIONALITY
@@ -255,7 +255,7 @@ void mainTask(void *pvParameters)
 
     // Check defaultConfigJSON is valid
     int numJsonTokens = 0;
-    if (!RdJson::validateJson(defaultConfigJSON, numJsonTokens))
+    if (!RaftJson::validateJson(defaultConfigJSON, numJsonTokens))
     {
         LOG_E(MODULE_NAME, "mainTask defaultConfigJSON failed to parse");
     }
@@ -284,20 +284,13 @@ void mainTask(void *pvParameters)
     SysTypeManager _sysTypeManager(_sysTypeConfig);
     _sysTypeManager.setup(SYS_TYPE_STATICS, SYS_TYPE_STATICS_LEN);
 
-//     // Handle power-up LED setting as early as possible
-// #ifdef FEATURE_POWER_UP_LED_ASAP
-//     powerUpLEDSet("PowerUpLED", _sysTypeConfig);
-// #ifdef DEBUG_TIMING_OF_STARTUP
-//     LOG_I(MODULE_NAME, "powerUpLEDSet ASAP");
-// #endif
-// #endif
-
     // System Module Manager
-    SysManager _sysModManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
-        &networkSystem, nullptr);
+    SysManager _sysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
+                    DEFAULT_FRIENDLY_NAME, SYSTEM_NAME, 
+                    HW_SERIAL_NUMBER_BYTES, DEFAULT_SERIAL_SET_MAGIC_STR);
 
     // Add the system restart callback to the SysTypeManager
-    _sysTypeManager.setSystemRestartCallback(std::bind<void>(&SysManager::systemRestart, &_sysModManager));
+    _sysTypeManager.setSystemRestartCallback([&_sysManager] { (&_sysManager)->systemRestart(); });
 
 // #ifdef FEATURE_INCLUDE_ROBOT_CONTROLLER
 //     // Robot Controller
@@ -315,11 +308,11 @@ void mainTask(void *pvParameters)
 
     // API Endpoints
     RestAPIEndpointManager _restAPIEndpointManager;
-    _sysModManager.setRestAPIEndpoints(_restAPIEndpointManager);
+    _sysManager.setRestAPIEndpoints(_restAPIEndpointManager);
 
     // Comms Channel Manager
     CommsChannelManager _commsChannelManager("CommsMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
-    _sysModManager.setCommsCore(&_commsChannelManager);
+    _sysManager.setCommsCore(&_commsChannelManager);
 
     // SerialConsole
     SerialConsole _serialConsole("SerialConsole", defaultSystemConfig, &_sysTypeConfig, nullptr);
@@ -329,7 +322,7 @@ void mainTask(void *pvParameters)
 
 #ifdef FEATURE_NETWORK_FUNCTIONALITY
     // NetworkManager
-    NetworkManager _networkManager("NetMan", defaultSystemConfig, &_sysTypeConfig, nullptr, DEFAULT_HOSTNAME);
+    NetworkManager _networkManager("NetMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
 #endif
 
     // ESP OTA Update
@@ -345,7 +338,7 @@ void mainTask(void *pvParameters)
     WebServer _webServer("WebServer", defaultSystemConfig, &_sysTypeConfig, nullptr);
 #endif
 
-#ifdef FEATURE_BLE_FUNCTIONALITY
+#ifdef CONFIG_BT_ENABLED
     // BLEManager
     BLEManager _bleManager("BLEMan", defaultSystemConfig, &_sysTypeConfig, nullptr, DEFAULT_ADVNAME);
 #endif
@@ -397,7 +390,7 @@ void mainTask(void *pvParameters)
 
     // Initialise the system module manager here so that API endpoints are registered
     // before file system ones
-    _sysModManager.setup();
+    _sysManager.setup();
 
 #ifdef FEATURE_WEB_SERVER_STATIC_FILES
     // Web server add files
@@ -419,7 +412,7 @@ void mainTask(void *pvParameters)
         vTaskDelay(1);
 
         // Service all the system modules
-        _sysModManager.service();
+        _sysManager.service();
 
         // Test and Monitoring
 #ifdef DEBUG_SHOW_TASK_INFO
@@ -444,7 +437,7 @@ void mainTask(void *pvParameters)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
-#include <freertos/task.h>
+#include "freertos/task.h"
 
 #ifdef DEBUG_SHOW_TASK_INFO
 int tasks_info()

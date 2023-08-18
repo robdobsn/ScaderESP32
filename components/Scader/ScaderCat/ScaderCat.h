@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <ConfigBase.h>
 #include <ScaderCommon.h>
 #include <RaftUtils.h>

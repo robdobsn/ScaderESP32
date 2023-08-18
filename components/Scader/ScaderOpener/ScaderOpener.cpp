@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderOpener.h"
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <ScaderCommon.h>
 #include <RaftUtils.h>
 #include <ConfigPinMap.h>
@@ -113,9 +113,9 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
 {
     // Extract params
     std::vector<String> params;
-    std::vector<RdJson::NameValuePair> nameValues;
+    std::vector<RaftJson::NameValuePair> nameValues;
     RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
-    String paramsJSON = RdJson::getJSONFromNVPairs(nameValues, true);
+    String paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
 
     // Handle commands
     bool rslt = true;

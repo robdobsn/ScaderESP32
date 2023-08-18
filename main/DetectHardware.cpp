@@ -48,7 +48,7 @@ bool HWDetectConfig::checkAnalogValues(int pin, int testPinMode, int threshold1,
 {
     // Check pin voltage is between bounds
     pinMode(pin, testPinMode);
-    MovingAverage<100> ma;
+    SimpleMovingAverage<100> ma;
     for (int i = 0; i < 100; i++)
     {
         int pinVal = analogRead(pin);

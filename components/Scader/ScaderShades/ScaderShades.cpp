@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderShades.h"
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <RaftUtils.h>
 #include <ConfigPinMap.h>
 #include <RestAPIEndpointManager.h>

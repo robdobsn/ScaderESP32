@@ -6,7 +6,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <RaftUtils.h>
 #include <ScaderWaterer.h>
 #include <ConfigPinMap.h>
@@ -113,9 +113,9 @@ void ScaderWaterer::apiControl(const String &reqStr, String &respStr, const APIS
 {
     // Extract params
     std::vector<String> params;
-    std::vector<RdJson::NameValuePair> nameValues;
+    std::vector<RaftJson::NameValuePair> nameValues;
     RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
-    String paramsJSON = RdJson::getJSONFromNVPairs(nameValues, true);
+    String paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
 
     // Handle commands
     bool rslt = true;

@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <Logger.h>
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <ScaderRelays.h>
 #include <ScaderCommon.h>
 #include <ConfigPinMap.h>

@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include "RFIDModuleBase.h"
 #include <RaftUtils.h>
 #include <driver/spi_master.h>

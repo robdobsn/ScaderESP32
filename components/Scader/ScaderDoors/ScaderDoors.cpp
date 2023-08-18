@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <Logger.h>
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <ScaderDoors.h>
 #include <ConfigPinMap.h>
 #include <RaftUtils.h>
@@ -287,9 +287,9 @@ RaftRetCode ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const
 
     // Extract params
     std::vector<String> params;
-    std::vector<RdJson::NameValuePair> nameValues;
+    std::vector<RaftJson::NameValuePair> nameValues;
     RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
-    JSONParams paramsJSON = RdJson::getJSONFromNVPairs(nameValues, true);
+    JSONParams paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
 
     // Publish to MQTT
     String tagID = paramsJSON.getString("tagID", "");
@@ -436,5 +436,5 @@ void ScaderDoors::publishStateChangeToCommandSerial()
     cmdStr += R"(")";
     cmdStr = "{" + cmdStr + "}";
     msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());
-    getCommsCore()->handleOutboundMessage(msg);
+    getCommsCore()->outboundHandleMsg(msg);
 }

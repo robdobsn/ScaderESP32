@@ -34,7 +34,7 @@
     #define TinyPICO_h
 
     #include <stdint.h>
-    #include <ArduinoOrAlt.h>
+    #include <RaftArduino.h>
 
     // #include <SPI.h>
 

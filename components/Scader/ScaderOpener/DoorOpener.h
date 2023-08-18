@@ -9,7 +9,7 @@
 #pragma once
 
 #include <Logger.h>
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <DebounceButton.h>
 #include <RaftUtils.h>
 #include <RaftI2CCentral.h>

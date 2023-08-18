@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <Logger.h>
-#include <ArduinoOrAlt.h>
+#include <RaftArduino.h>
 #include <ScaderRFID.h>
 #include <ConfigPinMap.h>
 #include <RaftUtils.h>
@@ -164,7 +164,7 @@ void ScaderRFID::service()
                 cmdStr += R"(,"tagID":")" + tagID + R"(")";
             cmdStr = "{" + cmdStr + "}";
             msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());
-            getCommsCore()->handleOutboundMessage(msg);
+            getCommsCore()->outboundHandleMsg(msg);
         }
         digitalWrite(_tagLedPin, tagPresent ? HIGH : LOW);
     }
@@ -220,9 +220,9 @@ RaftRetCode ScaderRFID::apiDoorStatusChange(const String &reqStr, String &respSt
 
     // Extract params
     std::vector<String> params;
-    std::vector<RdJson::NameValuePair> nameValues;
+    std::vector<RaftJson::NameValuePair> nameValues;
     RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
-    JSONParams paramsJSON = RdJson::getJSONFromNVPairs(nameValues, true);
+    JSONParams paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
 
     // Result
     bool rslt = true;

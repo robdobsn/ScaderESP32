@@ -3,6 +3,8 @@ add_compile_definitions(HW_SYSTEM_NAME=Scader)
 add_compile_definitions(HW_DEFAULT_FRIENDLY_NAME=Scader)
 add_compile_definitions(HW_DEFAULT_HOSTNAME=Scader)
 add_compile_definitions(HW_DEFAULT_ADVNAME=Scader)
+add_compile_definitions(HW_SERIAL_NUMBER_BYTES=16)
+add_compile_definitions(HW_SERIAL_SET_MAGIC_STR=Magic)
 
 # Main features
 add_compile_definitions(FEATURE_NETWORK_FUNCTIONALITY)

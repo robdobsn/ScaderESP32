@@ -60,7 +60,7 @@
         },
         "MQTTMan": {
             "enable": 1,
-            "brokerHostname": "192.168.86.247",
+            "brokerHostname": "benbecula",
             "brokerPort": 1883,
             "clientID": "Scader",
             "topics": [

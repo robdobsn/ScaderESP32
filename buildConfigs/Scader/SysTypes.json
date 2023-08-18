@@ -45,15 +45,14 @@
             "wifiAPChannel": 1,
             "wifiAPMaxConn": 4,
             "wifiAPAuthMode": "WPA2_PSK",
-            "EthLanChip": "LAN87XX",
-            "EthPowerPin": [
+            "ethLanChip": "LAN87XX",
+            "ethPowerPin": [
                 {"__hwRevs__": [3,4], "__value__": 12}
             ],
-            "EthMDCPin": 23,
-            "EthMDIOPin": 18,
-            "EthPhyAddr": 0,
-            "EthPhyRstPin": -1,
-            "logLevel": "D",
+            "ethMDCPin": 23,
+            "ethMDIOPin": 18,
+            "ethPhyAddr": 0,
+            "ethPhyRstPin": -1,
             "NTPServer": "pool.ntp.org",
             "timezone": "UTC",
             "logLevel": "D"

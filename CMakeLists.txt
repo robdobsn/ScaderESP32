@@ -52,7 +52,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   raftsysmods
   GIT_REPOSITORY https://github.com/robdobsn/RaftSysMods
-  GIT_TAG        v1.0.1
+  GIT_TAG        v1.0.2
 )
 
 # Fetch the RaftMotorControl library

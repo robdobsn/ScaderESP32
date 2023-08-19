@@ -10,8 +10,8 @@ python3 ./scripts/build.py buildConfigs/$BUILDCONF &&\
 if [[ $SERIALPORT_OR_IP =~ ^[[:digit:]] ]]
   then
     echo Sending OTA
-    ./scripts/otaWebUIUpdate.sh $BUILDCONF $1
-    curl -F "file=@./builds/$BUILDCONF/$FW_IMAGE_NAME" "http://$1/api/espFwUpdate"
+    ./scripts/otaWebUIUpdate.sh $BUILDCONF $SERIALPORT_OR_IP
+    curl -F "file=@./builds/$BUILDCONF/$FW_IMAGE_NAME" "http://$SERIALPORT_OR_IP/api/espFwUpdate"
   else
     SCRIPTS_FOLDER=./builds/$BUILDCONF/_deps/raftcore-src/scripts
     SERIAL_MONITOR=${SCRIPTS_FOLDER}/SerialMonitor.py

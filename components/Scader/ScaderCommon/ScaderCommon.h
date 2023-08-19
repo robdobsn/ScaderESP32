@@ -40,7 +40,7 @@ public:
 
     String getStatusJSON()
     {
-            // Get network information
+        // Get network information
         JSONParams networkJson = _base.sysModGetStatusJSON("NetMan");
 
         // Extract hostname
@@ -68,7 +68,7 @@ public:
                         R"("module":")" + _moduleName +
                         R"(","name":")" + _scaderUIName + 
                         R"(","version":")" + _base.getSysManager()->getSystemVersion() + 
-                        R"(","hostname":")" + hostname + 
+                        R"(","hostname":")" + _scaderHostname + 
                         R"(","IP":")" + ipAddress + 
                         R"(","MAC":")" + macAddress + 
                         R"(","upMs":)" + String(esp_timer_get_time() / 1000ULL);

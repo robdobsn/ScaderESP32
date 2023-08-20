@@ -22,6 +22,7 @@ class ScaderDoors : public SysModBase
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
     ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    virtual ~ScaderDoors();
 
 protected:
 
@@ -46,14 +47,6 @@ private:
 
     // Settings
     uint32_t _maxElems = DEFAULT_MAX_ELEMS;
-
-    // Door strike/sense pins
-    int _strikeControlPins[DEFAULT_MAX_ELEMS] = { -1, -1 };
-    bool _strikePinUnlockLevel[DEFAULT_MAX_ELEMS] = { false, false };
-    uint32_t _unlockForSecs[DEFAULT_MAX_ELEMS] = { 1, 1 };
-    int _openSensePins[DEFAULT_MAX_ELEMS] = { -1, -1 };
-    bool _openSensePinLevel[DEFAULT_MAX_ELEMS] = { false, false };
-    int _closedSensePins[DEFAULT_MAX_ELEMS] = { -1, -1 };
 
     // Bell pressed sense pin
     int _bellPressedPin = -1;

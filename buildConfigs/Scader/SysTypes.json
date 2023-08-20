@@ -14,7 +14,8 @@
             ],
             "pauseWiFiforBLE":1,
             "slowSysModMs": 100,
-            "rebootAfterNHours": 24
+            "rebootAfterNHours": 24,
+            "rebootIfDiscMins": 10
         },
         "LogManager": {
             "logDests": [
@@ -311,7 +312,8 @@
                     "strikeOn": 1,
                     "openSensePin": -1,
                     "openSenseLevel": 0,
-                    "unlockForSecs": 30
+                    "unlockForSecs": 30,
+                    "delayRelockSecs": 10
                 }
             ],
             "masterDoorIdx": 0,

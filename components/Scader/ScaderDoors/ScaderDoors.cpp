@@ -31,9 +31,14 @@ ScaderDoors::ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, Con
     : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
           _scaderCommon(*this, pModuleName)
 {
-    // Clear strike pins to -1
-    std::fill(_strikeControlPins, _strikeControlPins + DEFAULT_MAX_ELEMS, -1);
-    std::fill(_openSensePins, _openSensePins + DEFAULT_MAX_ELEMS, -1);
+}
+
+ScaderDoors::~ScaderDoors()
+{
+    if (_bellPressedPin >= 0)
+    {
+        pinMode(_bellPressedPin, INPUT);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,28 +62,22 @@ void ScaderDoors::setup()
         return;
     }
 
-    // Get active/sense levels of pins
-    _strikePinUnlockLevel[0] = configGetBool("doors[0]/strikeOn", false);
-    _strikePinUnlockLevel[1] = configGetBool("doors[1]/strikeOn", false);
-    _unlockForSecs[0] = configGetLong("doors[0]/unlockForSecs", 1);
-    _unlockForSecs[1] = configGetLong("doors[1]/unlockForSecs", 1);
-    _openSensePinLevel[0] = configGetBool("doors[0]/openSenseLevel", false);
-    _openSensePinLevel[1] = configGetBool("doors[1]/openSenseLevel", false);
+    // Get array of door configs
+    std::vector<String> doorConfigs;
+    configGetArrayElems("doors", doorConfigs);
+    if (doorConfigs.size() == 0)
+    {
+        LOG_E(MODULE_PREFIX, "setup no doors");
+        return;
+    }
 
-    // Configure GPIOs
-    ConfigPinMap::PinDef gpioPins[] = {
-        ConfigPinMap::PinDef("doors[0]/strikePin", ConfigPinMap::GPIO_OUTPUT, &_strikeControlPins[0], !_strikePinUnlockLevel[0]),
-        ConfigPinMap::PinDef("doors[1]/strikePin", ConfigPinMap::GPIO_OUTPUT, &_strikeControlPins[1], !_strikePinUnlockLevel[1]),
-        ConfigPinMap::PinDef("doors[0]/openSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_openSensePins[0], 0),
-        ConfigPinMap::PinDef("doors[1]/openSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_openSensePins[1], 0),
-        ConfigPinMap::PinDef("doors[0]/closedSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_closedSensePins[0], 0),
-        ConfigPinMap::PinDef("doors[1]/closedSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_closedSensePins[1], 0),
-        ConfigPinMap::PinDef("bellSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &_bellPressedPin, 0),
-    };
-    ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
-
-    // Bell pressed pin sense
-    _bellPressedPinLevel = configGetBool("bellSenseLevel", false);
+    // Handle bell config
+    String bellSensePinStr = configGetString("bellSensePin", "");
+    _bellPressedPin = ConfigPinMap::getPinFromName(bellSensePinStr.c_str());
+    if (_bellPressedPin >= 0)
+    {
+        pinMode(_bellPressedPin, INPUT_PULLUP);
+    }
 
     // Master door index and reporting
     _masterDoorIndex = configGetLong("masterDoorIdx", 0);
@@ -104,22 +103,52 @@ void ScaderDoors::setup()
     // Setup door strikes
     _doorStrikes.clear();
     _doorStrikes.resize(_maxElems);
-    for (int i = 0; i < _maxElems; i++)
+
+    // Iterate through door configs
+    uint32_t doorIdx = 0;
+    for (String& doorConfigStr : doorConfigs)
     {
-        if (_strikeControlPins[i] >= 0)
+        // Check if valid
+        if (doorIdx >= _maxElems)
         {
-            _doorStrikes[i].setup(_strikeControlPins[i], _strikePinUnlockLevel[i], _openSensePins[i], 
-                    _closedSensePins[i], _openSensePinLevel[i], _unlockForSecs[i]);
+            LOG_E(MODULE_PREFIX, "setup too many doors");
+            break;
         }
+
+        // Extract door config
+        ConfigBase doorConfig(doorConfigStr);
+
+        // Get active/sense levels of pins
+        bool strikePinUnlockLevel = doorConfig.getBool("strikeOn", false);
+        bool openSensePinLevel = doorConfig.getBool("openSenseLevel", false);
+        uint32_t unlockForSecs = doorConfig.getLong("unlockForSecs", 10);
+        uint32_t delayRelockSecs = doorConfig.getLong("delayRelockSecs", 0);
+
+        // Configure GPIOs
+        int strikeControlPin = -1;
+        int openSensePin = -1;
+        int closedSensePin = -1;
+        ConfigPinMap::PinDef gpioPins[] = {
+            ConfigPinMap::PinDef("strikePin", ConfigPinMap::GPIO_OUTPUT, &strikeControlPin, !strikePinUnlockLevel),
+            ConfigPinMap::PinDef("openSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &openSensePin, 0),
+            ConfigPinMap::PinDef("closedSensePin", ConfigPinMap::GPIO_INPUT_PULLUP, &closedSensePin, 0)
+        };
+        ConfigPinMap::configMultiple(doorConfig, gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
+
+        // Setup the door strike
+        if (strikeControlPin >= 0)
+        {
+            _doorStrikes[doorIdx].setup(strikeControlPin, strikePinUnlockLevel, openSensePin, 
+                    closedSensePin, openSensePinLevel, unlockForSecs, delayRelockSecs);
+        }
+ 
+        LOG_I(MODULE_PREFIX, "setup enabled doorIdx %d strikePin %d strikeOpen %d openSensePin %d openSenseLevel %d closedSensePin %d unlockForSecs %d", 
+                    doorIdx, strikeControlPin, strikePinUnlockLevel, openSensePin, openSensePinLevel, closedSensePin, unlockForSecs);
+
+        // Next door
+        doorIdx++;
     }
 
-    // Debug
-    for (int i = 0; i < _maxElems; i++)
-    {
-        LOG_I(MODULE_PREFIX, "setup enabled door %d strikePin %d strikeOpen %d openSensePin %d openSenseLevel %d closedSensePin %d unlockForSecs %d", 
-                    i, _strikeControlPins[i], _strikePinUnlockLevel[i], _openSensePins[i], _openSensePinLevel[i], 
-                    _closedSensePins[i], _unlockForSecs[i]);
-    }
     LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s bellSensePin %d masterDoorIdx %d", 
                     _scaderCommon.getUIName().c_str(),
                     _bellPressedPin, _masterDoorIndex);
@@ -326,11 +355,11 @@ uint32_t ScaderDoors::executeUnlockLock(std::vector<int> elemNums, bool unlock)
             // Set state
             if (unlock)
             {
-                _doorStrikes[elemIdx].unlockWithTimeout("API", _unlockForSecs[elemIdx]);
+                _doorStrikes[elemIdx].unlockWithTimeout("API");
             }
             else
             {
-                _doorStrikes[elemIdx].lock();
+                _doorStrikes[elemIdx].lock(false);
             }
             _mutableDataChangeLastMs = millis();
             numElemsSet++;

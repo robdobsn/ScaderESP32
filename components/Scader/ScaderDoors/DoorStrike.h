@@ -34,7 +34,8 @@ public:
     // Setup strike
     // Garage mode if closedSensePin is defined
     bool setup(int doorStrikePin, bool doorStrikeOn, int doorOpenSensePin, 
-                int doorClosedSensePin, bool senseWhenOpen, int defaultUnlockSecs = 10);
+                int doorClosedSensePin, bool senseWhenOpen, uint32_t defaultUnlockSecs,
+                uint32_t delayRelockSecs);
 
     // Service to handle timeouts, etc
     void service();
@@ -43,7 +44,7 @@ public:
     bool unlockWithTimeout(const char* unlockCause, int timeoutInSecs = -1);
 
     // Lock
-    bool lock();
+    bool lock(bool forceImmediate);
 
     // Check if locked
     bool isLocked();
@@ -52,7 +53,7 @@ public:
     DoorOpenSense getOpenStatus() const;
 
     // Get all status info
-    bool getStatus(DoorLockedEnum& lockedEnum, DoorOpenSense& openSense, int& timeBeforeRelock) const;
+    bool getStatus(DoorLockedEnum& lockedEnum, DoorOpenSense& openSense, uint32_t& timeBeforeRelock) const;
 
     // Get status hash
     void getStatusHash(std::vector<uint8_t>& stateHash) const;
@@ -77,11 +78,14 @@ private:
     bool _doorStrikeOn = false;
     int _doorOpenSensePin = -1;
     int _doorClosedSensePin = -1;
-    int _mTimeOutOnUnlockMs = 0;
-    int _defaultUnlockMs = 0;
+    uint32_t _timeOutOnUnlockMs = 0;
+    uint32_t _defaultUnlockMs = 0;
+    uint32_t _delayRelockSecs = 0;
     bool _senseWhenOpen = false;
     bool _isLocked = true;
-    unsigned long _unlockedTime = 0;
-    const int MIN_TIMEOUT_AFTER_UNLOCK_MS = 1000;
+    uint32_t _unlockedTimeMs = 0;
+    const uint32_t MIN_TIMEOUT_AFTER_UNLOCK_MS = 1000;
     bool _garageMode = false;
+    uint32_t _relockPendingTimeMs = 0;
+    bool _relockPending = false;
 };

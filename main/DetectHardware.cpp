@@ -155,29 +155,33 @@ int DetectHardware::detectHardware()
     // Turn off Ethernet PHY power
     pinMode(12, OUTPUT);
     digitalWrite(12, LOW);
-    delay(200);
+    ESP_LOGI(MODULE_PREFIX, "detectHardware turned off Ethernet PHY power");
+    delay(100);
 
     // Check for OLIMEX ESP32-POE which has a voltage enable circuit on pin 12
     // Initially pins 18,25,26,27 should be low as power is off
     bool isOlimexESP32PoE = false;
     if (HWDetectConfig(
         {
-            HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_NOT_STRONG_PULLUP),
-            HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_NOT_STRONG_PULLUP),
+            HWDetectPinDef(25, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 0, 2500),
+            HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 0, 2500),
+            HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 0, 2500),
         }).isThisHW())
     {
         // Turn on Ethernet PHY power
         pinMode(12, OUTPUT);
         digitalWrite(12, HIGH);
-        delay(200);
+        ESP_LOGI(MODULE_PREFIX, "detectHardware turned on Ethernet PHY power");
+        delay(100);
+
 
         // Check pins 18,25,26,27 are now high
         if (HWDetectConfig(
             {
                 HWDetectPinDef(18, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH),
-                HWDetectPinDef(25, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH),
-                HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH),
-                HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH),
+                HWDetectPinDef(25, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 2600, 4096),
+                HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 2600, 4096),
+                HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 2600, 4096),
             }).isThisHW())
         {
             isOlimexESP32PoE = true;
@@ -186,6 +190,8 @@ int DetectHardware::detectHardware()
     // Turn off Ethernet PHY power
     digitalWrite(12, LOW);
     pinMode(12, INPUT);
+    ESP_LOGI(MODULE_PREFIX, "detectHardware turned off Ethernet PHY power");
+    delay(100);
 
     // Debug
     ESP_LOGI(MODULE_PREFIX, "isOlimexESP32PoE %s", isOlimexESP32PoE ? "YES" : "NO");

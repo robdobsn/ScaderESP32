@@ -156,7 +156,7 @@ int DetectHardware::detectHardware()
     pinMode(12, OUTPUT);
     digitalWrite(12, LOW);
     ESP_LOGI(MODULE_PREFIX, "detectHardware turned off Ethernet PHY power");
-    delay(100);
+    delay(500);
 
     // Check for OLIMEX ESP32-POE which has a voltage enable circuit on pin 12
     // Initially pins 18,25,26,27 should be low as power is off
@@ -172,7 +172,7 @@ int DetectHardware::detectHardware()
         pinMode(12, OUTPUT);
         digitalWrite(12, HIGH);
         ESP_LOGI(MODULE_PREFIX, "detectHardware turned on Ethernet PHY power");
-        delay(100);
+        delay(500);
 
 
         // Check pins 18,25,26,27 are now high
@@ -191,7 +191,7 @@ int DetectHardware::detectHardware()
     digitalWrite(12, LOW);
     pinMode(12, INPUT);
     ESP_LOGI(MODULE_PREFIX, "detectHardware turned off Ethernet PHY power");
-    delay(100);
+    delay(500);
 
     // Debug
     ESP_LOGI(MODULE_PREFIX, "isOlimexESP32PoE %s", isOlimexESP32PoE ? "YES" : "NO");

@@ -62,6 +62,9 @@ private:
     // On/Off Key
     int _onOffKey = -1;
 
+    // Mains sync detection
+    int _mainsSyncPin = -1;
+
     // Names of control elements
     std::vector<String> _elemNames;
 
@@ -82,4 +85,17 @@ private:
     void saveMutableData();
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
+
+    // Mains sync ISR
+    static void IRAM_ATTR mainsSyncISRStatic(void *pArg)
+    {
+        if (pArg)
+            ((ScaderRelays *)pArg)->mainsSyncISR();
+    }
+    void IRAM_ATTR mainsSyncISR();
+
+    // TODO
+    // Debug count of ISR
+    volatile uint32_t _isrCount = 0;
+    uint32_t _debugServiceLastMs = 0;
 };

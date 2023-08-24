@@ -23,6 +23,7 @@ bool HWDetectConfig::checkDigitalValues(int pin, int testPinMode, int expectedVa
 {
     // Set pin mode
     pinMode(pin, testPinMode);
+    delay(1);
 
     // Check pin value
     bool pinVal = digitalRead(pin) != LOW;
@@ -168,7 +169,7 @@ int DetectHardware::detectHardware()
         // Turn on Ethernet PHY power
         pinMode(12, OUTPUT);
         digitalWrite(12, HIGH);
-        delay(20);
+        delay(200);
 
         // Check pins 18,25,26,27 are now high
         if (HWDetectConfig(

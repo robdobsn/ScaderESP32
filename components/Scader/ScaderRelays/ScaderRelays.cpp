@@ -92,6 +92,7 @@ void ScaderRelays::setup()
         ConfigPinMap::PinDef("SPI_CS2", ConfigPinMap::GPIO_OUTPUT, &_spiChipSelects[1], 1),
         ConfigPinMap::PinDef("SPI_CS3", ConfigPinMap::GPIO_OUTPUT, &_spiChipSelects[2], 1),
         ConfigPinMap::PinDef("ONOFF_KEY", ConfigPinMap::GPIO_INPUT, &_onOffKey),
+        ConfigPinMap::PinDef("MAINS_SYNC", ConfigPinMap::GPIO_INPUT, &_mainsSyncPin),
     };
     ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
 
@@ -162,6 +163,24 @@ void ScaderRelays::setup()
                     _spiMosi, _spiMiso, _spiClk, _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], ret);
             return;
         }
+    }
+
+    // Initialise mains sync input
+    if (_mainsSyncPin >= 0)
+    {
+        // Setup GPIO
+        gpio_config_t io_conf = {};
+        io_conf.intr_type = GPIO_INTR_POSEDGE;
+        io_conf.pin_bit_mask = (1ULL<<_mainsSyncPin);
+        io_conf.mode = GPIO_MODE_INPUT;
+        io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+        gpio_config(&io_conf);
+
+        // Install GPIO ISR service
+        gpio_install_isr_service(0);
+
+        // Install specific interrupt handler
+        gpio_isr_handler_add((gpio_num_t)_mainsSyncPin, mainsSyncISRStatic, this);
     }
 
     // Clear states
@@ -252,6 +271,13 @@ void ScaderRelays::service()
             saveMutableData();
             _mutableDataDirty = false;
         }
+    }
+
+    // TODO
+    if (Raft::isTimeout(millis(), _debugServiceLastMs, 1000))
+    {
+        _debugServiceLastMs = millis();
+        LOG_I(MODULE_PREFIX, "service mainsSyncPin %d count %d", _mainsSyncPin, _isrCount);
     }
 }
 
@@ -456,4 +482,14 @@ void ScaderRelays::debugShowCurrentState()
         elemStr += String(_elemStates[i]);
     }
     LOG_I(MODULE_PREFIX, "debugShowCurrentState %s", elemStr.c_str());
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// mainsSyncISR
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void IRAM_ATTR ScaderRelays::mainsSyncISR()
+{
+    // TODO
+    _isrCount = _isrCount + 1;
 }

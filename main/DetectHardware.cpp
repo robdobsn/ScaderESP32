@@ -152,52 +152,31 @@ int DetectHardware::detectHardware()
     // Default to generic
     _hardwareRevision = HW_IS_GENERIC_BOARD;
 
-    // Turn off Ethernet PHY power
-    pinMode(12, OUTPUT);
-    digitalWrite(12, LOW);
-    ESP_LOGI(MODULE_PREFIX, "detectHardware turned off Ethernet PHY power");
-    delay(500);
-
-    // Check for OLIMEX ESP32-POE which has a voltage enable circuit on pin 12
-    // Initially pins 18,25,26,27 should be low as power is off
-    bool isOlimexESP32PoE = false;
+    // Check for RFID PCB hardware
+    // Pins 13, 14, 32 are pulled high on that hardware so try to pull them low with the weak ESP32 internal
+    // pull-down and see if they remain high
     if (HWDetectConfig(
         {
-            HWDetectPinDef(25, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 0, 2500),
-            HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 0, 2500),
-            HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 0, 2500),
-        }).isThisHW())
+            HWDetectPinDef(13, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
+            HWDetectPinDef(14, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
+            HWDetectPinDef(32, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
+        }).isThisHW(true))
     {
-        // Turn on Ethernet PHY power
-        pinMode(12, OUTPUT);
-        digitalWrite(12, HIGH);
-        ESP_LOGI(MODULE_PREFIX, "detectHardware turned on Ethernet PHY power");
-        delay(500);
-
-
-        // Check pins 18,25,26,27 are now high
-        if (HWDetectConfig(
-            {
-                HWDetectPinDef(18, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH),
-                HWDetectPinDef(25, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 2600, 4096),
-                HWDetectPinDef(26, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 2600, 4096),
-                HWDetectPinDef(27, HWDetectPinDef::PIN_EXPECTED_BETWEEN_BOUNDS_IF_PULLED_DOWN, 2600, 4096),
-            }).isThisHW())
-        {
-            isOlimexESP32PoE = true;
-        }
+        _hardwareRevision = HW_IS_RFID_BOARD;
     }
-    // Turn off Ethernet PHY power
-    digitalWrite(12, LOW);
-    pinMode(12, INPUT);
-    ESP_LOGI(MODULE_PREFIX, "detectHardware turned off Ethernet PHY power");
-    delay(500);
 
-    // Debug
-    ESP_LOGI(MODULE_PREFIX, "isOlimexESP32PoE %s", isOlimexESP32PoE ? "YES" : "NO");
+    // Check for Conservatory opener hardware
+    else if (HWDetectConfig(
+        {
+            HWDetectPinDef(4, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
+            HWDetectPinDef(5, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
+        }).isThisHW(true))
+    {
+        _hardwareRevision = HW_IS_CONSV_OPENER_BOARD;
+    }
 
-    // Detect boards based on Olimex ESP32-PoE
-    if (isOlimexESP32PoE)
+    // Assume must be light-scaders
+    else
     {
         // Default to light scader
         _hardwareRevision = HW_IS_LIGHT_SCADER_BOARD;
@@ -213,31 +192,6 @@ int DetectHardware::detectHardware()
             }).isThisHW())
         {
             _hardwareRevision = HW_IS_SCADER_SHADES_BOARD;
-        }
-    }
-    else
-    {
-        // Check for RFID PCB hardware
-        // Pins 13, 14, 32 are pulled high on that hardware so try to pull them low with the weak ESP32 internal
-        // pull-down and see if they remain high
-        if (HWDetectConfig(
-            {
-                HWDetectPinDef(13, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-                HWDetectPinDef(14, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-                HWDetectPinDef(32, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
-            }).isThisHW(true))
-        {
-            _hardwareRevision = HW_IS_RFID_BOARD;
-        }
-
-        // Check for Conservatory opener hardware
-        if (HWDetectConfig(
-            {
-                HWDetectPinDef(4, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-                HWDetectPinDef(5, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
-            }).isThisHW(true))
-        {
-            _hardwareRevision = HW_IS_CONSV_OPENER_BOARD;
         }
     }
 

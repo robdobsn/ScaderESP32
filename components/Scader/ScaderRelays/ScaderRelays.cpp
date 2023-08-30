@@ -26,6 +26,7 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 // #define CHECK_RUNNING_ON_APPROPRIATE_HW
 // #define DEBUG_RELAYS_MUTABLE_DATA
 #define DEBUG_RELAYS_API
+// #define DEBUG_MAINS_SYNC
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -165,8 +166,11 @@ void ScaderRelays::setup()
         }
     }
 
+    // Get enable mains sync flag
+    _enableMainsSync = configGetBool("mainsSync", false);
+
     // Initialise mains sync input
-    if (_mainsSyncPin >= 0)
+    if (_enableMainsSync && (_mainsSyncPin >= 0))
     {
         // Setup GPIO
         gpio_config_t io_conf = {};
@@ -273,12 +277,13 @@ void ScaderRelays::service()
         }
     }
 
-    // TODO
+#ifdef DEBUG_MAINS_SYNC
     if (Raft::isTimeout(millis(), _debugServiceLastMs, 1000))
     {
         _debugServiceLastMs = millis();
         LOG_I(MODULE_PREFIX, "service mainsSyncPin %d count %d", _mainsSyncPin, _isrCount);
     }
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

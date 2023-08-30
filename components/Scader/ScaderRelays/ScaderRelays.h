@@ -64,6 +64,7 @@ private:
 
     // Mains sync detection
     int _mainsSyncPin = -1;
+    bool _enableMainsSync = false;
 
     // Names of control elements
     std::vector<String> _elemNames;

@@ -1,5 +1,5 @@
 body {
-  background-color: black;
+  background-color: #282c34;
 }
 .ScaderApp {
   text-align: center;
@@ -18,7 +18,6 @@ body {
 
 .ScaderApp-body {
   background-color: #282c34;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -43,9 +42,9 @@ body {
 }
 
 .ScaderElem {
-  margin: 7px;
-  border-radius: 5px;
-  padding: 7px;
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
 }
 
 .ScaderElem-section {
@@ -53,6 +52,15 @@ body {
   flex-direction: row;
   justify-content: center;
   align-items: center;
+}
+
+.ScaderElem-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin: 0px;
+  padding: 0px;
 }
 
 .ScaderElem-edit {
@@ -74,22 +82,22 @@ body {
 }
 
 .ScaderElem-button {
-  display: inline-flex;
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   position: relative;
-  width: 12rem;
+  width: 100%;
+  max-width: 10rem;
   height: 12rem;
   background-color: #909090;
   border: 1px solid #505050;
-  border-radius: 20px;
+  border-radius: 10px;
   color: white;
   padding: 5px 5px;
   text-align: center;
   text-decoration: none;
-  font-size: 1.4rem;
-  margin: 4px 2px;
+  margin: 4px 4px;
   cursor: pointer;
 }
 
@@ -120,6 +128,7 @@ body {
   top: 1rem;
   width: 100%;
   padding-bottom: 10px;
+  font-size: 1.2rem;
 }
 
 .ScaderElem-button-icon {
@@ -136,37 +145,6 @@ body {
   margin-left: 10px;
   border-radius: 8px;
   border: none;
-}
-
-.ScaderElem-shade-button {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background-color: #909090;
-  border: 1px solid #505050;
-  margin: 0.5rem;
-  cursor: pointer;
-}
-
-.ScaderElem-shade-button svg {
-  width: 100%;
-  height: 100%;
-}
-
-.ScaderElem-shade-extra-button {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background-color: #909090;
-  border: 1px solid #505050;
-  cursor: pointer;
-  color: white;
-  font-size: 0.5em;
-  margin-bottom: 1rem;
 }
 
 .ScaderElem-button-small {
@@ -268,8 +246,9 @@ body {
   padding: 1% 2%;
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  width: 90%;
 }
 
 .ScaderHeader-bareditmode {
@@ -289,7 +268,7 @@ body {
 
 .ScaderHeader-title {
   flex: auto;
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: bold;
   color: #e0e0e0;
   text-align: center;
@@ -333,13 +312,62 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   flex: 10;
-  margin-top: 15px;
+  margin-top: 5px;
+}
+
+.ScaderElem-shadename {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 80%;
+  height: 5rem;
+  background-color: #909090;
+  border-radius: 10px;
+  color: white;
+  padding: 5px 5px;
+  text-align: center;
+  text-decoration: none;
+  margin: 4px 2px;
+}
+
+.ScaderElem-shade-button {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: #909090;
+  border: 1px solid #505050;
+  margin: 0.5rem;
+  cursor: pointer;
+}
+
+.ScaderElem-shade-button svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ScaderElem-shade-extra-button {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: #909090;
+  border: 1px solid #505050;
+  cursor: pointer;
+  color: white;
+  font-size: 0.5em;
+  margin-bottom: 1rem;
 }
 
 .ScaderElem-shadegroup {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;

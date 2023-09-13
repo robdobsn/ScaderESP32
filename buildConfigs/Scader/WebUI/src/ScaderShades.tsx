@@ -164,7 +164,6 @@ export default function ScaderShades(props:ScaderScreenProps) {
       // Display if enabled
       config.enable ?
         <div className="ScaderElem">
-          <div className="ScaderElem-header">
             {/* Grid of elements */}
             <div className="ScaderElem-gridhoriz">
               {config[configElemsName].map((elem, index) => (
@@ -245,7 +244,6 @@ export default function ScaderShades(props:ScaderScreenProps) {
               </div>
             : null}                    
           </div>
-        </div>
       : null
     )
   }

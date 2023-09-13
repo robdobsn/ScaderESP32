@@ -129,7 +129,7 @@ export default function ScaderDoors(props:ScaderScreenProps) {
       // Display if enabled
       config.enable ?
         <div className="ScaderElem">
-          <div className="ScaderElem-header">
+          <div className="ScaderElem-gridhoriz">
             {/* Grid of elements */}
             {config[configElemsName].map((elem, index) => (
               <button key={index} className="ScaderElem-button" 

@@ -78,6 +78,7 @@ void ScaderDoors::setup()
     {
         pinMode(_bellPressedPin, INPUT_PULLUP);
     }
+    _bellPressedPinLevel = configGetBool("bellSenseLevel", false);
 
     // Master door index and reporting
     _masterDoorIndex = configGetLong("masterDoorIdx", 0);
@@ -149,9 +150,9 @@ void ScaderDoors::setup()
         doorIdx++;
     }
 
-    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s bellSensePin %d masterDoorIdx %d", 
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s bellSensePin %d bellSenseLevel %d masterDoorIdx %d", 
                     _scaderCommon.getUIName().c_str(),
-                    _bellPressedPin, _masterDoorIndex);
+                    _bellPressedPin, _bellPressedPinLevel, _masterDoorIndex);
 
     // Debug show states
     debugShowCurrentState();
@@ -455,8 +456,7 @@ void ScaderDoors::debugShowCurrentState()
 void ScaderDoors::publishStateChangeToCommandSerial()
 {
     // If any door locked/unlocked then send message over CommandSerial to inform of change
-    int channelID = getCommsCore()->getChannelIDByName("CommandSerial", "RICSerial");
-    // LOG_I(MODULE_PREFIX, "service channelID %d", channelID);
+    int channelID = getCommsCore()->getChannelIDByName("Serial1", "RICSerial");
 
     // Send message
     CommsChannelMsg msg(channelID, MSG_PROTOCOL_RAWCMDFRAME, 0, MSG_TYPE_COMMAND);
@@ -466,4 +466,8 @@ void ScaderDoors::publishStateChangeToCommandSerial()
     cmdStr = "{" + cmdStr + "}";
     msg.setFromBuffer((uint8_t*)cmdStr.c_str(), cmdStr.length());
     getCommsCore()->outboundHandleMsg(msg);
+
+    // Debug
+    LOG_I(MODULE_PREFIX, "publishStateChangeToCommandSerial channelID %d msg %s", 
+                channelID, cmdStr.c_str());
 }

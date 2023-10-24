@@ -8,11 +8,15 @@
 
 #pragma once
 
+// #define USE_FASTLED_LIBRARY
+
 #include <SysModBase.h>
 #include <ConfigBase.h>
 #include <ScaderCommon.h>
 #include <RaftUtils.h>
+#ifdef USE_FASTLED_LIBRARY
 #include <FastLED.h>
+#endif
 
 class APISourceInfo;
 
@@ -43,8 +47,10 @@ private:
     // Tnitalised flag
     bool _isInitialised = false;
 
+#ifdef USE_FASTLED_LIBRARY
     // WS2812 strips
     std::vector<CRGB> _ledPixels;
+#endif
 
     // Patterns
     enum LedStripPattern
@@ -67,7 +73,9 @@ private:
     // Helper functions
     RaftRetCode apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void getStatusHash(std::vector<uint8_t>& stateHash);
+#ifdef USE_FASTLED_LIBRARY
     void setAllPixels(const CRGB& colour);
+#endif
 
     // Pattern locate
     static const uint32_t PATTERN_LOCATE_INITIAL_FLASHES = 3;

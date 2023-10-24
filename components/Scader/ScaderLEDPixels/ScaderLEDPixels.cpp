@@ -55,6 +55,8 @@ void ScaderLEDPixels::setup()
     // Common
     _scaderCommon.setup();
 
+#ifdef USE_FASTLED_LIBRARY
+
     // Get settings
     uint8_t defaultBrightness = configGetLong("brightness", 96);
  
@@ -110,6 +112,9 @@ void ScaderLEDPixels::setup()
 
     // HW Now initialised
     _isInitialised = true;
+
+#endif
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,6 +184,11 @@ void ScaderLEDPixels::addRestAPIEndpoints(RestAPIEndpointManager &endpointManage
 
 RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
+    bool rslt = true;
+    String reasonStr = "";
+
+#ifdef USE_FASTLED_LIBRARY
+
     // Check init
     if (!_isInitialised)
     {
@@ -186,9 +196,6 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
     }
 
-    bool rslt = true;
-    String reasonStr = "";
-    
     // Get command
     String cmd = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
 
@@ -263,6 +270,8 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         }
     }
 
+#endif
+
     // Set result
     return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt, reasonStr.c_str());
 }
@@ -285,6 +294,7 @@ void ScaderLEDPixels::getStatusHash(std::vector<uint8_t>& stateHash)
 // Clear all pixels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef USE_FASTLED_LIBRARY
 void ScaderLEDPixels::setAllPixels(const CRGB& colour)
 {
     for (uint32_t i = 0; i < _ledPixels.size(); i++)
@@ -293,6 +303,7 @@ void ScaderLEDPixels::setAllPixels(const CRGB& colour)
     }
     FastLED.show();
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Pattern Locate
@@ -300,6 +311,8 @@ void ScaderLEDPixels::setAllPixels(const CRGB& colour)
 
 void ScaderLEDPixels::patternLocate_start()
 {
+#ifdef USE_FASTLED_LIBRARY
+
     // Initialise pattern
     _pattern = PATTERN_LOCATE;
 
@@ -312,11 +325,13 @@ void ScaderLEDPixels::patternLocate_start()
 
     // Pattern timing
     _patternLastTime = millis();
-
+    
+#endif
 }
 
 void ScaderLEDPixels::patternLocate_service()
 {
+#ifdef USE_FASTLED_LIBRARY
     // Check time
     if (Raft::isTimeout(millis(), _patternLastTime, PATTERN_LOCATE_STEP_MS))
     {
@@ -380,6 +395,7 @@ void ScaderLEDPixels::patternLocate_service()
         // Show LEDs
         FastLED.show();
     }
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -388,6 +404,8 @@ void ScaderLEDPixels::patternLocate_service()
 
 void ScaderLEDPixels::patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed)
 {
+#ifdef USE_FASTLED_LIBRARY
+
     // Initialise pattern
     _pattern = PATTERN_SNAKE;
 
@@ -404,11 +422,12 @@ void ScaderLEDPixels::patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed)
 
     // Pattern timing
     _patternLastTime = millis();
-
+#endif
 }
 
 void ScaderLEDPixels::patternSnake_service()
 {
+#ifdef USE_FASTLED_LIBRARY
     // Check time
     if (Raft::isTimeout(millis(), _patternLastTime, _patternSnakeSpeed))
     {
@@ -452,5 +471,6 @@ void ScaderLEDPixels::patternSnake_service()
         // Show LEDs
         FastLED.show();
     }
+#endif
 }
 

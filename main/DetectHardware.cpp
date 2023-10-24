@@ -65,7 +65,7 @@ bool HWDetectConfig::checkAnalogValues(int pin, int testPinMode, int threshold1,
              testPinMode == INPUT ? "INPUT" : (testPinMode == INPUT_PULLDOWN) ? "INPUT_PULLDOWN"
                                                                               : "INPUT_PULLUP",
              threshold1, threshold2,
-             ma.getAverage(),
+             (int)ma.getAverage(),
              inRange ? "Y" : "N");
 
     // Return result

@@ -334,14 +334,27 @@
             "doorClosedAngleOffsetDegrees": 0,
             "MotorOnTimeAfterMoveSecs": 1,
             "MaxMotorCurrentAmps": 0.5,
-            "consvPirPin": 32,
-            "consvButtonPin": 15,
-            "i2cPort": 0,
-            "sdaPin": 21,
-            "sclPin": 22,
+            "consvPirPin": 15,
+            "consvButtonPin": 32,
             "i2cBusFreqHz": 100000,
-            "mt6701addr": "0x06",
-            "reverseSensorAngle": 1,
+            "BusI2C": {
+				"name": "I2CA",
+				"type": "I2C",
+				"reqFIFOLen": 10,
+				"i2cPort": 0,
+				"sdaPin": 21,
+				"sclPin": 22,
+				"i2cFreq": 100000,
+				"taskCore": 0,
+				"taskStack": 10000,
+				"taskPriority": 24                
+            },
+			"AngleSensor": {
+				"i2cAddr": 54,
+				"pollsPerSec": 5000,
+				"reverse": false,
+				"hysteresis": 0
+			},            
             "bus":
             {
                 "name": "SERA",

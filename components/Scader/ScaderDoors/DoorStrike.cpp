@@ -210,7 +210,7 @@ String DoorStrike::getStatusJson(bool incBraces) const
                         incBraces ? "{" : "", 
                         getDoorLockedStr(lockedEnum), 
                         getDoorOpenSenseStr(openEnum),
-                        timeBeforeLockMs,
+                        (int)timeBeforeLockMs,
                         incBraces ? "}" : "");
     return statusStr;
 }

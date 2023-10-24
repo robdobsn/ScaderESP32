@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.11.2"
+#define SYSTEM_VERSION "5.12.1"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -201,18 +201,6 @@ extern "C" void app_main(void)
             }
         }
     }
-
-    // Disable the watchdog timer on the idle task of the core that the mainTask runs on
-    // The idle task will not be scheduled to run at all unless: the mainTask blocks, the mainTask delays for at least one tick
-    // Since neither of these currently happen it makes more sense just to disable the watchdog as the idle task doesn't do anything in any case
-    TaskHandle_t idleTaskOnMainTaskCore = xTaskGetIdleTaskHandleForCPU(MAIN_TASK_PROCESSOR_CORE);
-    if (idleTaskOnMainTaskCore)
-        esp_task_wdt_delete(idleTaskOnMainTaskCore);
-
-    // This seems not to be necessary
-    // TaskHandle_t idleTaskOnOtherTaskCore = xTaskGetIdleTaskHandleForCPU(MAIN_TASK_PROCESSOR_CORE == 0 ? 1 : 0);
-    // if (idleTaskOnOtherTaskCore)
-    //     esp_task_wdt_delete(idleTaskOnOtherTaskCore);
 
     // Start the mainTask
     xTaskCreatePinnedToCore(mainTask, "mainTask", MAIN_TASK_STACK_SIZE, nullptr, MAIN_TASK_PRIORITY, 

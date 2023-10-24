@@ -12,14 +12,20 @@
 #include <RaftArduino.h>
 #include <DebounceButton.h>
 #include <RaftUtils.h>
-#include <RaftI2CCentral.h>
 #include <ConfigBase.h>
 #include <SimpleMovingAverage.h>
 #include <MotorControl.h>
 #include "stdint.h"
 #include <OpenerStatus.h>
+#include <BusI2C.h>
+#include <AS5600Sensor.h>
 // #include <TinyPICO.h>
 // #include <ina219.h>
+
+// Rotation sensor selection
+// Note: one or other of these must be defined
+// #define USE_MT6701_ROTATION_SENSOR
+#define USE_AS5600_ROTATION_SENSOR
 
 class BusSerial;
 
@@ -160,13 +166,10 @@ private:
     double _doorMoveSpeedDegsPerSec = 5;
 
     // I2C bus
-    RaftI2CCentral _i2cCentral;
-    bool _i2cEnabled = false;
+    BusI2C _busI2C;
 
-    // Magnetic rotation sensor MT6701 address and timing
-    uint32_t _mt6701Addr = 0x06;
-    uint32_t _lastRotationAngleMs = 0;
-    bool _reverseSensorAngle = false;
+    // Magnetic rotation sensor
+    AS5600Sensor _rotationSensor;
 
     // Debug
     uint32_t _debugLastDisplayMs = 0;
@@ -193,13 +196,19 @@ private:
     }
     int32_t _calDoorOpenRotationDirection = 1;
 
+    // I2C bus element status callback
+    void busElemStatusCB(BusBase& bus, const std::vector<BusElemAddrAndStatus>& statusChanges);
+
+    // I2C bus operation status callback
+    void busOperationStatusCB(BusBase& bus, BusOperationStatus busOperationStatus);
+
     // Helpers
     void onConservatoryButtonPressed(int val);
     bool isMotorActive();
     double calcDoorMoveSpeedDegsPerSec(double timeSecs, double angleDegs);
     void serviceCalibration();
     void handleClosingDoorAfterTimePeriod();
-    void updateRotationAngleFromSensor();
+    // void updateRotationAngleFromSensor();
     int32_t calculateDegreesFromClosed(int32_t measuredAngleDegrees)
     {
         // This calculation assumes:

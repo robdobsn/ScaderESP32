@@ -14,7 +14,9 @@
 
 static const char* MODULE_PREFIX = "DoorOpener";
 
-DoorOpener::DoorOpener()
+DoorOpener::DoorOpener() :
+        _busI2C(std::bind(&DoorOpener::busElemStatusCB, this, std::placeholders::_1, std::placeholders::_2),
+                std::bind(&DoorOpener::busOperationStatusCB, this, std::placeholders::_1, std::placeholders::_2))
 {
 }
 
@@ -103,34 +105,23 @@ void DoorOpener::setup(ConfigBase& config)
         _pStepper->setMaxMotorCurrentAmps(0, maxMotorCurrentAmps);
 
     // Setup I2C
-    uint32_t i2cPort = config.getLong("i2cPort", 0);
-    int i2cSdaPin = config.getLong("sdaPin", -1);
-    int i2cSclPin = config.getLong("sclPin", -1);
-    uint32_t i2cBusFreqHz = config.getLong("i2cBusFreqHz", 100000);
-    if (i2cSdaPin != -1 && i2cSclPin != -1)
-    {
-        _i2cEnabled = _i2cCentral.init(i2cPort, i2cSdaPin, i2cSclPin, i2cBusFreqHz);
-    }
+    _busI2C.setup(config, "BusI2C");
 
-    // MT6701 address
-    _mt6701Addr = config.getLong("mt6701addr", 0x06);
-
-    // Reverse angle
-    _reverseSensorAngle = config.getLong("reverseSensorAngle", 0);
+    // Rotation sensor address
+    _rotationSensor.setup(config, "AngleSensor", &_busI2C);
 
     // Read from non-volatile storage
     readFromNVS();
 
     // Debug
     // LOG_I(MODULE_PREFIX, "setup HBridgeEn=%d HBridgePhase=%d HBridgeVissen=%d", _hBridgeEn, _hBridgePhase, _hBridgeVissen);
-    LOG_I(MODULE_PREFIX, "setup Conservatory: buttonPin %d pirPin %d reverseSensorAngle %s",
-                _conservatoryButtonPin, _consvPirSensePin, _reverseSensorAngle ? "Y" : "N");
+    LOG_I(MODULE_PREFIX, "setup Conservatory: buttonPin %d pirPin %d",
+                _conservatoryButtonPin, _consvPirSensePin);
     LOG_I(MODULE_PREFIX, "setup DoorClosedAngleOffset %ddegs DoorSwingAngle %ddegs DoorTimeToOpen %ds DoorRemainOpenTime %ds", 
                 _doorClosedAngleOffsetDegrees, _doorSwingAngleDegrees, _doorTimeToOpenSecs, _doorRemainOpenTimeSecs);
     LOG_I(MODULE_PREFIX, "setup DoorMoveSpeed %.2fdegs/s MaxMotorCurrent %.2fA MotorOnTimeAfterMove %ds", 
                 _doorMoveSpeedDegsPerSec, maxMotorCurrentAmps, _motorOnTimeAfterMoveSecs);
-    LOG_I(MODULE_PREFIX, "setup i2cPort %d sdaPin %d sclPin %d i2cBusFreqHz %d mt6701addr 0x%02x i2cEnabled %s", 
-                i2cPort, i2cSdaPin, i2cSclPin, i2cBusFreqHz, _mt6701Addr, _i2cEnabled ? "Y" : "FAILED");
+    LOG_I(MODULE_PREFIX, "setup rotSensorI2CAddr 0x%02x", _rotationSensor.getI2CAddr());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,6 +134,9 @@ void DoorOpener::service()
     if (_pStepper)
         _pStepper->service();
 
+    // Service I2C bus
+    _busI2C.service();
+    
     // Service the button
     _conservatoryButton.service();
 
@@ -166,7 +160,7 @@ void DoorOpener::service()
     }
 
     // Update rotation angle
-    updateRotationAngleFromSensor();
+    // updateRotationAngleFromSensor();
 
     // Update opener status
     uiModuleSetOpenStatus(isClosed(), isMotorActive());
@@ -178,7 +172,7 @@ void DoorOpener::service()
     saveToNVSIfRequired();
 
     // Debug
-    if (Raft::isTimeout(millis(), _debugLastDisplayMs, 5000))
+    if (Raft::isTimeout(millis(), _debugLastDisplayMs, 500))
     {
         _debugLastDisplayMs = millis();
         bool isValid = false;
@@ -221,7 +215,7 @@ void DoorOpener::onConservatoryButtonPressed(int val)
 {
     _conservatoryButtonState = val == 0 ? 0 : 1;
     // _isOverCurrent = false;
-    LOG_I(MODULE_PREFIX, "onConservatoryButtonPressed %d", val);
+    // LOG_I(MODULE_PREFIX, "onConservatoryButtonPressed %d", val);
 
     // Check if motor already active
     if (isMotorActive())
@@ -289,43 +283,70 @@ void DoorOpener::handleClosingDoorAfterTimePeriod()
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Update rotation angle from sensor
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// // Update rotation angle from sensor
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::updateRotationAngleFromSensor()
-{
-    // Check ready
-    if (!_i2cEnabled || !Raft::isTimeout(millis(), _lastRotationAngleMs, ROTATION_ANGLE_SAMPLE_TIME_MS))
-        return;
+// void DoorOpener::updateRotationAngleFromSensor()
+// {
+//     // Check ready
+//     if (!_i2cEnabled || !Raft::isTimeout(millis(), _lastRotationAngleMs, ROTATION_ANGLE_SAMPLE_TIME_MS))
+//         return;
 
-    // Update last time
-    _lastRotationAngleMs = millis();
+//     // Update last time
+//     _lastRotationAngleMs = millis();
 
-    // Get rotation angle
-    uint8_t rotationRegNum = 0x03;
-    uint8_t rotationAngleBytes[2];
-    uint32_t numBytesRead = 0;
-    RaftI2CCentralIF::AccessResultCode rslt = _i2cCentral.access(_mt6701Addr, &rotationRegNum, 1, rotationAngleBytes, 2, numBytesRead);
+// #ifdef USE_MT6701_ROTATION_SENSOR
+//     // Get rotation angle
+//     uint8_t rotationRegNum = 0x03;
+//     uint8_t rotationAngleBytes[2];
+//     uint32_t numBytesRead = 0;
+//     RaftI2CCentralIF::AccessResultCode rslt = _i2cBus.access(_rotationSensorAddr, &rotationRegNum, 1, rotationAngleBytes, 2, numBytesRead);
 
-    // Check for error
-    if (rslt == RaftI2CCentralIF::ACCESS_RESULT_OK)
-    {
-        // Convert to angle
-        int32_t rawRotationAngle = (rotationAngleBytes[0] << 6) | (rotationAngleBytes[1] >> 2);
-        _rotationAngleFromMagSensor = (360*rawRotationAngle)/16384;
+//     // Check for error
+//     if (rslt == RaftI2CCentralIF::ACCESS_RESULT_OK)
+//     {
+//         // Convert to angle
+//         int32_t rawRotationAngle = (rotationAngleBytes[0] << 6) | (rotationAngleBytes[1] >> 2);
+//         _rotationAngleFromMagSensor = (360*rawRotationAngle)/16384;
 
-        // Check for reverse
-        _rotationAngleCorrected = _reverseSensorAngle ? 360 - _rotationAngleFromMagSensor : _rotationAngleFromMagSensor;
+//         // Check for reverse
+//         _rotationAngleCorrected = _reverseSensorAngle ? 360 - _rotationAngleFromMagSensor : _rotationAngleFromMagSensor;
 
-        // LOG_I(MODULE_PREFIX, "service rotation angle %ddegrees (raw %ddegrees, %drawunits)", 
-        //             _rotationAngleCorrected, _rotationAngleFromMagSensor, rawRotationAngle);
-    }
-    else
-    {
-        // LOG_E(MODULE_PREFIX, "service error reading rotation angle - rslt=%s", RaftI2CCentralIF::getAccessResultStr(rslt));
-    }
-}
+//         // LOG_I(MODULE_PREFIX, "service rotation angle %ddegrees (raw %ddegrees, %drawunits)", 
+//         //             _rotationAngleCorrected, _rotationAngleFromMagSensor, rawRotationAngle);
+//     }
+//     else
+//     {
+//         // LOG_E(MODULE_PREFIX, "service error reading rotation angle - rslt=%s", RaftI2CCentralIF::getAccessResultStr(rslt));
+//     }
+// #endif
+// #ifdef USE_AS5600_ROTATION_SENSOR
+//     // Get rotation angle
+//     uint8_t rotationRegNum = 0x0E;
+//     uint8_t rotationAngleBytes[2];
+//     uint32_t numBytesRead = 0;
+//     RaftI2CCentralIF::AccessResultCode rslt = _i2cBus.access(_rotationSensorAddr, &rotationRegNum, 1, rotationAngleBytes, 2, numBytesRead);
+
+//     // Check for error
+//     if (rslt == RaftI2CCentralIF::ACCESS_RESULT_OK)
+//     {
+//         // Convert to angle
+//         int32_t rawRotationAngle = (rotationAngleBytes[0] << 8) | (rotationAngleBytes[1]);
+//         _rotationAngleFromMagSensor = (360*rawRotationAngle)/4096;
+
+//         // Check for reverse
+//         _rotationAngleCorrected = _reverseSensorAngle ? 360 - _rotationAngleFromMagSensor : _rotationAngleFromMagSensor;
+
+//         // LOG_I(MODULE_PREFIX, "service rotation angle %ddegrees (raw %ddegrees, %drawunits)", 
+//         //             _rotationAngleCorrected, _rotationAngleFromMagSensor, rawRotationAngle);
+//     }
+//     else
+//     {
+//         // LOG_E(MODULE_PREFIX, "service error reading rotation angle - rslt=%s", RaftI2CCentralIF::getAccessResultStr(rslt));
+//     }
+// #endif
+// }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // is motor active
@@ -644,3 +665,49 @@ void DoorOpener::serviceCalibration()
         }
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// I2CBus element status callback
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void DoorOpener::busElemStatusCB(BusBase& bus, const std::vector<BusElemAddrAndStatus>& statusChanges)
+{
+    String statusStr;
+    int seqStartAddr = -1;
+    bool lastWasOnline = false;
+    int lastAddr = 0;
+    for (auto& statusChange : statusChanges)
+    {
+        if (seqStartAddr == -1)
+        {
+            seqStartAddr = statusChange.address;
+            lastWasOnline = statusChange.isChangeToOnline;
+        }
+        else if (lastWasOnline != statusChange.isChangeToOnline)
+        {
+            if (!statusStr.isEmpty())
+                statusStr += ", ";
+            statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(statusChange.address - 1, 16) + (lastWasOnline ? ":online" : ":offline");
+            seqStartAddr = statusChange.address;
+            lastWasOnline = statusChange.isChangeToOnline;
+        }
+        lastAddr = statusChange.address;
+    }
+    if (seqStartAddr != -1)
+    {
+        if (!statusStr.isEmpty())
+            statusStr += ", ";
+        statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(lastAddr, 16) + (lastWasOnline ? ":online" : ":offline");
+    }
+    LOG_I(MODULE_PREFIX, "busElemStatusCB I2C addr %s", statusStr.c_str());
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// I2CBus operation status callback
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void DoorOpener::busOperationStatusCB(BusBase& bus, BusOperationStatus busOperationStatus)
+{
+    LOG_I(MODULE_PREFIX, "busOperationStatusCB I2C bus %s", BusBase::busOperationStatusToString(busOperationStatus));
+}
+

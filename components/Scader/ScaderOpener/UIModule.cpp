@@ -19,7 +19,7 @@ static const char *MODULE_PREFIX = "UIModule";
 // #define DEBUG_UI_MODULE_RX_ASCII
 // #define DEBUG_UI_MODULE_RX_LOOP
 // #define DEBUG_UI_MODULE_RX_LINE
-#define DEBUG_SERVICE_STATUS
+// #define DEBUG_SERVICE_STATUS
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor

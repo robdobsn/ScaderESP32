@@ -98,6 +98,7 @@ export class ScaderManager {
                     this._websocket = null;
                 }
             }
+            console.log(`websocket state ${this._websocket?.readyState}`);
         }, 5000);
 
         return rslt;

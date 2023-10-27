@@ -19,6 +19,10 @@
 
 static const char *MODULE_PREFIX = "ScaderOpener";
 
+#define DEBUG_DEFAULT_CONFIG
+#define DEBUG_GLOBAL_CONFIG
+#define DEBUG_MUTABLE_CONFIG
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +31,15 @@ ScaderOpener::ScaderOpener(const char *pModuleName, ConfigBase &defaultConfig, C
     : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
           _scaderCommon(*this, pModuleName)
 {
+#ifdef DEBUG_DEFAULT_CONFIG
+    LOG_I(MODULE_PREFIX, "constructor defaultConfig %s", defaultConfig.getConfigString().c_str());
+#endif
+#ifdef DEBUG_GLOBAL_CONFIG
+    LOG_I(MODULE_PREFIX, "constructor globalConfig %s", pGlobalConfig ? pGlobalConfig->getConfigString().c_str() : "NULL");
+#endif
+#ifdef DEBUG_MUTABLE_CONFIG
+    LOG_I(MODULE_PREFIX, "constructor mutableConfig %s", pMutableConfig ? pMutableConfig->getConfigString().c_str() : "NULL");
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,27 +138,27 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
         // Open
         if (params[1] == "open")
         {
-            _doorOpener.motorMoveToPosition(true);
+            _doorOpener.doorOpen();
             rsltStr = "Opened";
         }
         // Close
         else if (params[1] == "close")
         {
-            _doorOpener.motorMoveToPosition(false);
+            _doorOpener.doorClose();
             rsltStr = "Closed";
         }
         // Stop
         else if (params[1] == "stopanddisable")
         {
-            _doorOpener.stopAndDisableDoor();
+            _doorOpener.doorStopAndDisable();
             rsltStr = "Stopped";
         }
-        // Calibrate
-        else if (params[1] == "calibrate")
-        {
-            _doorOpener.calibrate();
-            rsltStr = "Calibrating";
-        }
+        // // Calibrate
+        // else if (params[1] == "calibrate")
+        // {
+        //     _doorOpener.calibrate();
+        //     rsltStr = "Calibrating";
+        // }
         // Set in-enable
         else if (params[1] == "inenable")
         {
@@ -166,18 +179,18 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
                 rsltStr = enVal ? "Out enabled" : "Out disabled";
             }
         }
-        // Set open pos
-        else if (params[1] == "setopenpos")
-        {
-            _doorOpener.setOpenPosition();
-            rsltStr = "Open position set";
-        }
-        // Set closed pos
-        else if (params[1] == "setclosedpos")
-        {
-            _doorOpener.setClosedPosition();
-            rsltStr = "Closed position set";
-        }
+        // // Set open pos
+        // else if (params[1] == "setopenpos")
+        // {
+        //     _doorOpener.setOpenPosition();
+        //     rsltStr = "Open position set";
+        // }
+        // // Set closed pos
+        // else if (params[1] == "setclosedpos")
+        // {
+        //     _doorOpener.setClosedPosition();
+        //     rsltStr = "Closed position set";
+        // }
         // Test
         else if (params[1] == "test")
         {
@@ -188,7 +201,7 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
                     if (params.size() > 2)
                     {
                         int degrees = params[3].toInt();
-                        _doorOpener.motorMoveAngle(degrees, true, degrees / 10);
+                        _doorOpener.debugMoveToAngle(degrees);
                         rsltStr = "Turned " + String(degrees) + " degrees";
                     }
                     else

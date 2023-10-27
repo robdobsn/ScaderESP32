@@ -90,10 +90,10 @@ private:
     // Mains sync ISR
     static void IRAM_ATTR mainsSyncISRStatic(void *pArg)
     {
-        if (pArg)
-            ((ScaderRelays *)pArg)->mainsSyncISR();
+        // if (pArg)
+        //     ((ScaderRelays *)pArg)->mainsSyncISR();
     }
-    void IRAM_ATTR mainsSyncISR();
+    // void IRAM_ATTR mainsSyncISR();
 
     // TODO
     // Debug count of ISR

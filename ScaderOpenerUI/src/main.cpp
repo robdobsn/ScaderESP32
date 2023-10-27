@@ -2,6 +2,11 @@
 #include <M5Stack.h>
 #include <M5StackColours.h>
 
+// GPIO Pins
+const int KITCHEN_PIR_PIN = 26;
+const int CTRL_SERIAL_RX_PIN = 5;
+const int CTRL_SERIAL_TX_PIN = 2;
+
 // Screen dimensions (sideways)
 const int SCREEN_HEIGHT = 320;
 const int SCREEN_WIDTH = 240;
@@ -18,6 +23,8 @@ bool labelRedraw = true;
 const int NUM_STATUS_LINES = 3;
 bool statusLineRedraw[NUM_STATUS_LINES] = {true, true, true};
 String statusLines[NUM_STATUS_LINES];
+bool kitPIRLastDispLevel = false;
+bool kitPIRLastLevel = false;
 
 // Serial port
 HardwareSerial ctrlSerial(2);
@@ -215,7 +222,7 @@ void redraw()
         if (statusLineRedraw[i])
         {
             // Clear line
-            M5.Lcd.fillRect(STATUS_LINES_X, STATUS_LINE_1_Y + i*STATUS_LINE_SPACING_Y, 160, 20, TFT_BLACK);
+            M5.Lcd.fillRect(STATUS_LINES_X, STATUS_LINE_1_Y + i*STATUS_LINE_SPACING_Y, 170, 20, TFT_BLACK);
             M5.Lcd.setCursor(STATUS_LINES_X, STATUS_LINE_1_Y + i*STATUS_LINE_SPACING_Y);
             M5.Lcd.println(statusLines[i]);
             statusLineRedraw[i] = false;
@@ -257,6 +264,17 @@ void redraw()
                         ARROW_2_LEFT_X+ARROW_HEAD_LEN, ARROW_2_Y+ARROW_BODY_WIDTH+ARROW_HEAD_STICKOUT,
                         isOutEnabled ? GREEN : DISABLED_COLOUR);
     }
+
+    // Indicator of PIR input
+    bool kitPIRDispLevel = digitalRead(KITCHEN_PIR_PIN);
+    if (kitPIRDispLevel != kitPIRLastDispLevel)
+    {
+        // Draw
+        M5.Lcd.fillRect(220, 310, 10, 10, kitPIRDispLevel ? GREEN : DISABLED_COLOUR);
+
+        // Done
+        kitPIRLastDispLevel = kitPIRDispLevel;
+    }
 }
 
 // Setup
@@ -274,7 +292,12 @@ void setup()
     showButtonLegends();
 
     // Setup ctrl serial
-    ctrlSerial.begin(115200, SERIAL_8N1, 5, 2);
+    ctrlSerial.begin(115200, SERIAL_8N1, CTRL_SERIAL_RX_PIN, CTRL_SERIAL_TX_PIN);
+
+    // Setup kitchen PIR input
+    pinMode(KITCHEN_PIR_PIN, INPUT);
+    kitPIRLastLevel = digitalRead(KITCHEN_PIR_PIN);
+    kitPIRLastDispLevel = !kitPIRLastLevel;
 
     // Setup diags serial
     Serial.begin(115200);
@@ -316,6 +339,17 @@ void loop()
             sendCommand("inEnable");
             // isInEnabled = true;
         }
+    }
+
+    // Check if PIR changed
+    bool kitPIRLevel = digitalRead(KITCHEN_PIR_PIN);
+    if (kitPIRLevel != kitPIRLastLevel)
+    {
+        // Send command
+        sendCommand(kitPIRLevel ? "kitchenPIRActive" : "kitchenPIRInactive");
+
+        // Done
+        kitPIRLastLevel = kitPIRLevel;
     }
 
     // Check if redraw needed

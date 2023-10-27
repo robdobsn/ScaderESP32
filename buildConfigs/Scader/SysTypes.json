@@ -330,92 +330,94 @@
         "ScaderOpener": {
             "DoorRemainOpenTimeSecs": 45,
             "DoorTimeToOpenSecs": 20,
-            "doorSwingAngleDegrees": 0,
-            "doorClosedAngleOffsetDegrees": 0,
-            "MotorOnTimeAfterMoveSecs": 1,
-            "MaxMotorCurrentAmps": 0.5,
+            "MotorOnTimeAfterMoveSecs": 5,
+            "MaxMotorCurrentAmps": 0.4,
+            "DoorOpenAngleDegs": 0,
+            "DoorClosedAngleDegs": 0,
             "consvPirPin": 15,
             "consvButtonPin": 32,
             "i2cBusFreqHz": 100000,
-            "BusI2C": {
-				"name": "I2CA",
-				"type": "I2C",
-				"reqFIFOLen": 10,
-				"i2cPort": 0,
-				"sdaPin": 21,
-				"sclPin": 22,
-				"i2cFreq": 100000,
-				"taskCore": 0,
-				"taskStack": 10000,
-				"taskPriority": 24                
-            },
-			"AngleSensor": {
-				"i2cAddr": 54,
-				"pollsPerSec": 5000,
-				"reverse": false,
-				"hysteresis": 0
-			},            
-            "bus":
-            {
-                "name": "SERA",
-                "type": "serial",
-                "uartNum": 2,
-                "rxPin": "23",
-                "txPin": "4",
-                "baudRate": 115200,
-                "minAfterSendMs": 5
-            },
-            "stepper":
-            {
-                "name": "DoorMotor",
-                "type": "Steppers",
-                "bus": "SERA",
-                "motion": {
-                    "geom": "XYZ",
-                    "blockDist": 10,
-                    "allowOutOfBounds": 0,
-                    "homeBeforeMove": 0,
-                    "junctionDeviation": 0.05
+            "MotorAndAngleSensor": {
+                "BusI2C": {
+                    "name": "I2CA",
+                    "type": "I2C",
+                    "reqFIFOLen": 10,
+                    "i2cPort": 0,
+                    "sdaPin": 21,
+                    "sclPin": 22,
+                    "i2cFreq": 100000,
+                    "taskCore": 0,
+                    "taskStack": 10000,
+                    "taskPriority": 24                
                 },
-                "ramp": {
-                    "rampTimerEn": 1,
-                    "rampTimerUs": 100,
-                    "pipelineLen": 100
+                "AngleSensor": {
+                    "i2cAddr": 54,
+                    "pollsPerSec": 1000,
+                    "reverse": false,
+                    "hysteresis": 0
+                },            
+                "MotorSerial":
+                {
+                    "name": "SERA",
+                    "type": "serial",
+                    "uartNum": 2,
+                    "rxPin": "23",
+                    "txPin": "4",
+                    "baudRate": 115200,
+                    "minAfterSendMs": 5
                 },
-                "motorEn": {
-                    "stepEnablePin": "27",
-                    "stepEnLev": 0,
-                    "stepDisableSecs": 1
-                },
-                "axes": [
-                    {
-                        "name": "X",
-                        "params": {
-                            "unitsPerRot": 360,
-                            "stepsPerRot": 3800,
-                            "maxSpeed": 50,
-                            "maxAcc": 50
-                        },
-                        "driver": {
-                            "driver": "TMC2209",
-                            "hw": "local",
-                            "addr": 0,
-                            "stepPin": "25",
-                            "dirnPin": "26",
-                            "invDirn": 0,
-                            "writeOnly": 0,
-                            "extSenseOhms": 0.15,
-                            "extVRef": 0,
-                            "extMStep": 0,
-                            "intpol": 1,
-                            "microsteps": 1,
-                            "rmsAmps": 0.01,
-                            "holdModeOrFactor": 0.5,
-                            "holdDelay": 1,
-                            "pwmFreqKHz": 35
+                "DoorMotor":
+                {
+                    "name": "DoorMotor",
+                    "type": "Steppers",
+                    "bus": "SERA",
+                    "motion": {
+                        "geom": "XYZ",
+                        "blockDist": 10,
+                        "allowOutOfBounds": 0,
+                        "homeBeforeMove": 0,
+                        "junctionDeviation": 0.05
+                    },
+                    "ramp": {
+                        "rampTimerEn": 1,
+                        "rampTimerUs": 100,
+                        "pipelineLen": 100
+                    },
+                    "motorEn": {
+                        "stepEnablePin": "27",
+                        "stepEnLev": 0,
+                        "stepDisableSecs": 1
+                    },
+                    "axes": [
+                        {
+                            "name": "X",
+                            "params": {
+                                "unitsPerRot": 360,
+                                "stepsPerRot": 28000,
+                                "maxSpeed": 10,
+                                "maxAcc": 10
+                            },
+                            "driver": {
+                                "driver": "TMC2209",
+                                "hw": "local",
+                                "addr": 0,
+                                "stepPin": "25",
+                                "dirnPin": "26",
+                                "invDirn": 0,
+                                "writeOnly": 0,
+                                "extSenseOhms": 0.15,
+                                "extVRef": 0,
+                                "extMStep": 0,
+                                "intpol": 1,
+                                "microsteps": 1,
+                                "rmsAmps": 0.01,
+                                "holdModeOrFactor": 0.5,
+                                "holdDelay": 1,
+                                "pwmFreqKHz": 35
+                            }
                         }
-                    }
-                ]
+                    ]
+                }
             },
             "uiModule":
             {

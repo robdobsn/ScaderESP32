@@ -70,17 +70,13 @@ export class ScaderOpenStatus {
     kitButtonPressed: boolean = false;
     consButtonPressed: boolean = false;
     pirSenseInActive: boolean = false;
-    pirSenseInTriggered: boolean = false;
     pirSenseOutActive: boolean = false;
-    pirSenseOutTriggered: boolean = false;
-    closedAngleTolerance: number = 0;
-    openEnoughForCatAccessAngle: number = 0;
-    angleFromClosed: number = 0;
-    rawSensorAngleCorrected: number = 0;
-    stepperCurAngle: number = 0;
-    doorSwingAngleDegrees: number = 0;
-    doorClosedAngleOffsetDegrees: number = 0;
+    doorOpenAngleDegs: number = 0;
+    doorClosedAngleDegs: number = 0;
+    doorCurAngle: number = 0;
     timeBeforeCloseSecs: number = 0;
+    doorStateCode: number = 0;
+    doorStateStr: string = "";
 }
 export class ScaderOpenerStates {
     module: string = "";

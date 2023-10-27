@@ -12,6 +12,7 @@
 
 static const char* MODULE_PREFIX = "OpenerStatus";
 #define DEBUG_OPENER_MUTABLE_DATA
+#define DEBUG_OPENER_STATE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Setup
@@ -68,4 +69,28 @@ void OpenerStatus::saveToNVSIfRequired()
 
     // No longer required
     _isNVSWriteReqd = false;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Set opener state
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void OpenerStatus::setOpenerState(DoorOpenerState newState, const String& debugMsg)
+{
+    // Store prev state for debug
+#ifdef DEBUG_OPENER_STATE
+    DoorOpenerState prevState = _doorOpenerState;
+#endif
+
+    // Store new state
+    _doorOpenerState = newState;
+    _doorOpenerStateLastMs = millis();
+
+    // Debug
+#ifdef DEBUG_OPENER_STATE
+    LOG_I(MODULE_PREFIX, "setOpenerState %s (was %s) %s", 
+                getOpenerStateStr(newState).c_str(), 
+                getOpenerStateStr(prevState).c_str(), 
+                debugMsg.c_str());
+#endif
 }

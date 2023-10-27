@@ -42,6 +42,22 @@ public:
         }
         _inEnabled = enabled; 
     }
+    void setKitchenPIRActive(bool isActive) 
+    { 
+        if (_kitchenPIRValue != isActive)
+        {
+            _kitchenPIRStateChange = true;
+            _kitchenPIRValue = isActive;
+        }
+    }
+    void setOpenCloseToggle(bool isActive)
+    {
+        if (_openCloseToggleValue != isActive)
+        {
+            _openCloseToggleStateChange = true;
+            _openCloseToggleValue = isActive;
+        }
+    }
     void uiModuleSetStatusStr(int idx, const String& statusStr)
     {
         if (idx < 0 || idx >= _statusStrs.size())
@@ -52,13 +68,12 @@ public:
             _statusStrs[idx] = statusStr;
         }
     }
-    void uiModuleSetOpenStatus(bool isClosed, bool isMoving) 
+    void uiModuleSetOpenCloseButtonLabel(const String& buttonLabel)
     { 
-        String label = isMoving ? "Stop" : (isClosed ? "Open" : "Close");
-        if (_openCloseBtnLabel != label)
+        if (_openCloseBtnLabel != buttonLabel)
         {
             _isUIUpdateReqd = true;
-            _openCloseBtnLabel = label;
+            _openCloseBtnLabel = buttonLabel;
         }
     }
 
@@ -80,9 +95,60 @@ public:
     bool uiUpdateRequired() { return _isUIUpdateReqd; }
     void uiUpdateDone() { _isUIUpdateReqd = false; }
 
+    // Check if kitchen PIR state changed
+    bool getKitchenPIRStateChangedAndClear(bool& kitchenPIRValue) {
+        if (!_kitchenPIRStateChange)
+            return false;
+        kitchenPIRValue = _kitchenPIRValue;
+        _kitchenPIRStateChange = false;
+        return true;
+    }
+
+    // Check if open/close toggle state changed
+    bool getOpenCloseToggleStateChangedAndClear(bool& openCloseToggleValue) {
+        if (!_openCloseToggleStateChange)
+            return false;
+        openCloseToggleValue = _openCloseToggleValue;
+        _openCloseToggleStateChange = false;
+        return true;
+    }
+
     // Read/save non-volatile-storage (NVS)
     void readFromNVS();
     void saveToNVSIfRequired();
+
+    // Door opener state
+    enum DoorOpenerState
+    {
+        DOOR_STATE_AJAR,
+        DOOR_STATE_CLOSED,
+        DOOR_STATE_OPENING,
+        DOOR_STATE_OPEN,
+        DOOR_STATE_CLOSING,
+    };
+
+    String getOpenerStateStr(DoorOpenerState doorState)
+    {
+        switch (doorState)
+        {
+            case DOOR_STATE_AJAR:
+                return "Ajar";
+            case DOOR_STATE_CLOSED:
+                return "Closed";
+            case DOOR_STATE_OPENING:
+                return "Opening";
+            case DOOR_STATE_OPEN:
+                return "Open";
+            case DOOR_STATE_CLOSING:
+                return "Closing";
+        }
+        return "Unknown";
+    }
+
+    // Get/Set opener state
+    DoorOpenerState getOpenerState() { return _doorOpenerState; }
+    void setOpenerState(DoorOpenerState newState, const String& debugMsg);
+    uint32_t getOpenerStateLastMs() { return _doorOpenerStateLastMs; }
 
 protected:
 
@@ -91,9 +157,18 @@ protected:
     bool _outEnabled = false;
 
     // Kitchen (out) PIR value
-    bool _pirOutValue = false;
+    bool _kitchenPIRValue = false;
+    bool _kitchenPIRStateChange = false;
+
+    // Open close toggle value
+    bool _openCloseToggleValue = false;
+    bool _openCloseToggleStateChange = false;
 
 private:
+
+    // State
+    DoorOpenerState _doorOpenerState = DOOR_STATE_AJAR;
+    uint32_t _doorOpenerStateLastMs = 0;
 
     // Open/Close button label
     String _openCloseBtnLabel = "Open";
@@ -107,7 +182,7 @@ private:
     uint32_t _nvsDataLastChangedMs = 0;
 
     // Status strings
-    std::vector<String> _statusStrs = { "Cat Policing", "", "" };
+    std::vector<String> _statusStrs = { "", "", "" };
 
     // Config
     ConfigBase* _pConfig = nullptr;

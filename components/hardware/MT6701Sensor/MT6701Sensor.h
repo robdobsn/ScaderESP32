@@ -9,7 +9,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <LatchingAngleAverage.h>
+#include <AngleMovingAverage.h>
 #include <SampleCollector.h>
 
 class BusBase;
@@ -63,7 +63,7 @@ private:
     BusBase* _pBus = nullptr;
 
     // Numerical filter
-    LatchingAngleAverage<1, MT6701_RAW_RANGE> _angleFilter;
+    AngleMovingAverage<1, MT6701_RAW_RANGE> _angleFilter;
 
     // Sample collector
     SampleCollector<int32_t>* _pSampleCollector = nullptr;

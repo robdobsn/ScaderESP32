@@ -19,7 +19,7 @@ static const char *MODULE_PREFIX = "UIModule";
 // #define DEBUG_UI_MODULE_RX_ASCII
 // #define DEBUG_UI_MODULE_RX_LOOP
 // #define DEBUG_UI_MODULE_RX_LINE
-// #define DEBUG_SERVICE_STATUS
+#define DEBUG_SERVICE_STATUS
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -224,8 +224,11 @@ void UIModule::processStatus(const String &status)
                 cmdStr.equalsIgnoreCase("outEnable") ? 1 : -1;
     int inEnabled = cmdStr.equalsIgnoreCase("inDisable") ? 0 :
                 cmdStr.equalsIgnoreCase("inEnable") ? 1 : -1;
+    int openCloseToggle = cmdStr.equalsIgnoreCase("openCloseToggle") ? 1 : -1;
+    int kitchenPIRActive = cmdStr.equalsIgnoreCase("kitchenPIRActive") ? 1 :
+                cmdStr.equalsIgnoreCase("kitchenPIRInactive") ? 0 : -1;
 
-    // Update UI
+    // Update status
     if (_pOpenerStatus)
     {
         if (outEnabled != -1)
@@ -237,6 +240,16 @@ void UIModule::processStatus(const String &status)
         {
             _pOpenerStatus->setInEnabled(inEnabled ? true : false);
             LOG_I(MODULE_PREFIX, "processStatus inEnabled %s", inEnabled ? "Y" : "N");
+        }
+        if (openCloseToggle != -1)
+        {
+            _pOpenerStatus->setOpenCloseToggle(openCloseToggle ? true : false);
+            LOG_I(MODULE_PREFIX, "processStatus openCloseToggle %s", openCloseToggle ? "Y" : "N");
+        }
+        if (kitchenPIRActive != -1)
+        {
+            _pOpenerStatus->setKitchenPIRActive(kitchenPIRActive ? true : false);
+            LOG_I(MODULE_PREFIX, "processStatus kitchenPIRActive %s", kitchenPIRActive ? "Y" : "N");
         }
     }
 }

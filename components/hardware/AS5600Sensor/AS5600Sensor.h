@@ -9,7 +9,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <LatchingAngleAverage.h>
+#include <AngleMovingAverage.h>
 #include <SampleCollector.h>
 
 class BusBase;
@@ -28,12 +28,26 @@ public:
     // Service
     void service();
 
-    // Get angle data
+    // Set hysteresis for angle measurement
+    void setHysteresis(float hysteresis)
+    {
+        _angleFilter.setHysteresis(hysteresis);
+    }
+    
+    // Get angle radians
     float getAngleRadians(bool withHysteresis, bool clamped)
     {
         // Get data
         int32_t filteredData = _angleFilter.getAverage(withHysteresis, clamped);
         return filteredData * AS5600_ANGLE_CONVERSION_FACTOR_RADIANS;
+    }
+
+    // Get angle degrees
+    float getAngleDegrees(bool withHysteresis, bool clamped)
+    {
+        // Get data
+        int32_t filteredData = _angleFilter.getAverage(withHysteresis, clamped);
+        return filteredData * AS5600_ANGLE_CONVERSION_FACTOR_DEGREES;
     }
 
     // Set sample collector
@@ -84,7 +98,7 @@ private:
     BusBase* _pBus = nullptr;
 
     // Numerical filter
-    LatchingAngleAverage<1, AS5600_RAW_RANGE> _angleFilter;
+    AngleMovingAverage<1, AS5600_RAW_RANGE> _angleFilter;
 
     // Sample collector
     SampleCollector<int32_t>* _pSampleCollector = nullptr;

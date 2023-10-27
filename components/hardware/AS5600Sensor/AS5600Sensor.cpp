@@ -53,7 +53,10 @@ void AS5600Sensor::setup(ConfigBase& config, const char* pConfigPrefix, BusBase*
     _angleFilter.setHysteresis(hysteresis);
 
     // Log
-    LOG_I(MODULE_PREFIX, "setup i2cAddr %x pollRatePerSec %d hysteresis %0.1f", (int)_i2cAddr, (int)_pollRatePerSec, hysteresis);
+    LOG_I(MODULE_PREFIX, "setup i2cAddr 0x%x reversed %s pollRatePerSec %d hysteresis %0.1f", 
+                (int)_i2cAddr,
+                _rotationDirectionReversed ? "Y" : "N",
+                (int)_pollRatePerSec, hysteresis);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

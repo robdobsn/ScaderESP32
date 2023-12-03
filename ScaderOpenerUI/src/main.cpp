@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <M5Stack.h>
 #include <M5StackColours.h>
+#include "MiniHDLC.h"
 
 // GPIO Pins
 const int KITCHEN_PIR_PIN = 26;
@@ -11,9 +12,9 @@ const int CTRL_SERIAL_TX_PIN = 2;
 const int SCREEN_HEIGHT = 320;
 const int SCREEN_WIDTH = 240;
 
-// Currently read serial data
-const int MAX_LINE_LENGTH = 200;
-String serialLine = "";
+// MiniHDLC
+void frameRxCB(const uint8_t *framebuffer, unsigned framelength);
+MiniHDLC miniHDLC(NULL, frameRxCB);
 
 // Status
 bool isInEnabled = false;
@@ -28,6 +29,15 @@ bool kitPIRLastLevel = false;
 
 // Serial port
 HardwareSerial ctrlSerial(2);
+const int MAX_CHARS_TO_PROCESS = 500;
+
+// Status update
+uint32_t lastStatusUpdateTimeMs = 0;
+const int STATUS_UPDATE_RATE_MS = 1000;
+
+// Debug
+uint32_t lastDebugTimeMs = 0;
+static const uint32_t DEBUG_INTERVAL_MS = 1000;
 
 // Button legends
 String buttonLegendText[] = 
@@ -54,10 +64,32 @@ const char *statusMsgNames[] =
     OPEN_CLOSE_LABEL_STR
 };
 
+void writeJSONString(const String &str)
+{
+    uint32_t encodedLen = miniHDLC.calcEncodedLen((const uint8_t*) str.c_str(), str.length());
+    std::vector<uint8_t> encoded(encodedLen);
+    miniHDLC.encodeFrame(encoded.data(), encodedLen, (const uint8_t*) str.c_str(), str.length());
+    ctrlSerial.write(encoded.data(), encodedLen);
+    
+    // Debug
+    Serial.printf("Sent JSON: %s\r\n", str.c_str());
+}
+
 // Send command to controller
 void sendCommand(String command)
 {
-    ctrlSerial.printf(R"({"cmd":"%s"})" "\r\n", command.c_str());
+    // Form HDLC frame
+    String cmdStr = R"({"cmd":")" + command + R"("})";
+    writeJSONString(cmdStr);
+}
+
+// Send status update
+void sendStatusUpdate()
+{
+    // Status msg
+    String statusMsg = R"({"cmd":"status","isInEnabled":)" + String(isInEnabled) + 
+                    R"(,"isOutEnabled":)" + String(isOutEnabled) + R"(})";
+    writeJSONString(statusMsg);
 }
 
 // Handle status message
@@ -115,10 +147,10 @@ void handleStatusMessage(const String &name, const String &val)
 }
 
 // Handle single line of serial info
-void handleSerialLine()
+void handleSerialLine(String& serialLine)
 {
     // Debug
-    Serial.printf("Status line: %s\r\n", serialLine.c_str());
+    // Serial.printf("Status line: %s\r\n", serialLine.c_str());
 
     // Handle line JSON
     for (int i = 0; i < sizeof(statusMsgNames) / sizeof(statusMsgNames[0]); i++)
@@ -150,33 +182,14 @@ void handleSerialLine()
     serialLine = "";
 }
 
-// Service serial input
-void serviceSerial()
+void frameRxCB(const uint8_t *framebuffer, unsigned framelength)
 {
-    // Handle serial input
-    for (int i = 0; i < MAX_LINE_LENGTH; i++)
-    {
-        // Check chars
-        if (ctrlSerial.available() == 0)
-            break;
-
-        // Check line length
-        if (serialLine.length() > MAX_LINE_LENGTH)
-            serialLine = "";
-
-        // Read into line
-        char c = ctrlSerial.read();
-        if (c == '\n' || c == '\r')
-        {
-            // Handle line
-            handleSerialLine();
-        }
-        else
-        {
-            // Append to line
-            serialLine += c;
-        }
-    }
+    // Decode
+    String frameStr(framebuffer, framelength);
+    Serial.printf("frameRxCB %s", frameStr.c_str());
+    // Process
+    handleSerialLine(frameStr);
+    // Serial.printf("frameRxCB %d\r\n", framelength);
 }
 
 // Show button legends
@@ -312,7 +325,7 @@ void loop()
     // Check buttons
     if (M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 200))
     {
-        sendCommand("openCloseToggle");
+        // sendCommand("openCloseToggle");
     }
     else if (M5.BtnB.wasReleased() || M5.BtnB.pressedFor(1000, 200))
     {
@@ -356,5 +369,37 @@ void loop()
     redraw();
 
     // Service serial
-    serviceSerial();
+    for (int i = 0; i < MAX_CHARS_TO_PROCESS; i++)
+    {
+        // Check chars
+        if (ctrlSerial.available() == 0)
+        {
+            break;
+        }
+
+        // Read into line
+        uint8_t c = ctrlSerial.read();
+        miniHDLC.handleChar(c);
+    }
+
+    // Status update
+    uint32_t nowMs = millis();
+    if (nowMs - lastStatusUpdateTimeMs > STATUS_UPDATE_RATE_MS)
+    {
+        // Send status update
+        sendStatusUpdate();
+
+        // Done
+        lastStatusUpdateTimeMs = nowMs;
+    }
+
+    // Debug
+    if (nowMs - lastDebugTimeMs > DEBUG_INTERVAL_MS)
+    {
+        // Debug
+        Serial.printf("isInEnabled=%d isOutEnabled=%d\r\n", isInEnabled, isOutEnabled);
+
+        // Done
+        lastDebugTimeMs = nowMs;
+    }
 }

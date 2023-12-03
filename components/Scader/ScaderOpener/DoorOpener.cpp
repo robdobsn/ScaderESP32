@@ -11,6 +11,8 @@
 #include <MotorControl.h>
 #include <HWElemConsts.h>
 
+#define DEBUG_DOOR_OPENER_STATUS_RATE_MS 5000
+
 static const char* MODULE_PREFIX = "DoorOpener";
 
 DoorOpener::DoorOpener() :
@@ -143,8 +145,9 @@ void DoorOpener::service()
     // Save to non-volatile storage
     saveToNVSIfRequired();
 
+#ifdef DEBUG_DOOR_OPENER_STATUS_RATE_MS
     // Debug
-    if (Raft::isTimeout(millis(), _debugLastDisplayMs, 1000))
+    if (Raft::isTimeout(millis(), _debugLastDisplayMs, DEBUG_DOOR_OPENER_STATUS_RATE_MS))
     {
         _debugLastDisplayMs = millis();
         LOG_I(MODULE_PREFIX, "service angle %.2f speed %.2fdegs/sec state %s timeInState %ds", 
@@ -153,6 +156,7 @@ void DoorOpener::service()
                 getOpenerStateStr(getOpenerState()),
                 (int)Raft::timeElapsed(millis(), getOpenerStateLastMs()) / 1000);
     }
+#endif
 
 }
 
@@ -319,6 +323,18 @@ void DoorOpener::serviceDoorState()
                 setOpenerState(DOOR_STATE_OPEN, "serviceDoorState door opened manually");
             else if (_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -1))
                 setOpenerState(DOOR_STATE_CLOSED, "serviceDoorState door closed manually");
+
+            // Check if maximum time in AJAR state exceeded
+            else if (Raft::isTimeout(millis(), getOpenerStateLastMs(), _doorRemainOpenTimeSecs*1000))
+            {
+                // Check if in enabled
+                if (_inEnabled || _outEnabled)
+                {
+                    String debugStr = "serviceDoorState door ajar for " + String(_doorRemainOpenTimeSecs) + "s - closing";
+                    _motorAndAngleSensor.moveToAngleDegs(_doorClosedAngleDegs);
+                    setOpenerState(DOOR_STATE_CLOSING, debugStr);
+                }
+            }
             break;
         case DOOR_STATE_CLOSED:
             // Check if the door is opening (manually)

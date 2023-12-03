@@ -25,7 +25,9 @@ static const char *MODULE_PREFIX = "UIModule";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-UIModule::UIModule()
+UIModule::UIModule() :
+    _miniHDLC(NULL, 
+            std::bind(&UIModule::frameRxCB, this, std::placeholders::_1, std::placeholders::_2))
 {
 }
 
@@ -127,61 +129,18 @@ void UIModule::service()
     if (!_isInitialised)
         return;
 
-    // Check anything available
+    // Handle any received data
     static const int MAX_BYTES_PER_CALL = 500;
-    size_t numCharsAvailable = 0;
-    esp_err_t err = uart_get_buffered_data_len((uart_port_t)_uartNum, &numCharsAvailable);
-    if ((err == ESP_OK) && (numCharsAvailable > 0))
+    for (int i = 0; i < MAX_BYTES_PER_CALL; i++)
     {
-#ifdef DEBUG_UI_MODULE_RX_LOOP
-        LOG_I(MODULE_PREFIX, "service charsAvail %d lineLen %d", numCharsAvailable, _rxLine.length());
-#endif
-        // Get data
-        uint32_t bytesToGet = numCharsAvailable < MAX_BYTES_PER_CALL ? numCharsAvailable : MAX_BYTES_PER_CALL;
-        std::vector<uint8_t, SpiramAwareAllocator<uint8_t>> charBuf;
-        charBuf.resize(bytesToGet);        
-        uint32_t bytesRead = uart_read_bytes((uart_port_t)_uartNum, charBuf.data(), bytesToGet, 1);
-        if (bytesRead != 0)
-        {
-            // LOG_I(MODULE_PREFIX, "service charsAvail %d ch %02x", 
-            //             bytesRead, charBuf.size() > 0 ? charBuf.data()[0] : 0);
+        // Read a byte
+        uint8_t rxByte = 0;
+        int rxLen = uart_read_bytes((uart_port_t)_uartNum, &rxByte, 1, 0);
+        if (rxLen <= 0)
+            break;
 
-#ifdef DEBUG_UI_MODULE_RX
-            String outHexStr;
-            Raft::getHexStrFromBytes(charBuf.data(), bytesRead, outHexStr);
-            LOG_I(MODULE_PREFIX, "service charsAvail %d data %s", bytesRead, outHexStr.c_str());
-#endif
-#ifdef DEBUG_UI_MODULE_RX_ASCII
-            String outStr;
-            Raft::strFromBuffer(charBuf.data(), bytesRead, outStr);
-            LOG_I(MODULE_PREFIX, "service charsAvail %d data %s", bytesRead, outStr.c_str());
-#endif
-
-            // Build line of text
-            for (int i = 0; i < bytesRead; i++)
-            {
-                uint8_t ch = charBuf.data()[i];
-                if ((ch == '\n') || (ch == '\r'))
-                {
-                    // End of line
-                    if (_rxLine.length() > 0)
-                    {
-                        // Process line
-#ifdef DEBUG_UI_MODULE_RX_LINE
-                        LOG_I(MODULE_PREFIX, "service line %s", _rxLine.c_str());
-#endif
-                        processStatus(_rxLine);
-                        _rxLine = "";
-                    }
-                }
-                else
-                {
-                    // Add to line
-                    if (_rxLine.length() < MAX_RX_LINE_LEN)
-                        _rxLine += (char)ch;
-                }
-            }
-        }
+        // Handle
+        _miniHDLC.handleChar(rxByte);        
     }
 
     // Check status update to UI required
@@ -193,8 +152,20 @@ void UIModule::service()
         // Get status
         String statusJson = _pOpenerStatus->getJson() + "\r\n";
 
+        // Encode to HDLC
+        uint32_t maxEncodedLen = _miniHDLC.calcEncodedLen((const uint8_t*)statusJson.c_str(), statusJson.length());
+        std::vector<uint8_t, SpiramAwareAllocator<uint8_t>> encodedBuf;
+        encodedBuf.resize(maxEncodedLen);
+        uint32_t encodedLen = _miniHDLC.encodeFrame(encodedBuf.data(), maxEncodedLen, 
+                        (const uint8_t*)statusJson.c_str(), statusJson.length());
+        if (encodedLen == 0)
+        {
+            LOG_E(MODULE_PREFIX, "service encodeFrame failed");
+            return;
+        }
+
         // Send to UI
-        uart_write_bytes((uart_port_t)_uartNum, statusJson.c_str(), statusJson.length());
+        uart_write_bytes((uart_port_t)_uartNum, encodedBuf.data(), encodedBuf.size());
 
         // Debug
 #ifdef DEBUG_SERVICE_STATUS
@@ -252,4 +223,25 @@ void UIModule::processStatus(const String &status)
             LOG_I(MODULE_PREFIX, "processStatus kitchenPIRActive %s", kitchenPIRActive ? "Y" : "N");
         }
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Handle a frame received from HDLC
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void UIModule::frameRxCB(const uint8_t *framebuffer, unsigned framelength)
+{
+    // Check callback is valid
+    if (!_pOpenerStatus)
+        return;
+
+    // Decode
+    String frameStr;
+    Raft::strFromBuffer(framebuffer, framelength, frameStr);
+#ifdef DEBUG_UI_MODULE_RX
+    LOG_I(MODULE_PREFIX, "frameRxCB %s", frameStr.c_str());
+#endif
+
+    // Process
+    processStatus(frameStr);
 }

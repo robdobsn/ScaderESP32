@@ -10,6 +10,7 @@
 
 #include <ConfigBase.h>
 #include <OpenerStatus.h>
+#include <MiniHDLC.h>
 
 class UIModule
 {
@@ -36,9 +37,11 @@ private:
     // Flag indicating begun
     bool _isInitialised = false;
 
-    // Rx line
-    String _rxLine;
-    static const int MAX_RX_LINE_LEN = 500;
+    // HDLC
+    MiniHDLC _miniHDLC;
+
+    // Frame Rx function
+    void frameRxCB(const uint8_t *framebuffer, unsigned framelength);
 
     // Opener parameters
     OpenerStatus* _pOpenerStatus;

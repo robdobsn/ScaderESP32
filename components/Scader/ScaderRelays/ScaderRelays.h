@@ -13,6 +13,7 @@
 #include <ConfigBase.h>
 #include <SysModBase.h>
 #include <ScaderCommon.h>
+#include "DebounceButton.h"
 #include <driver/spi_master.h>
 
 class APISourceInfo;
@@ -76,6 +77,13 @@ private:
     static const uint32_t MUTABLE_DATA_SAVE_MIN_MS = 5000;
     uint32_t _mutableDataChangeLastMs = 0;
     bool _mutableDataDirty = false;
+
+    // Pulse counter functionality
+    bool _pulseCounterEnabled = false;
+    int _pulseCounterPin = -1;
+    DebounceButton _pulseCounterButton;
+    void pulseCounterCallback(bool val, uint32_t msSinceLastChange, uint16_t repeatCount);
+    uint32_t _pulseCount = 0;
 
     // Helpers
     bool applyCurrentState();

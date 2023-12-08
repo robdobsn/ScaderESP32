@@ -15,6 +15,9 @@ export default function ScaderRelays(props:ScaderScreenProps) {
   const subElemsFriendly = "relays";
   const subElemsFriendlyCaps = "Relay";
   const restCommandName = "relay";
+  const pulseCountElemName = "pulseCount";
+  const setPulseCountRestCmdName = "pulseCount";
+  const pulseCountEnableName = "enablePulseCounter"
   const [config, setConfig] = React.useState(props.config[scaderName]);
   const [state, setState] = React.useState(new ScaderState()[scaderName]);
 
@@ -93,7 +96,7 @@ export default function ScaderRelays(props:ScaderScreenProps) {
   const editModeScreen = () => {
     return (
       <div className="ScaderElem-edit">
-        <div className="ScaderElem-header">
+        <div className="ScaderElem-editmode">
           {/* Checkbox for enable with label */}
           <label>
             <input className="ScaderElem-checkbox" type="checkbox" 
@@ -123,6 +126,40 @@ export default function ScaderRelays(props:ScaderScreenProps) {
                 </label>
               </div>
             ))}
+            {/* Pulse count */}
+            <div>
+              {/* Checkbox for pulse count enable */}
+              <label>
+                <input className="ScaderElem-checkbox" type="checkbox" 
+                      checked={config[pulseCountEnableName]} 
+                      onChange={(event) => {
+                        // Update config
+                        const newConfig = {...config};
+                        newConfig[pulseCountEnableName] = event.target.checked;
+                        setConfig(newConfig);
+                        updateMutableConfig(newConfig);
+                      }} />
+                Enable Pulse Count
+              </label>
+            </div>
+            <div>
+              <label>
+                Current Pulse Count {state[pulseCountElemName]}
+              </label>
+            </div>
+            <div>
+              <label>
+                Pulse Count:
+                <input className="ScaderElem-input" type="number" id={`${configElemsName}-pulseCount`} />
+                <button className="ScaderElem-button-editmode" 
+                          onClick={(event) => {
+                            scaderManager.sendCommand(`/${restCommandName}/${setPulseCountRestCmdName}/${(document.getElementById(`${configElemsName}-pulseCount`) as HTMLInputElement).value}`);
+                          }}
+                          id={`${configElemsName}-pulseCountBtn`}>
+                      Set
+                </button>
+              </label>
+            </div>
           </div>
         }
       </div>

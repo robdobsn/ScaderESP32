@@ -84,6 +84,24 @@ void ScaderRelays::setup()
     }
 #endif
 
+    // Check if pulse counter enabled
+    _pulseCounterEnabled = configGetBool("enablePulseCounter", false);
+    if (_pulseCounterEnabled)
+    {
+        _pulseCounterPin = configGetLong("pulseCounterPin", -1);
+        if (_pulseCounterPin < 0)
+        {
+            LOG_E(MODULE_PREFIX, "setup pulseCounterPin %d invalid", _pulseCounterPin);
+        }
+        else
+        {
+            _pulseCounterButton.setup(_pulseCounterPin,false, 1, 
+                    std::bind(&ScaderRelays::pulseCounterCallback, this, 
+                            std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                    DebounceButton::DEFAULT_PIN_DEBOUNCE_MS, 0);
+        }
+    }
+
     // Configure GPIOs
     ConfigPinMap::PinDef gpioPins[] = {
         ConfigPinMap::PinDef("SPI_MOSI", ConfigPinMap::GPIO_INPUT, &_spiMosi),
@@ -207,6 +225,12 @@ void ScaderRelays::setup()
         }
     }
 
+    // Set pulse count from mutable config
+    if (_pulseCounterEnabled)
+    {
+        _pulseCount = configGetLong("pulseCount", 0);
+    }
+
     // Element names
     std::vector<String> elemInfos;
     if (configGetArrayElems("elems", elemInfos))
@@ -225,12 +249,13 @@ void ScaderRelays::setup()
     }
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s maxRelays %d MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d onOffKey %d",
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s maxRelays %d MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d onOffKey %d pulseCounter %s",
                 _scaderCommon.getUIName().c_str(),
                 _maxElems, 
                 _spiMosi, _spiMiso, _spiClk, 
                 _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], 
-                _onOffKey);
+                _onOffKey, 
+                _pulseCounterEnabled ? ("pin " + String(_pulseCounterPin)).c_str() : "DISABLED");
 
     // Debug show states
     debugShowCurrentState();
@@ -266,6 +291,12 @@ void ScaderRelays::service()
     // Check init
     if (!_isInitialised)
         return;
+
+    // Service pulse counter
+    if (_pulseCounterEnabled)
+    {
+        _pulseCounterButton.service();
+    }
 
     // Check if mutable data changed
     if (_mutableDataDirty)
@@ -312,6 +343,24 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
     {
         LOG_I(MODULE_PREFIX, "apiControl disabled");
         return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
+    }
+
+    // Check for set pulse count
+    String cmdStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
+    if (cmdStr.startsWith("pulseCount"))
+    {
+        // Get pulse count
+        String pulseCountStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
+        if (pulseCountStr.length() > 0)
+        {
+            // Set pulse count
+            _pulseCount = pulseCountStr.toInt();
+            _mutableDataDirty = true;
+            _mutableDataChangeLastMs = millis();
+            LOG_I(MODULE_PREFIX, "apiControl pulseCount %d", _pulseCount);
+        }
+        String pulseCountJson = R"("pulseCount":)" + String(_pulseCount);
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, true, pulseCountJson.c_str());
     }
 
     // Get list of elems to control
@@ -388,8 +437,15 @@ String ScaderRelays::getStatusJSON()
         elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + (_elemStates[i] ? "1" : "0") + "}";
     }
 
+    // Pulse count JSON if enabled
+    String pulseCountStr = "";
+    if (_pulseCounterEnabled)
+    {
+        pulseCountStr = R"(,"pulseCount":)" + String(_pulseCount);
+    }
+
     // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elemStatus + "]}";
+    return "{" + _scaderCommon.getStatusJSON() + pulseCountStr + ",\"elems\":[" + elemStatus + "]}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -401,6 +457,8 @@ void ScaderRelays::getStatusHash(std::vector<uint8_t>& stateHash)
     stateHash.clear();
     for (bool state : _elemStates)
         stateHash.push_back(state ? 1 : 0);
+    if (_pulseCounterEnabled)
+        stateHash.push_back(_pulseCount & 0xff);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -418,6 +476,12 @@ void ScaderRelays::saveMutableData()
         jsonConfig += String(i < _elemStates.size() ? _elemStates[i] : false);
     }
     jsonConfig += "]";
+
+    // Save pulse count
+    if (_pulseCounterEnabled)
+    {
+        jsonConfig += ",\"pulseCount\":" + String(_pulseCount);
+    }
 
     // Add outer brackets
     jsonConfig = "{" + jsonConfig + "}";
@@ -491,6 +555,21 @@ void ScaderRelays::debugShowCurrentState()
     LOG_I(MODULE_PREFIX, "debugShowCurrentState %s", elemStr.c_str());
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Pulse counter callback
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ScaderRelays::pulseCounterCallback(bool val, uint32_t msSinceLastChange, uint16_t repeatCount)
+{
+    if (val == 1)
+    {
+        _pulseCount++;
+        _mutableDataDirty = true;
+        _mutableDataChangeLastMs = millis();
+        LOG_I(MODULE_PREFIX, "pulseCounterCallback count %d", _pulseCount);
+    }
+}
+
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // // mainsSyncISR
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -500,3 +579,4 @@ void ScaderRelays::debugShowCurrentState()
 //     // TODO
 //     _isrCount = _isrCount + 1;
 // }
+

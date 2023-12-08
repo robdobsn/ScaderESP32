@@ -37,7 +37,7 @@ export default function ScaderRFID(props:ScaderScreenProps) {
   const editModeScreen = () => {
     return (
       <div className="ScaderElem-edit">
-        <div className="ScaderElem-header">
+        <div className="ScaderElem-editmode">
           {/* Checkbox for enable shades */}
           <label>
             <input className="ScaderElem-checkbox" type="checkbox" 

@@ -7,11 +7,14 @@ export class ScaderRelayState {
 export class ScaderRelayStates {
     module: string = "";
     elems: Array<ScaderRelayState> = [];
+    pulseCount?: number = 0;
     constructor(obj: any) {
         if (obj) {
             if (obj.module)
                 this.module = obj.module;
             this.elems = obj.elems;
+            if (obj.pulseCount)
+                this.pulseCount = obj.pulseCount;
         }
     }
 }

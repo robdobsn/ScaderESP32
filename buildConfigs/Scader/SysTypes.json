@@ -272,7 +272,9 @@
             "MAINS_SYNC": [
                 {"__hwRevs__": [3], "__value__": 35}
             ],
-            "mainsSync": false
+            "mainsSync": false,
+            "enablePulseCounter": false,
+            "pulseCounterPin": 39
         },
         "ScaderShades": {
             "maxElems": 5,

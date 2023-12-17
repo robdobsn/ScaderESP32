@@ -164,29 +164,34 @@ void DoorOpener::service()
 // Open/Close door
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::doorOpen()
+void DoorOpener::startDoorOpening(String debugMsg)
 {
-    // WebUI command
+    // Initiate door opening
     _motorAndAngleSensor.moveToAngleDegs(_doorOpenAngleDegs);
-    setOpenerState(DOOR_STATE_OPENING, "webUIDoorOpen door opening");
+    setOpenerState(DOOR_STATE_OPENING, debugMsg + " (go-to-angle " + String(_doorOpenAngleDegs) + ")");
 }
 
-void DoorOpener::doorClose()
+void DoorOpener::startDoorClosing(String debugMsg)
 {
-    // WebUI command
-    _motorAndAngleSensor.moveToAngleDegs(_doorClosedAngleDegs);
-    setOpenerState(DOOR_STATE_CLOSING, "webUIDoorClose door closing");
+    // Increment angle by a small amount to ensure the door is fully closed
+    float requiredDoorAngleDegs = _doorClosedAngleDegs < _doorOpenAngleDegs ? 
+                    _doorClosedAngleDegs - DOOR_CLOSED_ANGLE_ADDITIONAL_DEGS : 
+                    _doorClosedAngleDegs + DOOR_CLOSED_ANGLE_ADDITIONAL_DEGS;
+        
+    // Initiate door closing
+    _motorAndAngleSensor.moveToAngleDegs(requiredDoorAngleDegs);
+    setOpenerState(DOOR_STATE_CLOSING, debugMsg + " (go-to-angle " + String(requiredDoorAngleDegs) + ")");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Stop and disable door
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::doorStopAndDisable()
+void DoorOpener::doorStopAndDisable(String debugMsg)
 {
     // WebUI command
     _motorAndAngleSensor.stop();
-    setOpenerState(DOOR_STATE_AJAR, "webUIDoorStopAndDisable door stopped");
+    setOpenerState(DOOR_STATE_AJAR, debugMsg);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,19 +225,16 @@ void DoorOpener::onConservatoryButtonPressed(int isActive, uint32_t timeSinceLas
             case DOOR_STATE_AJAR:
             case DOOR_STATE_CLOSED:
                 // When closed or ajar - open fully
-                _motorAndAngleSensor.moveToAngleDegs(_doorOpenAngleDegs);
-                setOpenerState(DOOR_STATE_OPENING, "onConservatoryButtonPressed door opening");
+                startDoorOpening("onConservatoryButtonPressed door opening");
                 break;
             case DOOR_STATE_OPENING:
             case DOOR_STATE_CLOSING:
                 // When opening or closing - stop
-                _motorAndAngleSensor.stop();
-                setOpenerState(DOOR_STATE_AJAR, "onConservatoryButtonPressed door stopped");
+                doorStopAndDisable("onConservatoryButtonPressed door stopped");
                 break;
             case DOOR_STATE_OPEN:
                 // When open - close
-                _motorAndAngleSensor.moveToAngleDegs(_doorClosedAngleDegs);
-                setOpenerState(DOOR_STATE_CLOSING, "onConservatoryButtonPressed door closing");
+                startDoorClosing("onConservatoryButtonPressed door closing");
                 break;
         }        
     }
@@ -251,8 +253,7 @@ void DoorOpener::onConservatoryPIRChanged(bool isActive, uint32_t timeSinceLastC
     if (((getOpenerState() == DOOR_STATE_CLOSED) || (getOpenerState() == DOOR_STATE_AJAR)) && isActive && _inEnabled)
     {
         // Open the door
-        _motorAndAngleSensor.moveToAngleDegs(_doorOpenAngleDegs);
-        setOpenerState(DOOR_STATE_OPENING, "onConservatoryPIRChanged door opening");
+        startDoorOpening("onConservatoryPIRChanged door opening");
     }
 }
 
@@ -269,8 +270,7 @@ void DoorOpener::onKitchenPIRChanged(bool isActive)
     if (((getOpenerState() == DOOR_STATE_CLOSED) || (getOpenerState() == DOOR_STATE_AJAR)) && isActive && _outEnabled)
     {
         // Open the door
-        _motorAndAngleSensor.moveToAngleDegs(_doorOpenAngleDegs);
-        setOpenerState(DOOR_STATE_OPENING, "onKitchenPIRChanged door opening");
+        startDoorOpening("onKitchenPIRChanged door opening");
     }
 
     // Remember current state
@@ -291,20 +291,17 @@ void DoorOpener::onOpenCloseToggleChanged(bool isActive)
     {
         case DOOR_STATE_CLOSED:
             // When closed - open fully
-            _motorAndAngleSensor.moveToAngleDegs(_doorOpenAngleDegs);
-            setOpenerState(DOOR_STATE_OPENING, "onOpenCloseToggleChanged door opening");
+            startDoorOpening("onOpenCloseToggleChanged door opening");
             break;
         case DOOR_STATE_OPENING:
         case DOOR_STATE_CLOSING:
             // When opening or closing - stop
-            _motorAndAngleSensor.stop();
-            setOpenerState(DOOR_STATE_AJAR, "onOpenCloseToggleChanged door stopped");
+            doorStopAndDisable("onOpenCloseToggleChanged door stopped");
             break;
         case DOOR_STATE_AJAR:
         case DOOR_STATE_OPEN:
             // When open or ajar - close
-            _motorAndAngleSensor.moveToAngleDegs(_doorClosedAngleDegs);
-            setOpenerState(DOOR_STATE_CLOSING, "onOpenCloseToggleChanged door closing");
+            startDoorClosing("onOpenCloseToggleChanged door closing");
             break;
     }
 }
@@ -319,31 +316,30 @@ void DoorOpener::serviceDoorState()
     {
         case DOOR_STATE_AJAR:
             // Check if moved (manually) to open or closed positions
-            if (_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, 1, -100))
+            if (_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
                 setOpenerState(DOOR_STATE_OPEN, "serviceDoorState door opened manually");
-            else if (_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -1))
+            else if (_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
                 setOpenerState(DOOR_STATE_CLOSED, "serviceDoorState door closed manually");
-
             // Check if maximum time in AJAR state exceeded
             else if (Raft::isTimeout(millis(), getOpenerStateLastMs(), _doorRemainOpenTimeSecs*1000))
             {
                 // Check if in enabled
                 if (_inEnabled || _outEnabled)
                 {
-                    String debugStr = "serviceDoorState door ajar for " + String(_doorRemainOpenTimeSecs) + "s - closing";
-                    _motorAndAngleSensor.moveToAngleDegs(_doorClosedAngleDegs);
-                    setOpenerState(DOOR_STATE_CLOSING, debugStr);
+                    startDoorClosing("serviceDoorState door ajar for " + String(_doorRemainOpenTimeSecs) + "s - closing");
                 }
             }
             break;
         case DOOR_STATE_CLOSED:
             // Check if the door is opening (manually)
-            if (!_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -1))
-                setOpenerState(DOOR_STATE_AJAR, "serviceDoorState door opening manually");
+            if (!_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
+                setOpenerState(DOOR_STATE_AJAR, "serviceDoorState door opening manually - set to AJAR curAngle " + 
+                            String(_motorAndAngleSensor.getMeasuredAngleDegs()) + " closedAngle " + String(_doorClosedAngleDegs) +
+                            " tolerance pos +100 neg -1");
             break;
         case DOOR_STATE_OPENING:
             // Check if reached open position
-            if (_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, 1, -100))
+            if (_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
                 setOpenerState(DOOR_STATE_OPEN, "serviceDoorState door at open pos");
             // Check if motor has stopped moving for some time
             else if (_motorAndAngleSensor.isStoppedForTimeMs(1000))
@@ -351,7 +347,7 @@ void DoorOpener::serviceDoorState()
             break;
         case DOOR_STATE_CLOSING:
             // Check if reached closed position
-            if (_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -1))
+            if (_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
                 setOpenerState(DOOR_STATE_CLOSED, "serviceDoorState door at closed pos");
             // Check if motor has stopped moving for some time
             else if (_motorAndAngleSensor.isStoppedForTimeMs(1000))
@@ -359,14 +355,12 @@ void DoorOpener::serviceDoorState()
             break;
         case DOOR_STATE_OPEN:
             // Check if the door is closing (manually)
-            if (!_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, 1, -100))
+            if (!_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
                 setOpenerState(DOOR_STATE_AJAR, "serviceDoorState door closing manually");
             // Check for maximum time in this state and either in or out enabled
             else if (Raft::isTimeout(millis(), getOpenerStateLastMs(), _doorRemainOpenTimeSecs*1000) && (_inEnabled || _outEnabled))
             {
-                String debugStr = "serviceDoorState door open for " + String(_doorRemainOpenTimeSecs) + "s - closing";
-                _motorAndAngleSensor.moveToAngleDegs(_doorClosedAngleDegs);
-                setOpenerState(DOOR_STATE_CLOSING, debugStr);
+                startDoorClosing("serviceDoorState door open for " + String(_doorRemainOpenTimeSecs) + "s - closing");
             }
             break;
     }
@@ -379,7 +373,7 @@ void DoorOpener::serviceDoorState()
 float DoorOpener::calcDegreesFromClosed(float measuredAngleDegrees)
 {
     // Calculate angle (in degrees)
-    return measuredAngleDegrees - _doorClosedAngleDegs;
+    return std::abs(measuredAngleDegrees - _doorClosedAngleDegs);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

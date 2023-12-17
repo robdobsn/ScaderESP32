@@ -138,19 +138,19 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
         // Open
         if (params[1] == "open")
         {
-            _doorOpener.doorOpen();
+            _doorOpener.startDoorOpening("API-open");
             rsltStr = "Opened";
         }
         // Close
         else if (params[1] == "close")
         {
-            _doorOpener.doorClose();
+            _doorOpener.startDoorClosing("API-close");
             rsltStr = "Closed";
         }
         // Stop
         else if (params[1] == "stopanddisable")
         {
-            _doorOpener.doorStopAndDisable();
+            _doorOpener.doorStopAndDisable("API-stopanddisable");
             rsltStr = "Stopped";
         }
         // // Calibrate

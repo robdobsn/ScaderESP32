@@ -220,13 +220,15 @@ bool MotorAndAngleSensor::isNearTargetAngle(float targetAngleDegs, float posTole
 bool MotorAndAngleSensor::isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec)
 {
     // Check motor speed < expected motor speed
-    if (std::abs(_measuredDoorSpeedDegsPerSec.getRatePerSec()) < 
+    double motorSpeedDegsPerSec = _measuredDoorSpeedDegsPerSec.getRatePerSec();
+    if (std::abs(motorSpeedDegsPerSec) < 
             (expectedMotorSpeedDegsPerSec == 0 ? _reqMotorSpeedDegsPerSec / 2 : expectedMotorSpeedDegsPerSec / 2))
     {
         // Check if stopped for more than a given time
         if (Raft::isTimeout(millis(), _lastMotorStoppedCheckTimeMs, timeMs))
         {
-            LOG_I(MODULE_PREFIX, "isStoppedForTimeMs motor IS stopped for %dms", timeMs);
+            LOG_I(MODULE_PREFIX, "isStoppedForTimeMs motor IS stopped for %dms (peedDegs/s meas %.2f expected %.2f reqd %.2f) lastMovingTime %d", 
+                        timeMs, motorSpeedDegsPerSec, expectedMotorSpeedDegsPerSec, _reqMotorSpeedDegsPerSec, _lastMotorStoppedCheckTimeMs);
             return true;
         }
     }

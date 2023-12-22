@@ -31,7 +31,7 @@ FetchContent_Declare(
   raftcore
   # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        v1.2.6
+  GIT_TAG        v1.2.11
 )
 
 # Fetch the RaftWebServer library
@@ -45,7 +45,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   rafti2c
   GIT_REPOSITORY https://github.com/robdobsn/RaftI2C
-  GIT_TAG        v1.1.1
+  GIT_TAG        v1.1.5
 )
 
 # Fetch the RaftSysMods library

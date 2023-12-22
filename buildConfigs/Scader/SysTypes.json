@@ -437,17 +437,23 @@
             "FET_2": 5
         },
         "ScaderLEDPix": {
-            "brightness": 96,
+            "brightnessPC": 20,
             "strips": [
                 {
-                    "pixPin": "32",
-                    "numPix": 500
-                },
-                {
-                    "pixPin": "33",
-                    "numPix": 500
+                    "pin": "32",
+                    "num": 16
                 }
-            ]
+            ],
+            "ledpix2":
+            {
+                "brightnessPC": 20,
+                "strips": [
+                    {
+                        "pin": "33",
+                        "num": 16
+                    }
+                ]                
+            }
         },
         "ScaderWaterer": {
             "i2cPort": 0,

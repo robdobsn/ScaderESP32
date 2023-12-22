@@ -16,7 +16,9 @@
 #include <JSONParams.h>
 #include "time.h"
 #include "driver/gpio.h"
+#include "LEDPatternRainbowSnake.h"
 
+#ifdef USE_FASTLED_LIBRARY
 // #include <FastLED.h>
 
 // #define NUM_STRIPS 2
@@ -33,6 +35,9 @@
 // #define FRAMES_PER_SECOND  120
 
 // #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
+#endif
+
+#define DEBUG_LED_PIXEL_SETUP
 
 static const char *MODULE_PREFIX = "ScaderLEDPixels";
 
@@ -55,10 +60,41 @@ void ScaderLEDPixels::setup()
     // Common
     _scaderCommon.setup();
 
+#ifdef USE_RAFT_PIXELS_LIBRARY
+
+    // Check enabled
+    if (!_scaderCommon.isEnabled())
+    {
+        LOG_I(MODULE_PREFIX, "setup disabled");
+        return;
+    }
+
+    // Setup LEDs
+    bool rslt = _ledPixels.setup(configGetConfig(), "");
+    bool rslt2 = _ledPixels2.setup(configGetConfig(), "ledpix2");
+
+    // Patterns
+#ifndef RUN_PATTERNS_IN_SYSMOD
+    _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
+    _ledPixels.setPattern("RainbowSnake");
+    _ledPixels2.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
+    _ledPixels2.setPattern("RainbowSnake");
+#endif
+
+    // Log
+#ifdef DEBUG_LED_PIXEL_SETUP
+    LOG_I(MODULE_PREFIX, "setup %s %s numPixels %d numPixels2 %d", 
+                rslt ? "OK" : "FAILED", rslt2 ? "OK" : "FAILED",
+                _ledPixels.getNumPixels(), _ledPixels2.getNumPixels());
+
+#endif
+
+#endif
+
 #ifdef USE_FASTLED_LIBRARY
 
     // Get settings
-    uint8_t defaultBrightness = configGetLong("brightness", 96);
+    uint8_t defaultBrightness = configGetLong("brightnessPC", 20);
  
     // Check enabled
     if (!_scaderCommon.isEnabled())
@@ -78,7 +114,7 @@ void ScaderLEDPixels::setup()
         // Create LED info (one for all strips)
         for (const JSONParams& stripInfo : stripInfos)
         {
-            totalNumPix += stripInfo.getLong("numPix", 0);
+            totalNumPix += stripInfo.getLong("num", 0);
         }
         _ledPixels.resize(totalNumPix);
 
@@ -90,8 +126,8 @@ void ScaderLEDPixels::setup()
             JSONParams stripInfo = stripInfos[i];
 
             // Extract pin and number of pixels
-            uint8_t pixPin = stripInfo.getLong("pixPin", 0);
-            uint32_t numPixels = stripInfo.getLong("numPix", 0);
+            uint8_t pixPin = stripInfo.getLong("pin", 0);
+            uint32_t numPixels = stripInfo.getLong("num", 0);
 
             // Add to FastLED library
             if (pixPin == 32)
@@ -110,10 +146,10 @@ void ScaderLEDPixels::setup()
                 _scaderCommon.getUIName().c_str(),
                 stripInfos.size(), totalNumPix, defaultBrightness);
 
+#endif
+
     // HW Now initialised
     _isInitialised = true;
-
-#endif
 
 }
 
@@ -151,6 +187,10 @@ void ScaderLEDPixels::service()
     if (!_isInitialised)
         return;
 
+    _ledPixels.service();
+    _ledPixels2.service();
+
+#ifdef RUN_PATTERNS_IN_SYSMOD
     // Handle patterns
     switch(_pattern)
     {
@@ -163,6 +203,7 @@ void ScaderLEDPixels::service()
             patternSnake_service();
             break;
     }
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,8 +228,6 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
     bool rslt = true;
     String reasonStr = "";
 
-#ifdef USE_FASTLED_LIBRARY
-
     // Check init
     if (!_isInitialised)
     {
@@ -206,7 +245,7 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         _pattern = PATTERN_NONE;
 
         // Clear the pixels
-        setAllPixels(CRGB::Black);
+        clearAllPixels();
     }
     else if (cmd.equalsIgnoreCase("set"))
     {
@@ -219,10 +258,10 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         // Convert to rgb
         Raft::RGBValue rgb = Raft::getRGBFromHex(rgbHex);
 
-        if (pixIdx < _ledPixels.size())
+        if (pixIdx < totalNumPixels())
         {
-            _ledPixels[pixIdx] = CRGB(rgb.r, rgb.g, rgb.b);
-            FastLED.show();
+            setPixelRGB(pixIdx, rgb.r, rgb.g, rgb.b);
+            show();
             LOG_I(MODULE_PREFIX, "apiControl set pixel %d to %s R%02x G%02x B%02x", pixIdx, rgbHex.c_str(), rgb.r, rgb.g, rgb.b);
         }
         else
@@ -242,7 +281,7 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         // }
     } else if (cmd.equalsIgnoreCase("show"))
     {
-        FastLED.show();
+        show();
     } else if (cmd.equalsIgnoreCase("run"))
     {
         // Get pattern name
@@ -270,8 +309,6 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         }
     }
 
-#endif
-
     // Set result
     return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt, reasonStr.c_str());
 }
@@ -295,15 +332,78 @@ void ScaderLEDPixels::getStatusHash(std::vector<uint8_t>& stateHash)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef USE_FASTLED_LIBRARY
-void ScaderLEDPixels::setAllPixels(const CRGB& colour)
+void ScaderLEDPixels::clearAllPixels()
 {
     for (uint32_t i = 0; i < _ledPixels.size(); i++)
     {
-        _ledPixels[i] = colour;
+        _ledPixels[i] = CRGB::Black;
     }
     FastLED.show();
 }
+
+void setPixelRGB(uint32_t idx, uint8_t r, uint8_t g, uint8_t b)
+{
+    _ledPixels[idx] = CRGB(r, g, b);
+}
+
+void setPixelHSV(uint32_t idx, uint16_t h, uint8_t s, uint8_t v)
+{
+    _ledPixels[idx] = CHSV(h, s, v);
+}
+
+void show()
+{
+    FastLED.show();
+}
+
+uint32_t totalNumPixels()
+{
+    return _ledPixels.size();
+}
+
+#else
+
+void ScaderLEDPixels::clearAllPixels()
+{
+    _ledPixels.clear();
+    _ledPixels2.clear();
+    show();
+} 
+
+void ScaderLEDPixels::setPixelRGB(uint32_t idx, uint8_t r, uint8_t g, uint8_t b)
+{
+    if (idx < _ledPixels.getNumPixels())
+        _ledPixels.setRGB(idx, r, g, b);
+    else if (idx < _ledPixels.getNumPixels() + _ledPixels2.getNumPixels())
+        _ledPixels2.setRGB(idx - _ledPixels.getNumPixels(), r, g, b);
+    else
+        LOG_E(MODULE_PREFIX, "setPixelRGB invalid idx %d", idx);
+}
+
+void ScaderLEDPixels::setPixelHSV(uint32_t idx, uint16_t h, uint8_t s, uint8_t v)
+{
+    if (idx < _ledPixels.getNumPixels())
+        _ledPixels.setHSV(idx, h, s, v);
+    else if (idx < _ledPixels.getNumPixels() + _ledPixels2.getNumPixels())
+        _ledPixels2.setHSV(idx - _ledPixels.getNumPixels(), h, s, v);
+    else
+        LOG_E(MODULE_PREFIX, "setPixelHSV invalid idx %d", idx);
+}
+
+void ScaderLEDPixels::show()
+{
+    _ledPixels.show();
+    _ledPixels2.show();
+}
+
+uint32_t ScaderLEDPixels::totalNumPixels()
+{
+    return _ledPixels.getNumPixels() + _ledPixels2.getNumPixels();
+}
+
 #endif
+
+#ifdef RUN_PATTERNS_IN_SYSMOD
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Pattern Locate
@@ -311,13 +411,11 @@ void ScaderLEDPixels::setAllPixels(const CRGB& colour)
 
 void ScaderLEDPixels::patternLocate_start()
 {
-#ifdef USE_FASTLED_LIBRARY
-
     // Initialise pattern
     _pattern = PATTERN_LOCATE;
 
     // Clear first
-    setAllPixels(CRGB::Black);
+    clearAllPixels();
 
     // Store pattern values
     _patternLEDIdx = 0;
@@ -325,13 +423,10 @@ void ScaderLEDPixels::patternLocate_start()
 
     // Pattern timing
     _patternLastTime = millis();
-    
-#endif
 }
 
 void ScaderLEDPixels::patternLocate_service()
 {
-#ifdef USE_FASTLED_LIBRARY
     // Check time
     if (Raft::isTimeout(millis(), _patternLastTime, PATTERN_LOCATE_STEP_MS))
     {
@@ -339,7 +434,7 @@ void ScaderLEDPixels::patternLocate_service()
         _patternLastTime = millis();
 
         // Check LED index
-        if (_patternLEDIdx >= _ledPixels.size())
+        if (_patternLEDIdx >= totalNumPixels())
         {
             // Restarting pattern
             LOG_I(MODULE_PREFIX, "patternLocate_service RESTART LEDIdx", _patternLEDIdx);
@@ -363,25 +458,25 @@ void ScaderLEDPixels::patternLocate_service()
             if (_patternSeqIdx % 2 == 0)
             {
                 // Flash all LEDs on as sync indicator
-                for (uint32_t i = 0; i < _ledPixels.size(); i++)
+                for (uint32_t i = 0; i < totalNumPixels(); i++)
                 {
-                    _ledPixels[i] = CRGB(40,40,40);
+                    setPixelRGB(i, 40, 40, 40);
                 }
             }
             else
             {
                 // Clear all LEDs
-                setAllPixels(CRGB::Black);
+                clearAllPixels();
             }
             _patternSeqIdx++;
         }
         else
         {
             // Clear all LEDs
-            setAllPixels(CRGB::Black);
+            clearAllPixels();
 
             // Set the next LED in sequence
-            _ledPixels[_patternLEDIdx] = CRGB::White;
+            setPixelRGB(_patternLEDIdx, 255, 255, 255);
             _patternLEDIdx++;
 
             // Check if it's time for another sync
@@ -393,9 +488,8 @@ void ScaderLEDPixels::patternLocate_service()
         }
 
         // Show LEDs
-        FastLED.show();
+        show();
     }
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -404,30 +498,26 @@ void ScaderLEDPixels::patternLocate_service()
 
 void ScaderLEDPixels::patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed)
 {
-#ifdef USE_FASTLED_LIBRARY
-
     // Initialise pattern
     _pattern = PATTERN_SNAKE;
 
     // Clear first
-    setAllPixels(CRGB::Black);
+    clearAllPixels();
 
     // Store pattern values
     _patternLEDIdx = 0;
     _patternDirection = 0;
-    _patternSnakeLen = snakeLen == 0 ? 40 : snakeLen;
+    _patternSnakeLen = snakeLen == 0 ? totalNumPixels() / 5 : snakeLen;
     _patternSnakeSpeed = snakeSpeed;
 
-    _patternLen = _ledPixels.size();
+    _patternLen = totalNumPixels();
 
     // Pattern timing
     _patternLastTime = millis();
-#endif
 }
 
 void ScaderLEDPixels::patternSnake_service()
 {
-#ifdef USE_FASTLED_LIBRARY
     // Check time
     if (Raft::isTimeout(millis(), _patternLastTime, _patternSnakeSpeed))
     {
@@ -453,24 +543,21 @@ void ScaderLEDPixels::patternSnake_service()
         }
 
         // Clear all pixels
-        for (uint32_t i = 0; i < _ledPixels.size(); i++)
-        {
-            _ledPixels[i] = CRGB::Black;
-        }
+        clearAllPixels();
 
         // Set a rainbow sequence of colours into the next batch of pixels
         for (uint32_t i = 0; i < _patternSnakeLen; i++)
         {
             // Set colour
-            _ledPixels[_patternLEDIdx + i] = CHSV(i * 255 / _patternSnakeLen, 255, 255);
+            setPixelHSV(_patternLEDIdx + i, i * 255 / _patternSnakeLen, 255, 255);
         }
 
         // Update LED index
         _patternLEDIdx += _patternDirection;
 
         // Show LEDs
-        FastLED.show();
+        show();
     }
-#endif
 }
 
+#endif // RUN_PATTERNS_IN_SYSMOD

@@ -8,12 +8,18 @@
 
 #pragma once
 
+#define USE_RAFT_PIXELS_LIBRARY
 // #define USE_FASTLED_LIBRARY
+#define RUN_PATTERNS_IN_SYSMOD
 
 #include <SysModBase.h>
 #include <ConfigBase.h>
 #include <ScaderCommon.h>
 #include <RaftUtils.h>
+
+#ifdef USE_RAFT_PIXELS_LIBRARY
+#include <LEDPixels.h>
+#endif
 #ifdef USE_FASTLED_LIBRARY
 #include <FastLED.h>
 #endif
@@ -47,11 +53,18 @@ private:
     // Tnitalised flag
     bool _isInitialised = false;
 
+#ifdef USE_RAFT_PIXELS_LIBRARY
+    // LED pixels
+    LEDPixels _ledPixels;
+    LEDPixels _ledPixels2;
+#endif
+
 #ifdef USE_FASTLED_LIBRARY
     // WS2812 strips
     std::vector<CRGB> _ledPixels;
 #endif
 
+#ifdef RUN_PATTERNS_IN_SYSMOD
     // Patterns
     enum LedStripPattern
     {
@@ -69,14 +82,18 @@ private:
     int _patternDirection = 1;
     uint32_t _patternLastTime = 0;
     uint32_t _patternLen = 0;
+#endif
 
     // Helper functions
     RaftRetCode apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
     void getStatusHash(std::vector<uint8_t>& stateHash);
-#ifdef USE_FASTLED_LIBRARY
-    void setAllPixels(const CRGB& colour);
-#endif
+    void clearAllPixels();
+    void setPixelRGB(uint32_t idx, uint8_t r, uint8_t g, uint8_t b);
+    void setPixelHSV(uint32_t idx, uint16_t h, uint8_t s, uint8_t v);
+    void show();
+    uint32_t totalNumPixels();
 
+#ifdef RUN_PATTERNS_IN_SYSMOD
     // Pattern locate
     static const uint32_t PATTERN_LOCATE_INITIAL_FLASHES = 3;
     static const uint32_t PATTERN_LOCATE_STEP_MS = 200;
@@ -85,4 +102,5 @@ private:
     void patternLocate_service();
     void patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed);
     void patternSnake_service();
+#endif
 };

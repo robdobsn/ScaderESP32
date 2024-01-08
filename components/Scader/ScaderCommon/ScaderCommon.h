@@ -8,11 +8,10 @@
 
 #pragma once
 
-#include <SysModBase.h>
-#include <SysManager.h>
-#include <JSONParams.h>
-#include <NetworkSystem.h>
-#include <ESPUtils.h>
+#include "SysModBase.h"
+#include "SysManager.h"
+#include "NetworkSystem.h"
+#include "ESPUtils.h"
 
 class ScaderCommon
 {
@@ -41,7 +40,7 @@ public:
     String getStatusJSON()
     {
         // Get network information
-        JSONParams networkJson = _base.sysModGetStatusJSON("NetMan");
+        RaftJson networkJson = _base.sysModGetStatusJSON("NetMan");
 
         // Extract hostname
         String hostname = networkJson.getString("hostname", "");

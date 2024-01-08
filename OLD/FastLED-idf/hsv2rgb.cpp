@@ -1,5 +1,5 @@
 #define FASTLED_INTERNAL
-#include <stdint.h>
+#include <cstdint>
 
 #include "FastLED.h"
 

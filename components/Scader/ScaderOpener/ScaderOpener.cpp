@@ -7,39 +7,27 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderOpener.h"
-#include <RaftArduino.h>
-#include <ScaderCommon.h>
-#include <RaftUtils.h>
-#include <ConfigPinMap.h>
-#include <RestAPIEndpointManager.h>
-#include <CommsChannelMsg.h>
-#include <SysManager.h>
-#include <esp_attr.h>
-#include <driver/gpio.h>
+#include "RaftArduino.h"
+#include "ScaderCommon.h"
+#include "RaftUtils.h"
+#include "ConfigPinMap.h"
+#include "RestAPIEndpointManager.h"
+#include "CommsChannelMsg.h"
+#include "SysManager.h"
+#include "esp_attr.h"
+#include "driver/gpio.h"
 
 static const char *MODULE_PREFIX = "ScaderOpener";
-
-#define DEBUG_DEFAULT_CONFIG
-#define DEBUG_GLOBAL_CONFIG
-#define DEBUG_MUTABLE_CONFIG
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderOpener::ScaderOpener(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
+// TODO - mutable config global was passed to SysModBase constructor
+ScaderOpener::ScaderOpener(const char* pModuleName, RaftJsonIF& sysConfig)
+    : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, pModuleName)
 {
-#ifdef DEBUG_DEFAULT_CONFIG
-    LOG_I(MODULE_PREFIX, "constructor defaultConfig %s", defaultConfig.getConfigString().c_str());
-#endif
-#ifdef DEBUG_GLOBAL_CONFIG
-    LOG_I(MODULE_PREFIX, "constructor globalConfig %s", pGlobalConfig ? pGlobalConfig->getConfigString().c_str() : "NULL");
-#endif
-#ifdef DEBUG_MUTABLE_CONFIG
-    LOG_I(MODULE_PREFIX, "constructor mutableConfig %s", pMutableConfig ? pMutableConfig->getConfigString().c_str() : "NULL");
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

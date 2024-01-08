@@ -29,37 +29,36 @@ unset(buildConfigName)
 # Fetch the RaftCore library
 FetchContent_Declare(
   raftcore
-  # GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
   GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-  GIT_TAG        v1.2.11
+  GIT_TAG        ReWorkConfigBase
 )
 
 # Fetch the RaftWebServer library
 FetchContent_Declare(
   raftwebserver
   GIT_REPOSITORY https://github.com/robdobsn/RaftWebServer
-  GIT_TAG        v1.0.0
+  GIT_TAG        ReWorkConfigBase
 )
 
 # Fetch the RaftI2C library
 FetchContent_Declare(
   rafti2c
   GIT_REPOSITORY https://github.com/robdobsn/RaftI2C
-  GIT_TAG        v1.1.5
+  GIT_TAG        ReWorkConfigBase
 )
 
 # Fetch the RaftSysMods library
 FetchContent_Declare(
   raftsysmods
   GIT_REPOSITORY https://github.com/robdobsn/RaftSysMods
-  GIT_TAG        v1.0.4
+  GIT_TAG        ReWorkConfigBase
 )
 
 # Fetch the RaftMotorControl library
 FetchContent_Declare(
   raftmotorcontrol
   GIT_REPOSITORY https://github.com/robdobsn/RaftMotorControl
-  GIT_TAG        v0.1.10
+  GIT_TAG        ReWorkConfigBase
 )
 
 # Fetch the mongoose web library

@@ -8,18 +8,17 @@
 
 #pragma once
 
-#include <RaftArduino.h>
-#include <ConfigBase.h>
-#include <ScaderCommon.h>
-#include <RaftUtils.h>
-#include <SysModBase.h>
+#include "RaftArduino.h"
+#include "ScaderCommon.h"
+#include "RaftUtils.h"
+#include "SysModBase.h"
 
 class APISourceInfo;
 
 class ScaderCat : public SysModBase
 {
 public:
-    ScaderCat(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderCat(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Check if the shade is moving
     bool isBusy(int shadeIdx);

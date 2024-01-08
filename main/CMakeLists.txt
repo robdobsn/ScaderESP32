@@ -13,17 +13,11 @@ idf_component_register(
 
 # Make sure the SysTypes header is (re)generated before compiling this component (main) if needed
 set(_systypes_header "${_custom_headers_dir}/SysTypes.h")
-set(_systypes_json "${BUILD_CONFIG_DIR}/SysTypes.json")
-add_custom_command(OUTPUT ${_systypes_header}
-                    COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/json2header.py ${_systypes_json} ${_systypes_header}
-                    DEPENDS ${_systypes_json}
-                    COMMENT "Generating SysTypes.h"
-                    )
+set(_systypes_json "${BUILD_CONFIG_DIR}/SysTypes")
 add_custom_target(generateSysTypesHeader
-                   DEPENDS ${_systypes_header}
-                   COMMENT "Checking SysTypes.h"
-                   )
-# https://docs.espressif.com/projects/esp-idf/en/v4.0.1/api-guides/build-system.html#preset-component-variables
+    COMMAND python3 ${raftcore_SOURCE_DIR}/scripts/GenerateSysTypesHeader.py ${_systypes_json} ${_systypes_header}
+    COMMENT "Generating SysTypes.h"
+)
 add_dependencies(${COMPONENT_LIB} generateSysTypesHeader)
 
 # Clean up
@@ -35,7 +29,7 @@ unset(_systypes_json)
 add_custom_target(generateWebUI
     COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/GenWebUI.py ${WEB_UI_GEN_FLAGS} ${UI_SOURCE_PATH} ${FS_IMAGE_PATH}
     COMMENT "Generating Web UI"
-    )
+)
 add_dependencies(${COMPONENT_LIB} generateWebUI)
 
 # Create a SPIFFS image from the contents of the FS_IMAGE_PATH directory

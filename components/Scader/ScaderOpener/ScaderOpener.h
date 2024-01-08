@@ -8,19 +8,18 @@
 
 #pragma once
 
-#include <RaftArduino.h>
-#include <ConfigBase.h>
-#include <ScaderCommon.h>
-#include <RaftUtils.h>
-#include <DoorOpener.h>
-#include <UIModule.h>
+#include "RaftArduino.h"
+#include "ScaderCommon.h"
+#include "RaftUtils.h"
+#include "DoorOpener.h"
+#include "UIModule.h"
 
 class APISourceInfo;
 
 class ScaderOpener : public SysModBase
 {
 public:
-    ScaderOpener(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderOpener(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // // Check if moving
     // bool isBusy();

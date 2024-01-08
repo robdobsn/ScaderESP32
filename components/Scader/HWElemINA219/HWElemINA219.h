@@ -8,9 +8,7 @@
 
 #pragma once
 
-#include <HWElemBase.h>
-
-class ConfigBase;
+#include "HWElemBase.h"
 
 class HWElemINA219 : public HWElemBase
 {
@@ -20,7 +18,7 @@ public:
     virtual ~HWElemINA219();
 
     // Setup
-    virtual void setup(ConfigBase& config, ConfigBase* pDefaults) override final;
+    virtual void setup(const RaftJsonIF& config, const RaftJsonIF* pDefaults) override final;
 
     // Post-Setup - called after any buses have been connected
     virtual void postSetup() override final;

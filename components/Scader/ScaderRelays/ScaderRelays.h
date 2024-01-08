@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <SysModBase.h>
-#include <ScaderCommon.h>
+#include "RaftUtils.h"
+#include "RaftJsonIF.h"
+#include "SysModBase.h"
+#include "ScaderCommon.h"
 #include "DebounceButton.h"
-#include <driver/spi_master.h>
+#include "driver/spi_master.h"
 
 class APISourceInfo;
 
@@ -24,7 +24,7 @@ class ScaderRelays : public SysModBase
     static const int DEFAULT_MAX_ELEMS = 24;
     static const int ELEMS_PER_CHIP = 8;
     static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
-    ScaderRelays(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig);
 
 protected:
 

@@ -9,11 +9,10 @@
 
 #pragma once
 
-#include <RaftArduino.h>
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <ScaderCommon.h>
-#include <SysModBase.h>
+#include "RaftArduino.h"
+#include "RaftUtils.h"
+#include "ScaderCommon.h"
+#include "SysModBase.h"
 
 class APISourceInfo;
 
@@ -87,7 +86,7 @@ public:
     static const int SHADE_DOWN_BIT_MASK = 4;
     static const int BITS_PER_SHADE = 3;
 
-    ScaderShades(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderShades(const char* pModuleName, RaftJsonIF& sysConfig);
 
     // Perform commands
     bool doCommand(int shadeIdx, String &cmdStr, String &durationStr);

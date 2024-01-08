@@ -6,20 +6,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include <ScaderRelays.h>
-#include <ScaderCommon.h>
-#include <ConfigPinMap.h>
-#include <RaftUtils.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
-#include <NetworkSystem.h>
-#include <CommsChannelMsg.h>
-#include <JSONParams.h>
-#include <ESPUtils.h>
 #include <time.h>
-#include <driver/gpio.h>
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "ScaderRelays.h"
+#include "ScaderCommon.h"
+#include "ConfigPinMap.h"
+#include "RaftUtils.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
+#include "NetworkSystem.h"
+#include "CommsChannelMsg.h"
+#include "ESPUtils.h"
+#include "driver/gpio.h"
 
 static const char *MODULE_PREFIX = "ScaderRelays";
 
@@ -32,8 +31,10 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderRelays::ScaderRelays(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-        : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
+// TODO - persistent conf passed global
+
+ScaderRelays::ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig)
+        : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, pModuleName)
 {
 }
@@ -242,7 +243,7 @@ void ScaderRelays::setup()
         // Set names
         for (int i = 0; i < numNames; i++)
         {
-            JSONParams elemInfo = elemInfos[i];
+            RaftJson elemInfo = elemInfos[i];
             _elemNames[i] = elemInfo.getString("name", ("Relay " + String(i+1)).c_str());
             LOG_I(MODULE_PREFIX, "Relay %d name %s", i+1, _elemNames[i].c_str());
         }

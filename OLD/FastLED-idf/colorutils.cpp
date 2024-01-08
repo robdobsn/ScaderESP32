@@ -1,7 +1,7 @@
 #define FASTLED_INTERNAL
 #define __PROG_TYPES_COMPAT__
 
-#include <stdint.h>
+#include <cstdint>
 #include <math.h>
 
 #include "FastLED.h"

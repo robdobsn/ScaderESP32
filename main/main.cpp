@@ -112,40 +112,42 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 
 // App
 #include "DetectHardware.h"
-#include <ConfigNVS.h>
-#include <CommsChannelManager.h>
-#include <SysTypeManager.h>
-#include <SysManager.h>
-#include <SerialConsole.h>
-#include <FileManager.h>
+#include "CommsChannelManager.h"
+#include "SysTypeManager.h"
+#include "SysManager.h"
+#include "SerialConsole.h"
+#include "FileManager.h"
 #ifdef CONFIG_BT_ENABLED
-#include <BLEManager.h>
+#include "BLEManager.h"
 #endif
 #ifdef FEATURE_NETWORK_FUNCTIONALITY
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 #ifdef FEATURE_WEB_SERVER_OR_WEB_SOCKETS
-#include <WebServer.h>
+#include "WebServer.h"
 #endif
 #endif
-#include <CommandSerial.h>
-#include <CommandSocket.h>
-#include <CommandFile.h>
-#include <StatePublisher.h>
-#include <LogManager.h>
+#include "CommandSerial.h"
+#include "CommandSocket.h"
+#include "CommandFile.h"
+#include "StatePublisher.h"
+#include "LogManager.h"
 
-#include <FileSystem.h>
-#include <ESPOTAUpdate.h>
-#include <ProtocolExchange.h>
+#include "FileSystem.h"
+#include "ESPOTAUpdate.h"
+#include "ProtocolExchange.h"
 
-// #include <BusSerial.h>
-#include <MQTTManager.h>
+// #include "BusSerial.h"
+
+#ifdef FEATURE_MQTT_MANAGER
+#include "MQTTManager.h"
+#endif
 
 // #ifdef FEATURE_HWELEM_STEPPERS
-// #include <HWElemSteppers.h>
+// #include "HWElemSteppers.h"
 // #endif
 
 // #ifdef FEATURE_POWER_UP_LED_ASAP
-// #include <PowerUpLEDSet.h>
+// #include "PowerUpLEDSet.h"
 // #endif
 
 // #ifdef FEATURE_EMBED_MICROPYTHON
@@ -236,44 +238,26 @@ void mainTask(void *pvParameters)
 #endif
     // Set hardware revision - ensure this runs early as some methods for determining
     // hardware revision may get disabled later on (e.g. GPIO pins later used for output)
-    ConfigBase::setHwRevision(DetectHardware::getHWRevision());
+    int hwRevision = DetectHardware::getHWRevision();
 
-    // Config for hardware
-    ConfigBase defaultSystemConfig(defaultConfigJSON);
+    // System configuration
+    RaftJsonNVS systemConfig("system");
 
-    // Check defaultConfigJSON is valid
-    int numJsonTokens = 0;
-    if (!RaftJson::validateJson(defaultConfigJSON, numJsonTokens))
-    {
-        LOG_E(MODULE_NAME, "mainTask defaultConfigJSON failed to parse");
-    }
+    // SysType configuration
+    RaftJson sysTypeConfig;
 
-    ///////////////////////////////////////////////////////////////////////////////////
-    // NOTE: Changing the size or order of the following will affect the layout
-    // of data in the Non-Volatile-Storage partition (see partitions.csv file NVS entry)
-    // This will render data in those areas invalid and this data will be lost when
-    // firmware with different layout is flashed
-    ///////////////////////////////////////////////////////////////////////////////////
+    // Chain the default config to the SysType so that it is used as a fallback
+    // if no SysTypes are specified
+    RaftJson defaultConfig(defaultConfigJSON, false);
+    sysTypeConfig.setChainedRaftJson(&defaultConfig);
 
-    // Configuration for the system - including system name
-    ConfigNVS _sysModMutableConfig("system", 500);
-
-    // Configuration for system modules
-    ConfigNVS _sysTypeConfig("sys", 10000);
-
-#ifdef FEATURE_INCLUDE_SCADER
-    // Configuration for Scader
-    ConfigNVS _scaderMutableConfig("scader", 4000);
-#endif
-
-    ///////////////////////////////////////////////////////////////////////////////////
-
-    // SysTypes
-    SysTypeManager _sysTypeManager(_sysTypeConfig);
-    _sysTypeManager.setup(SYS_TYPE_STATICS, SYS_TYPE_STATICS_LEN);
+    // SysType manager
+    SysTypeManager _sysTypeManager(systemConfig, sysTypeConfig);
+    _sysTypeManager.setBaseSysTypes(&sysTypeStatics);
+    _sysTypeManager.setHardwareRevision(hwRevision);
 
     // System Module Manager
-    SysManager _sysManager("SysManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig,
+    SysManager _sysManager("SysManager", systemConfig,
                     DEFAULT_FRIENDLY_NAME, SYSTEM_NAME, 
                     HW_SERIAL_NUMBER_BYTES, DEFAULT_SERIAL_SET_MAGIC_STR);
 
@@ -299,55 +283,57 @@ void mainTask(void *pvParameters)
     _sysManager.setRestAPIEndpoints(_restAPIEndpointManager);
 
     // Comms Channel Manager
-    CommsChannelManager _commsChannelManager("CommsMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    CommsChannelManager _commsChannelManager("CommsMan", systemConfig);
     _sysManager.setCommsCore(&_commsChannelManager);
 
     // SerialConsole
-    SerialConsole _serialConsole("SerialConsole", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    SerialConsole _serialConsole("SerialConsole", systemConfig);
 
     // FileManager
-    FileManager _fileManager("FileManager", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    FileManager _fileManager("FileManager", systemConfig);
 
 #ifdef FEATURE_NETWORK_FUNCTIONALITY
     // NetworkManager
-    NetworkManager _networkManager("NetMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    NetworkManager _networkManager("NetMan", systemConfig);
 #endif
 
     // ESP OTA Update
-    ESPOTAUpdate _espotaUpdate("ESPOTAUpdate", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    ESPOTAUpdate _espotaUpdate("ESPOTAUpdate", systemConfig);
 
     // ProtocolExchange
-    ProtocolExchange _protocolExchange("ProtExchg", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    ProtocolExchange _protocolExchange("ProtExchg", systemConfig);
     _protocolExchange.setHandlers(&_espotaUpdate);
     _fileManager.setProtocolExchange(_protocolExchange);
 
 #ifdef FEATURE_WEB_SERVER_OR_WEB_SOCKETS
     // WebServer
-    WebServer _webServer("WebServer", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    WebServer _webServer("WebServer", systemConfig);
 #endif
 
 #ifdef CONFIG_BT_ENABLED
     // BLEManager
-    BLEManager _bleManager("BLEMan", defaultSystemConfig, &_sysTypeConfig, nullptr, DEFAULT_ADVNAME);
+    BLEManager _bleManager("BLEMan", systemConfig, DEFAULT_ADVNAME);
 #endif
 
     // Command Serial
-    CommandSerial _commandSerial("CommandSerial", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    CommandSerial _commandSerial("CommandSerial", systemConfig);
 
     // Command Socket
-    CommandSocket _commandSocket("CommandSocket", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    CommandSocket _commandSocket("CommandSocket", systemConfig);
 
     // Command File
-    CommandFile _commandFile("CommandFile", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    CommandFile _commandFile("CommandFile", systemConfig);
 
+#ifdef FEATURE_MQTT_MANAGER
     // MQTT
-    MQTTManager _mqttManager("MQTTMan", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    MQTTManager _mqttManager("MQTTMan", systemConfig);
+#endif
 
     // State Publisher
-    StatePublisher _statePublisher("Publish", defaultSystemConfig, &_sysTypeConfig, nullptr);
+    StatePublisher _statePublisher("Publish", systemConfig);
 
     // Log manager
-    LogManager _LogManager("LogManager", defaultSystemConfig, &_sysTypeConfig, &_sysModMutableConfig);
+    LogManager _LogManager("LogManager", systemConfig);
     
 // #ifdef FEATURE_EMBED_MICROPYTHON
 //     // Micropython
@@ -356,16 +342,15 @@ void mainTask(void *pvParameters)
 
 #ifdef FEATURE_INCLUDE_SCADER
     // Scader components
-    ScaderRelays _scaderRelays("ScaderRelays", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    ScaderShades _scaderShades("ScaderShades", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    ScaderDoors _scaderDoors("ScaderDoors", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    ScaderOpener _scaderOpener("ScaderOpener", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    // // ConfigBase cfg;
+    ScaderRelays _scaderRelays("ScaderRelays", systemConfig);
+    ScaderShades _scaderShades("ScaderShades", systemConfig);
+    ScaderDoors _scaderDoors("ScaderDoors", systemConfig);
+    ScaderOpener _scaderOpener("ScaderOpener", systemConfig);
     // // ScaderOpener _scaderOpener("ScaderOpener", cfg, nullptr, &_scaderMutableConfig);
     // // _scaderOpener.setup();
     // // ScaderCat _scaderCat("ScaderCat", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    ScaderLEDPixels _scaderLEDPixels("ScaderLEDPix", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
-    ScaderRFID _scaderRFID("ScaderRFID", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
+    ScaderLEDPixels _scaderLEDPixels("ScaderLEDPix", systemConfig);
+    ScaderRFID _scaderRFID("ScaderRFID", systemConfig);
     // ScaderWaterer _scaderWaterer("ScaderWaterer", defaultSystemConfig, &_sysTypeConfig, &_scaderMutableConfig);
 #endif
 

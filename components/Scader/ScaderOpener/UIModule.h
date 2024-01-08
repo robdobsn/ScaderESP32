@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <ConfigBase.h>
-#include <OpenerStatus.h>
-#include <MiniHDLC.h>
+#include "RaftJsonIF.h"
+#include "OpenerStatus.h"
+#include "MiniHDLC.h"
 
 class UIModule
 {
@@ -20,7 +20,7 @@ public:
     virtual ~UIModule();
 
     // Setup
-    void setup(ConfigBase &config, OpenerStatus* pOpenerStatus);
+    void setup(RaftJsonIF& config, OpenerStatus* pOpenerStatus);
 
     // Service - called frequently
     void service();

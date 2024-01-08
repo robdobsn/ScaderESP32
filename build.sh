@@ -23,7 +23,8 @@ if [[ $SERIALPORT_OR_IP =~ ^[[:digit:]] ]]
         python.exe ${FLASHER} ${PARTITIONS_CSV} builds/$BUILDCONF $FW_IMAGE_NAME $SERIALPORT_OR_IP $TARGET_CHIP -b$FLASHBAUD -f spiffs.bin
         if [ $? -eq "0" ]
           then
-            python.exe ${SERIAL_MONITOR} $SERIALPORT_OR_IP -g
+            # python.exe ${SERIAL_MONITOR} $SERIALPORT_OR_IP -g
+            serial-monitor.exe -p $SERIALPORT_OR_IP
           fi
     else
         echo "Running on Linux or OSX"

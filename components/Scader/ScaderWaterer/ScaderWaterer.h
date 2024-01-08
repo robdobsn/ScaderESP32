@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include <RaftArduino.h>
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <SysModBase.h>
+#include "RaftArduino.h"
+#include "RaftUtils.h"
+#include "SysModBase.h"
 #include "MoistureSensors.h"
 #include "PumpControl.h"
 
@@ -20,7 +19,7 @@ class APISourceInfo;
 class ScaderWaterer : public SysModBase
 {
 public:
-    ScaderWaterer(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderWaterer(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Check if moving
     bool isBusy();

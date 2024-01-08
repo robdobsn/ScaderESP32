@@ -6,20 +6,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include "ScaderLEDPixels.h"
-#include <ConfigPinMap.h>
-#include <RaftUtils.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
-#include <JSONParams.h>
-#include "time.h"
+#include <ctime>
 #include "driver/gpio.h"
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "ScaderLEDPixels.h"
+#include "ConfigPinMap.h"
+#include "RaftUtils.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
 #include "LEDPatternRainbowSnake.h"
 
 #ifdef USE_FASTLED_LIBRARY
-// #include <FastLED.h>
+// #include "FastLED.h"
 
 // #define NUM_STRIPS 2
 // #define NUM_LEDS_PER_STRIP 100
@@ -45,8 +44,10 @@ static const char *MODULE_PREFIX = "ScaderLEDPixels";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
+// TODO - persistent config passed as global
+
+ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig)
+    : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, pModuleName)
 {
 }
@@ -112,7 +113,7 @@ void ScaderLEDPixels::setup()
     if (configGetArrayElems("strips", stripInfos))
     {
         // Create LED info (one for all strips)
-        for (const JSONParams& stripInfo : stripInfos)
+        for (const RaftJson& stripInfo : stripInfos)
         {
             totalNumPix += stripInfo.getLong("num", 0);
         }
@@ -123,7 +124,7 @@ void ScaderLEDPixels::setup()
         for (size_t i = 0; i < stripInfos.size(); i++)
         {
             // Get strip info
-            JSONParams stripInfo = stripInfos[i];
+            RaftJson stripInfo = stripInfos[i];
 
             // Extract pin and number of pixels
             uint8_t pixPin = stripInfo.getLong("pin", 0);

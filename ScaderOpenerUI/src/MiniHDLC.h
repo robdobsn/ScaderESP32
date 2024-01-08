@@ -13,9 +13,9 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+#include <cstdint>
+#include <cstddef>
+#include <cstdbool>
 #include "SimpleBuffer.h"
 
 // Callback handling

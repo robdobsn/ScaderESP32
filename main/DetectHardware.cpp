@@ -7,7 +7,7 @@
 
 #include "DetectHardware.h"
 #include "esp_log.h"
-#include <SimpleMovingAverage.h>
+#include "SimpleMovingAverage.h"
 
 // Module
 static const char *MODULE_PREFIX = "DetectHardware";

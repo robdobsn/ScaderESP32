@@ -34,18 +34,18 @@
 #endif
 
 #ifdef SmartMatrix_h
-#include <SmartMatrix.h>
+#include "SmartMatrix.h"
 #endif
 
 #ifdef DmxSimple_h
-#include <DmxSimple.h>
+#include "DmxSimple.h"
 #endif
 
 #ifdef DmxSerial_h
-#include <DMXSerial.h>
+#include "DMXSerial.h"
 #endif
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "cpp_compat.h"
 

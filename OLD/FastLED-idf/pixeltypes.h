@@ -3,7 +3,7 @@
 
 #include "FastLED.h"
 
-#include <stdint.h>
+#include <cstdint>
 #include "lib8tion.h"
 #include "color.h"
 

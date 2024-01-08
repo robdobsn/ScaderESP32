@@ -8,15 +8,14 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderShades.h"
-#include <RaftArduino.h>
-#include <RaftUtils.h>
-#include <ConfigPinMap.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
-#include <CommsChannelMsg.h>
-#include <JSONParams.h>
-#include <ESPUtils.h>
-#include <NetworkSystem.h>
+#include "RaftArduino.h"
+#include "RaftUtils.h"
+#include "ConfigPinMap.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
+#include "CommsChannelMsg.h"
+#include "ESPUtils.h"
+#include "NetworkSystem.h"
 
 static const char *MODULE_PREFIX = "ScaderShades";
 
@@ -24,8 +23,9 @@ static const char *MODULE_PREFIX = "ScaderShades";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderShades::ScaderShades(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
+// TODO - config is global was passed to SysModBase constructor
+ScaderShades::ScaderShades(const char *pModuleName, RaftJsonIF& sysConfig)
+    : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, pModuleName)
 {
 }
@@ -132,7 +132,7 @@ void ScaderShades::setup()
         // Set names
         for (int i = 0; i < numNames; i++)
         {
-            JSONParams elemInfo = elemInfos[i];
+            RaftJson elemInfo = elemInfos[i];
             _elemNames[i] = elemInfo.getString("name", ("Shade " + String(i+1)).c_str());
             LOG_I(MODULE_PREFIX, "Shade %d name %s", i+1, _elemNames[i].c_str());
         }

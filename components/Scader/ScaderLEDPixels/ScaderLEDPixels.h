@@ -12,16 +12,15 @@
 // #define USE_FASTLED_LIBRARY
 #define RUN_PATTERNS_IN_SYSMOD
 
-#include <SysModBase.h>
-#include <ConfigBase.h>
-#include <ScaderCommon.h>
-#include <RaftUtils.h>
+#include "SysModBase.h"
+#include "ScaderCommon.h"
+#include "RaftUtils.h"
 
 #ifdef USE_RAFT_PIXELS_LIBRARY
-#include <LEDPixels.h>
+#include "LEDPixels.h"
 #endif
 #ifdef USE_FASTLED_LIBRARY
-#include <FastLED.h>
+#include "FastLED.h"
 #endif
 
 class APISourceInfo;
@@ -29,7 +28,7 @@ class APISourceInfo;
 class ScaderLEDPixels : public SysModBase
 {
   public:
-    ScaderLEDPixels(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig);
 
 protected:
 

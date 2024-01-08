@@ -2,12 +2,14 @@
 //
 // Static storage for SysTypes
 //
-// Rob Dobson 2020-2022
+// Rob Dobson 2020-2024
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const char* SYS_TYPE_STATICS[] = {
+#include <vector>
+#include "SysTypeStatics.h"
+
+const std::vector<SysTypeInfoRec> sysTypeStatics =
+{
 #include "SysTypes.h"
 };
-
-extern const int SYS_TYPE_STATICS_LEN = sizeof(SYS_TYPE_STATICS) / sizeof(const char *);

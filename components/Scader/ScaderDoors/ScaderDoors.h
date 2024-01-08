@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <SysModBase.h>
-#include <ScaderCommon.h>
-#include <DoorStrike.h>
-#include <ThreadSafeQueue.h>
+#include "RaftUtils.h"
+#include "RaftJsonIF.h"
+#include "SysModBase.h"
+#include "ScaderCommon.h"
+#include "DoorStrike.h"
+#include "ThreadSafeQueue.h"
 
 class APISourceInfo;
 
@@ -21,7 +21,7 @@ class ScaderDoors : public SysModBase
 {
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
-    ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderDoors(const char *pModuleName, RaftJsonIF& sysConfig);
     virtual ~ScaderDoors();
 
 protected:

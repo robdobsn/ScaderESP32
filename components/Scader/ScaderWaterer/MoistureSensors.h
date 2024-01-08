@@ -8,20 +8,19 @@
 
 #pragma once
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include <RaftUtils.h>
-#include <RdI2C.h>
-#include <ConfigBase.h>
-#include <SimpleMovingAverage.h>
-#include "stdint.h"
+#include <cstdint>
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "RaftUtils.h"
+#include "RdI2C.h"
+#include "SimpleMovingAverage.h"
 
 class MoistureSensors
 {
 public:
     MoistureSensors();
     virtual ~MoistureSensors();
-    void setup(ConfigBase& config);
+    void setup(const RaftJsonIF& config);
     void service();
     bool isBusy();
     uint32_t getCount() {

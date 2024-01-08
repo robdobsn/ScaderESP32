@@ -28,7 +28,7 @@ PumpControl::~PumpControl()
 // setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PumpControl::setup(ConfigBase& config)
+void PumpControl::setup(RaftJsonIF& config)
 {
     // Deinit
     deinit();

@@ -8,12 +8,11 @@
 
 #pragma once
 
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <SysModBase.h>
-#include <ScaderCommon.h>
-#include <RFIDModuleBase.h>
-#include <StatusIndicator.h>
+#include "RaftUtils.h"
+#include "SysModBase.h"
+#include "ScaderCommon.h"
+#include "RFIDModuleBase.h"
+#include "StatusIndicator.h"
 
 class APISourceInfo;
 
@@ -21,8 +20,7 @@ class ScaderRFID : public SysModBase
 {
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
-    ScaderRFID(const char *pModuleName, ConfigBase &defaultConfig, 
-                ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderRFID(const char *pModuleName, RaftJsonIF& sysConfig);
 
 protected:
 

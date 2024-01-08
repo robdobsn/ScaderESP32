@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <AngleMovingAverage.h>
-#include <SampleCollector.h>
+#include <cstdint>
+#include "AngleMovingAverage.h"
+#include "SampleCollector.h"
 
 class BusBase;
-class ConfigBase;
 class BusRequestResult;
+class RaftJsonIF;
 
 class AS5600Sensor
 {
@@ -23,7 +23,7 @@ public:
     virtual ~AS5600Sensor();
 
     // Setup
-    void setup(ConfigBase& config, const char* pConfigPrefix, BusBase* pBus);
+    void setup(RaftJsonIF& config, BusBase* pBus);
 
     // Service
     void service();

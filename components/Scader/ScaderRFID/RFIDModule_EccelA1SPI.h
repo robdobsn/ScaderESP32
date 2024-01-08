@@ -8,10 +8,10 @@
 
 #pragma once 
 
-#include <RaftArduino.h>
+#include "RaftArduino.h"
 #include "RFIDModuleBase.h"
-#include <RaftUtils.h>
-#include <driver/spi_master.h>
+#include "RaftUtils.h"
+#include "driver/spi_master.h"
 
 class RFIDModule_EccelA1SPI : public RFIDModuleBase
 {

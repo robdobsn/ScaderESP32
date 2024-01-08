@@ -7,8 +7,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "OpenerStatus.h"
-#include <RaftUtils.h>
-#include <SysModBase.h>
+#include "RaftUtils.h"
+#include "SysModBase.h"
 
 static const char* MODULE_PREFIX = "OpenerStatus";
 #define DEBUG_OPENER_MUTABLE_DATA
@@ -64,7 +64,7 @@ void OpenerStatus::saveToNVSIfRequired()
     // Save
     if (_pConfig)
     {
-        _pConfig->writeConfig(jsonConfig);
+        _pConfig->setJsonDoc(jsonConfig.c_str());
     }
 
     // No longer required

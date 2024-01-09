@@ -36,7 +36,7 @@
     "NetMan": {
         "wifiSTAEn": 1,
         "wifiAPEn": 0,
-        "ethEn": 0,
+        "ethEn": 1,
         "wifiSSID": "",
         "wifiPW": "",
         "wifiSTAScanThreshold": "OPEN",
@@ -56,7 +56,7 @@
         "logLevel": "D"
     },
     "MQTTMan": {
-        "enable": 1,
+        "enable": 0,
         "brokerHostname": "benbecula",
         "brokerPort": 1883,
         "clientID": "Scader",

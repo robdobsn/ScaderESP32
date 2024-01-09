@@ -16,7 +16,9 @@
 class ScaderCommon
 {
 public:
-    ScaderCommon(SysModBase& base, const char* moduleName) : _base(base)
+    ScaderCommon(SysModBase& base, RaftJsonIF& sysConfig, const char* moduleName) : 
+                _base(base),
+                _sysConfig(sysConfig)
     {
         _moduleName = moduleName;
     }
@@ -27,10 +29,23 @@ public:
         _isEnabled = _base.configGetLong("enable", false) != 0;
 
         // Name set in UI
-        _scaderUIName = _base.configGetString("/ScaderCommon/name", "Scader");
+        _scaderUIName = _sysConfig.getString("ScaderCommon/name", "Scader");
 
         // Hostname set in UI
-        _scaderHostname = _base.configGetString("/ScaderCommon/hostname", "Scader");
+        _scaderHostname = _sysConfig.getString("ScaderCommon/hostname", "Scader");
+
+        // If not blank set the UI name as the friendly name for the system
+        if (_scaderUIName.length() > 0)
+        {
+            String respStr;
+            _base.getSysManager()->setFriendlyName(_scaderUIName.c_str(), false, respStr);
+        }
+
+        // Set the hostname if not blank
+        if (_scaderHostname.length() > 0)
+        {
+            networkSystem.setHostname(_scaderHostname.c_str());
+        }
 
         // Debug
         LOG_I("ScaderCommon", "setup scaderUIName %s scaderHostname %s", 
@@ -109,5 +124,8 @@ private:
 
     // Module name
     String _moduleName;
+
+    // System config
+    RaftJsonIF& _sysConfig;
 };
 

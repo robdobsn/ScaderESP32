@@ -152,6 +152,12 @@ int DetectHardware::detectHardware()
     // Default to generic
     _hardwareRevision = HW_IS_GENERIC_BOARD;
 
+#ifdef FEATURE_FORCE_HARDWARE_REVISION
+
+    _hardwareRevision = FEATURE_FORCE_HARDWARE_REVISION;
+
+#else
+
     // Check for RFID PCB hardware
     // Pins 13, 14, 32 are pulled high on that hardware so try to pull them low with the weak ESP32 internal
     // pull-down and see if they remain high
@@ -175,25 +181,15 @@ int DetectHardware::detectHardware()
         _hardwareRevision = HW_IS_CONSV_OPENER_BOARD;
     }
 
-    // Assume must be light-scaders
+    // Assume must be a generic board as light-scader and shades-scader
+    // are handled by a separate buildConfig
     else
     {
         // Default to light scader
-        _hardwareRevision = HW_IS_LIGHT_SCADER_BOARD;
-
-        // Check for scader shades
-        // Pins 4, 13, 14 and 16 are pulled low on scader shades
-        if (HWDetectConfig(
-            {
-                HWDetectPinDef(4, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-                HWDetectPinDef(13, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH),
-                HWDetectPinDef(14, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-                HWDetectPinDef(16, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH)
-            }).isThisHW())
-        {
-            _hardwareRevision = HW_IS_SCADER_SHADES_BOARD;
-        }
+        _hardwareRevision = HW_IS_GENERIC_BOARD;
     }
+
+#endif
 
     ESP_LOGI(MODULE_PREFIX, "detectHardware() returning %s (%d)", 
                 getHWRevisionStr(_hardwareRevision), _hardwareRevision);

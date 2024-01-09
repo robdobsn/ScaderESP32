@@ -11,7 +11,7 @@
 // System Name and Version
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define SYSTEM_VERSION "5.15.1"
+#define SYSTEM_VERSION "5.16.1"
 
 #define MACRO_STRINGIFY(x) #x
 #define MACRO_TOSTRING(x) MACRO_STRINGIFY(x)
@@ -260,6 +260,7 @@ void mainTask(void *pvParameters)
     SysManager _sysManager("SysManager", systemConfig,
                     DEFAULT_FRIENDLY_NAME, SYSTEM_NAME, 
                     HW_SERIAL_NUMBER_BYTES, DEFAULT_SERIAL_SET_MAGIC_STR);
+    _sysManager.setHwRevision(hwRevision);
 
     // Add the system restart callback to the SysTypeManager
     _sysTypeManager.setSystemRestartCallback([&_sysManager] { (&_sysManager)->systemRestart(); });

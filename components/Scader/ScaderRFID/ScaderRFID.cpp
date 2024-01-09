@@ -31,7 +31,7 @@ static const char *MODULE_PREFIX = "ScaderRFID";
 
 ScaderRFID::ScaderRFID(const char *pModuleName, RaftJsonIF& sysConfig)
     : SysModBase(pModuleName, sysConfig),
-          _scaderCommon(*this, pModuleName)
+          _scaderCommon(*this, sysConfig, pModuleName)
 {
 }
 

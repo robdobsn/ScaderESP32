@@ -13,6 +13,12 @@ if((NOT EXISTS ${BUILD_CONFIG_DIR}) OR (NOT IS_DIRECTORY ${BUILD_CONFIG_DIR}))
     message(FATAL_ERROR "Config directory ${BUILD_CONFIG_DIR} not found.")
 endif()
 
+# Check common config dir exists
+set(BUILD_CONFIG_COMMON_DIR "${CMAKE_SOURCE_DIR}/buildConfigs/Common")
+if((NOT EXISTS ${BUILD_CONFIG_COMMON_DIR}) OR (NOT IS_DIRECTORY ${BUILD_CONFIG_COMMON_DIR}))
+    message(FATAL_ERROR "Config directory ${BUILD_CONFIG_COMMON_DIR} not found.")
+endif()
+
 # Use sdkconfig for the selected build configuration
 set(SDKCONFIG_DEFAULTS "${BUILD_CONFIG_DIR}/sdkconfig.defaults")
 set(SDKCONFIG "${BUILD_CONFIG_DIR}/sdkconfig")
@@ -61,13 +67,6 @@ FetchContent_Declare(
   GIT_TAG        ReWorkConfigBase
 )
 
-# Fetch the mongoose web library
-# FetchContent_Declare(
-#   mongoose
-#   GIT_REPOSITORY https://github.com/cesanta/mongoose.git
-#   GIT_TAG        7.10
-# )
-
 # Populate first so we have a folder that we can add in EXTRA_COMPONENT_DIRS
 message(STATUS "Fetching dependencies...")
 FetchContent_Populate(raftcore)
@@ -75,18 +74,10 @@ FetchContent_Populate(raftwebserver)
 FetchContent_Populate(rafti2c)
 FetchContent_Populate(raftsysmods)
 FetchContent_Populate(raftmotorcontrol)
-# FetchContent_Populate(mongoose)
 
-# Copy CMakeLists.txt to mongoose source directory
-# message(STATUS "Copying mongoose CMakeLists.txt... from ${CMAKE_CURRENT_SOURCE_DIR}/mongoose/CMakeLists.txt to ${mongoose_SOURCE_DIR}/CMakeLists.txt")
-# configure_file(${raftwebserver_SOURCE_DIR}/components/RaftWebServer/mongoose/CMakeLists.txt ${mongoose_SOURCE_DIR}/CMakeLists.txt COPYONLY)
-
-# Fetch raftwebserver and raftcore
+# Fetch
 set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${raftcore_SOURCE_DIR} ${raftwebserver_SOURCE_DIR} ${rafti2c_SOURCE_DIR} ${raftsysmods_SOURCE_DIR} ${raftmotorcontrol_SOURCE_DIR})
 FetchContent_MakeAvailable(raftcore raftwebserver rafti2c raftsysmods raftmotorcontrol)
-
-# set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${raftcore_SOURCE_DIR} ${raftwebserver_SOURCE_DIR} ${rafti2c_SOURCE_DIR} ${raftsysmods_SOURCE_DIR} ${raftmotorcontrol_SOURCE_DIR} ${mongoose_SOURCE_DIR})
-# FetchContent_MakeAvailable(raftcore raftwebserver rafti2c raftsysmods raftmotorcontrol mongoose)
 
 # Add optional component folders
 set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} ${OPTIONAL_COMPONENTS})
@@ -96,7 +87,6 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 # Define the project name
 project(${FW_IMAGE_NAME} DEPENDS esp_littlefs raftcore raftwebserver rafti2c raftsysmods raftmotorcontrol)
-# project(${FW_IMAGE_NAME} DEPENDS esp_littlefs raftcore raftwebserver rafti2c raftsysmods raftmotorcontrol mongoose)
 
 # This makes it easy for VS Code to access the compile commands for the most
 # recently built FW revision.

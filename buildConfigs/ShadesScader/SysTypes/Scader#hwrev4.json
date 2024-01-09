@@ -1,0 +1,227 @@
+{
+    "HWName": "ShadesScader",
+    "CmdsAtStart": "",
+    "WebUI": "",
+    "SysManager": {
+        "monitorPeriodMs":30000,
+        "reportList":[
+            "NetMan",
+            "Scader",
+            "SysMan",
+            "ProtExchg",
+            "StatsCB"
+        ],
+        "pauseWiFiforBLE":1,
+        "slowSysModMs": 100,
+        "rebootAfterNHours": 24,
+        "rebootIfDiscMins": 10
+    },
+    "LogManager": {
+        "logDests": [
+            {
+                "enable": true,
+                "type": "Papertrail",
+                "host": "logs2.papertrailapp.com",
+                "port": 48992,
+                "sysName": "Scader"
+            }
+        ]
+    },
+    "ProtExchg": {
+        "RICSerial":{
+            "FrameBound":"0xE7",
+            "CtrlEscape":"0xD7"
+        }
+    },
+    "NetMan": {
+        "wifiSTAEn": 1,
+        "wifiAPEn": 0,
+        "ethEn": 1,
+        "wifiSSID": "",
+        "wifiPW": "",
+        "wifiSTAScanThreshold": "OPEN",
+        "wifiAPSSID": "",
+        "wifiAPPW": "",
+        "wifiAPChannel": 1,
+        "wifiAPMaxConn": 4,
+        "wifiAPAuthMode": "WPA2_PSK",
+        "ethLanChip": "LAN87XX",
+        "ethPowerPin": 12,
+        "ethMDCPin": 23,
+        "ethMDIOPin": 18,
+        "ethPhyAddr": 0,
+        "ethPhyRstPin": -1,
+        "NTPServer": "pool.ntp.org",
+        "timezone": "UTC",
+        "logLevel": "D"
+    },
+    "MQTTMan": {
+        "enable": true,
+        "brokerHostname": "benbecula",
+        "brokerPort": 1883,
+        "clientID": "Scader",
+        "topics": [
+            {
+                "name": "scaderIn",
+                "inbound": 1,
+                "path": "scader/in",
+                "qos": 1
+            },
+            {
+                "name": "scaderOut",
+                "inbound": 0,
+                "path": "scader/out",
+                "qos": 1
+            }
+        ]
+    },
+    "NTPClient": {
+        "enable": 1,
+        "NTPServer": "pool.ntp.org",
+        "GMTOffsetSecs": 0,
+        "DSTOffsetSecs": 0
+    },
+    "ESPOTAUpdate": {
+        "OTADirect": 1
+    },
+    "WebServer": {
+        "enable": 1,
+        "webServerPort": 80,
+        "stdRespHeaders": [
+            "Access-Control-Allow-Origin: *"
+        ],
+        "apiPrefix": "api/",
+        "fileServer": 1,
+        "numConnSlots": 12,
+        "websockets": [
+            {
+                "pfix": "ws",
+                "pcol": "RICSerial",
+                "maxConn": 4,
+                "txQueueMax": 20,
+                "pingMs": 30000
+            },
+            {
+                "pfix": "scader",
+                "pcol": "RICJSON",
+                "maxConn": 4,
+                "txQueueMax": 20,
+                "pingMs": 30000,
+                "content": "text"
+            }
+        ],
+        "logLevel": "D",
+        "sendMax": 5000,
+        "taskCore": 0,
+        "taskStack": 5000,
+        "taskPriority": 9
+    },
+    "SerialConsole": {
+        "enable": 1,
+        "uartNum": 0,
+        "rxBuf": 5000,
+        "txBuf": 1500,
+        "crlfOnTx": 1,
+        "protocol": "RICSerial",
+        "logLevel": "D"
+    },
+    "CommandSerial": {
+        "logLevel": "D",
+        "ports": [
+            {
+                "name": "Serial1",
+                "enable": 1,
+                "uartNum": 1,
+                "baudRate": 115200,
+                "rxBufSize": 8192,
+                "rxPin": 35,
+                "txPin": 5,
+                "protocol": "RICSerial",
+                "logLevel": "D"
+            }
+        ]
+    },
+    "CommandSocket": {
+        "enable": 0,
+        "socketPort": 24,
+        "protocol": "RICSerial",
+        "logLevel": "D"
+    },
+    "FileManager": {
+        "SPIFFSEnabled": 1,
+        "LittleFSEnabled": 0,
+        "LocalFSFormatIfCorrupt": 1,
+        "CacheFileSysInfo": 0,
+        "SDEnabled": 0,
+        "DefaultSD": 1,
+        "SDMOSI": 15,
+        "SDMISO": 4,
+        "SDCLK": 14,
+        "SDCS": 13
+    },
+    "Publish": {
+        "pubList": [
+            {
+                "type": "HW",
+                "name": "ScaderShades",
+                "trigger": "Time",
+                "msgID": "ScaderShades",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
+            },
+            {
+                "type": "HW",
+                "name": "ScaderDoors",
+                "trigger": "Time",
+                "msgID": "ScaderDoors",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
+            }
+        ]
+    },
+    "ScaderShades": {
+        "maxElems": 5,
+        "HC595_SER": 16,
+        "HC595_SCK": 4,
+        "HC595_LATCH": 14,
+        "HC595_RST": 13,
+        "LED_OP": -1,
+        "LED_ACT": 15,
+        "enableLightLevels": 0,
+        "LIGHTLVLPINS": [34, 39, -1]
+    },
+    "ScaderDoors": {
+        "maxElems": 2,
+        "doors": [
+            {
+                "strikePin": 33,
+                "strikeOn": 1,
+                "openSensePin": 34,
+                "openSenseLevel": 0,
+                "unlockForSecs": 10
+            },
+            {
+                "strikePin": 32,
+                "strikeOn": 1,
+                "openSensePin": -1,
+                "openSenseLevel": 0,
+                "unlockForSecs": 30,
+                "delayRelockSecs": 10
+            }
+        ],
+        "masterDoorIdx": 0,
+        "reportMasterDoorOnly": true,
+        "bellSensePin": 39,
+        "bellSenseLevel": 1
+    }
+}

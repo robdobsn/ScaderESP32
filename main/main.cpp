@@ -77,6 +77,8 @@ static const char* MODULE_NAME = "MainTask";
 // #define DEBUG_SHOW_RUNTIME_STATS
 // #define DEBUG_HEAP_ALLOCATION
 // #define DEBUG_TIMING_OF_STARTUP
+#define DEBUG_SHOW_NVS_INFO
+#define DEBUG_SHOW_NVS_CONTENTS
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 #ifdef DEBUG_SHOW_TASK_INFO
@@ -232,6 +234,14 @@ extern "C" void app_main(void)
 
 void mainTask(void *pvParameters)
 {
+#ifdef DEBUG_SHOW_NVS_INFO
+#ifdef DEBUG_SHOW_NVS_CONTENTS
+    RaftJsonNVS::debugShowNVSInfo(true);
+#else
+    RaftJsonNVS::debugShowNVSInfo(false);
+#endif // DEBUG_SHOW_NVS_CONTENTS
+#endif // DEBUG_SHOW_NVS_INFO
+
     // Trace heap allocation - see RdWebConnManager.cpp and RdWebConnection.h/cpp
 #ifdef DEBUG_HEAP_ALLOCATION
     heap_trace_init_standalone(trace_record, NUM_RECORDS);
@@ -241,7 +251,7 @@ void mainTask(void *pvParameters)
     int hwRevision = DetectHardware::getHWRevision();
 
     // System configuration
-    RaftJsonNVS systemConfig("system");
+    RaftJsonNVS systemConfig("sys");
 
     // SysType configuration
     RaftJson sysTypeConfig;
@@ -259,7 +269,8 @@ void mainTask(void *pvParameters)
     // System Module Manager
     SysManager _sysManager("SysManager", systemConfig,
                     DEFAULT_FRIENDLY_NAME, SYSTEM_NAME, 
-                    HW_SERIAL_NUMBER_BYTES, DEFAULT_SERIAL_SET_MAGIC_STR);
+                    HW_SERIAL_NUMBER_BYTES, DEFAULT_SERIAL_SET_MAGIC_STR
+                    "system");
     _sysManager.setHwRevision(hwRevision);
 
     // Add the system restart callback to the SysTypeManager

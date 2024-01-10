@@ -18,14 +18,14 @@ updates/
 node_modules/
 
 # Remove generated webui files
-buildConfigs/Scader/FSImage/*.gz
-buildConfigs/Scader/FSImage/manifest.json
-buildConfigs/Scader/FSImage/asset-manifest.json
-buildConfigs/Scader/FSImage/favicon.ico
-buildConfigs/Scader/FSImage/logo192.png
-buildConfigs/Scader/FSImage/logo512.png
-buildConfigs/Scader/FSImage/robots.txt
-buildConfigs/Scader/FSImage/*.LICENSE.txt
+buildConfigs/**/FSImage/*.gz
+buildConfigs/**/FSImage/manifest.json
+buildConfigs/**/FSImage/asset-manifest.json
+buildConfigs/**/FSImage/favicon.ico
+buildConfigs/**/FSImage/logo192.png
+buildConfigs/**/FSImage/logo512.png
+buildConfigs/**/FSImage/robots.txt
+buildConfigs/**/FSImage/*.LICENSE.txt
 
 WebUIOld.old
 WebUIReact.old

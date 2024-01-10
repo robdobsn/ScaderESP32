@@ -31,8 +31,6 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO - persistent conf passed global
-
 ScaderRelays::ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig)
         : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName),

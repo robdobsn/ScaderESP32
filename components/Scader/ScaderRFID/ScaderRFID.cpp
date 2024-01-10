@@ -27,8 +27,6 @@ static const char *MODULE_PREFIX = "ScaderRFID";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO - persistent config passed global
-
 ScaderRFID::ScaderRFID(const char *pModuleName, RaftJsonIF& sysConfig)
     : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)

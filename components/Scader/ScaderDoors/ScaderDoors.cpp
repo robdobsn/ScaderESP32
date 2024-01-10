@@ -26,8 +26,6 @@ static const char *MODULE_PREFIX = "ScaderDoors";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO - SysConfig was using a flag to say that mutableConfigIsGlobal !!!!
-
 ScaderDoors::ScaderDoors(const char *pModuleName, RaftJsonIF& sysConfig)
     : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)

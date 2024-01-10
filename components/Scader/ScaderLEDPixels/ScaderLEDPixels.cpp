@@ -44,8 +44,6 @@ static const char *MODULE_PREFIX = "ScaderLEDPixels";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO - persistent config passed as global
-
 ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig)
     : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)

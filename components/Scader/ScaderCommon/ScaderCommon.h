@@ -26,7 +26,7 @@ public:
     void setup()
     {
         // Get settings
-        _isEnabled = _base.configGetLong("enable", false) != 0;
+        _isEnabled = _base.configGetBool("enable", false);
 
         // Name set in UI
         _scaderUIName = _sysConfig.getString("ScaderCommon/name", "Scader");

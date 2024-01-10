@@ -23,7 +23,6 @@ static const char *MODULE_PREFIX = "ScaderOpener";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO - mutable config global was passed to SysModBase constructor
 ScaderOpener::ScaderOpener(const char* pModuleName, RaftJsonIF& sysConfig)
     : SysModBase(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)

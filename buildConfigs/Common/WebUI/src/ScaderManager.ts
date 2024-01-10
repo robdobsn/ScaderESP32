@@ -349,6 +349,11 @@ export class ScaderManager {
         // Iterate over keys in nv
         let key: keyof ScaderConfig;
         for (key in nv) {
+            // Check if key exists in config
+            if (!(key in config)) {
+                console.log(`ScaderManager addNonVolatileSettings key ${key} not in config`);
+                continue;
+            }
             Object.assign(config[key], nv[key])
         }
 

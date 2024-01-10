@@ -6,7 +6,7 @@
         "monitorPeriodMs":30000,
         "reportList":[
             "NetMan",
-            "BLEMan",
+            "Scader",
             "SysMan",
             "ProtExchg",
             "StatsCB"
@@ -50,7 +50,7 @@
         "logLevel": "D"
     },
     "MQTTMan": {
-        "enable": 1,
+        "enable": true,
         "brokerHostname": "benbecula",
         "brokerPort": 1883,
         "clientID": "Scader",
@@ -78,14 +78,7 @@
     "ESPOTAUpdate": {
         "OTADirect": 1
     },
-    "BLEMan": {
-        "enable": 0,
-        "outQSize": 15,
-        "sendUseInd": 1,
-        "logLevel": "D",
-        "nimLogLev": "E"
-    },
-    "WebServer": {
+        "WebServer": {
         "enable": 1,
         "webServerPort": 80,
         "stdRespHeaders": [
@@ -176,19 +169,6 @@
             },
             {
                 "type": "HW",
-                "name": "ScaderOpener",
-                "trigger": "Time",
-                "msgID": "ScaderOpener",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            },
-            {
-                "type": "HW",
                 "name": "ScaderRFID",
                 "trigger": "Time",
                 "msgID": "ScaderRFID",
@@ -201,144 +181,6 @@
                 ]
             }
         ]
-    },
-    "ScaderOpener": {
-        "DoorRemainOpenTimeSecs": 45,
-        "DoorTimeToOpenSecs": 20,
-        "MotorOnTimeAfterMoveSecs": 5,
-        "MaxMotorCurrentAmps": 0.4,
-        "DoorOpenAngleDegs": 0,
-        "DoorClosedAngleDegs": 0,
-        "consvPirPin": 15,
-        "consvButtonPin": 32,
-        "i2cBusFreqHz": 100000,
-        "MotorAndAngleSensor": {
-            "BusI2C": {
-                "name": "I2CA",
-                "type": "I2C",
-                "reqFIFOLen": 10,
-                "i2cPort": 0,
-                "sdaPin": 21,
-                "sclPin": 22,
-                "i2cFreq": 100000,
-                "taskCore": 0,
-                "taskStack": 10000,
-                "taskPriority": 24                
-            },
-            "AngleSensor": {
-                "i2cAddr": 54,
-                "pollsPerSec": 1000,
-                "reverse": false,
-                "hysteresis": 0
-            },            
-            "MotorSerial":
-            {
-                "name": "SERA",
-                "type": "serial",
-                "uartNum": 2,
-                "rxPin": "23",
-                "txPin": "4",
-                "baudRate": 115200,
-                "minAfterSendMs": 5
-            },
-            "DoorMotor":
-            {
-                "name": "DoorMotor",
-                "type": "Steppers",
-                "bus": "SERA",
-                "motion": {
-                    "geom": "XYZ",
-                    "blockDist": 10,
-                    "allowOutOfBounds": 0,
-                    "homeBeforeMove": 0,
-                    "junctionDeviation": 0.05
-                },
-                "ramp": {
-                    "rampTimerEn": 1,
-                    "rampTimerUs": 100,
-                    "pipelineLen": 100
-                },
-                "motorEn": {
-                    "stepEnablePin": "27",
-                    "stepEnLev": 0,
-                    "stepDisableSecs": 1
-                },
-                "axes": [
-                    {
-                        "name": "X",
-                        "params": {
-                            "unitsPerRot": 360,
-                            "stepsPerRot": 28000,
-                            "maxSpeed": 10,
-                            "maxAcc": 10
-                        },
-                        "driver": {
-                            "driver": "TMC2209",
-                            "hw": "local",
-                            "addr": 0,
-                            "stepPin": "25",
-                            "dirnPin": "26",
-                            "invDirn": 0,
-                            "writeOnly": 0,
-                            "extSenseOhms": 0.15,
-                            "extVRef": 0,
-                            "extMStep": 0,
-                            "intpol": 1,
-                            "microsteps": 1,
-                            "rmsAmps": 0.01,
-                            "holdModeOrFactor": 0.5,
-                            "holdDelay": 1,
-                            "pwmFreqKHz": 35
-                        }
-                    }
-                ]
-            }
-        },
-        "uiModule":
-        {
-            "rxPin": "19",
-            "txPin": "18",
-            "uartNum": 1,
-            "baudRate": 115200	
-        }
-
-    },
-    "ScaderCat": {
-        "LIGHT_CTRL": 23,
-        "VALVE_CTRL": 19,
-        "FET_1": 18,
-        "FET_2": 5
-    },
-    "ScaderLEDPix": {
-        "brightnessPC": 20,
-        "strips": [
-            {
-                "pin": "32",
-                "num": 16
-            }
-        ],
-        "ledpix2":
-        {
-            "brightnessPC": 20,
-            "strips": [
-                {
-                    "pin": "33",
-                    "num": 16
-                }
-            ]                
-        }
-    },
-    "ScaderWaterer": {
-        "i2cPort": 0,
-        "sdaPin": "21",
-        "sclPin": "22",
-        "i2cFreq": 100000,
-        "adcI2CAddr": "0x48",
-        "reportSecs": 10,
-        "Pump0": "23",
-        "Pump1": "25",
-        "Pump2": "26",
-        "Pump3": "27"
     },
     "ScaderRFID": {
         "actLedPin": 15,

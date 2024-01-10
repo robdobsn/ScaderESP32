@@ -6,7 +6,7 @@
         "monitorPeriodMs":30000,
         "reportList":[
             "NetMan",
-            "BLEMan",
+            "Scader",
             "SysMan",
             "ProtExchg",
             "StatsCB"
@@ -50,7 +50,7 @@
         "logLevel": "D"
     },
     "MQTTMan": {
-        "enable": 1,
+        "enable": true,
         "brokerHostname": "benbecula",
         "brokerPort": 1883,
         "clientID": "Scader",
@@ -77,13 +77,6 @@
     },
     "ESPOTAUpdate": {
         "OTADirect": 1
-    },
-    "BLEMan": {
-        "enable": 0,
-        "outQSize": 15,
-        "sendUseInd": 1,
-        "logLevel": "D",
-        "nimLogLev": "E"
     },
     "WebServer": {
         "enable": 1,
@@ -153,61 +146,9 @@
         "pubList": [
             {
                 "type": "HW",
-                "name": "ScaderRelays",
-                "trigger": "Time",
-                "msgID": "ScaderRelays",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            },
-            {
-                "type": "HW",
-                "name": "ScaderShades",
-                "trigger": "Time",
-                "msgID": "ScaderShades",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            },
-            {
-                "type": "HW",
                 "name": "ScaderDoors",
                 "trigger": "Time",
                 "msgID": "ScaderDoors",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            },
-            {
-                "type": "HW",
-                "name": "ScaderOpener",
-                "trigger": "Time",
-                "msgID": "ScaderOpener",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            },
-            {
-                "type": "HW",
-                "name": "ScaderRFID",
-                "trigger": "Time",
-                "msgID": "ScaderRFID",
                 "rates": [
                     {
                         "if": "scaderOut",

@@ -9,7 +9,7 @@
 #include "RaftArduino.h"
 
 enum HWRevision {
-    HW_IS_GENERIC_BOARD = 1,
+    HW_IS_GENERIC_BOARD = 0,
     HW_IS_RFID_BOARD = 2,
     HW_IS_LIGHT_SCADER_BOARD = 3,
     HW_IS_SCADER_SHADES_BOARD = 4,

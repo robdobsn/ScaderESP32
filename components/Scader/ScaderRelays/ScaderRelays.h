@@ -103,6 +103,9 @@ private:
     }
     // void IRAM_ATTR mainsSyncISR();
 
+    // Relay states, etc
+    RaftJsonNVS _scaderModuleState;
+
     // TODO
     // Debug count of ISR
     volatile uint32_t _isrCount = 0;

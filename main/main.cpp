@@ -269,7 +269,7 @@ void mainTask(void *pvParameters)
     // System Module Manager
     SysManager _sysManager("SysManager", systemConfig,
                     DEFAULT_FRIENDLY_NAME, SYSTEM_NAME, 
-                    HW_SERIAL_NUMBER_BYTES, DEFAULT_SERIAL_SET_MAGIC_STR
+                    HW_SERIAL_NUMBER_BYTES, DEFAULT_SERIAL_SET_MAGIC_STR,
                     "system");
     _sysManager.setHwRevision(hwRevision);
 

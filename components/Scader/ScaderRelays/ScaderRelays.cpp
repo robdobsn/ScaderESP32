@@ -35,7 +35,8 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 
 ScaderRelays::ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig)
         : SysModBase(pModuleName, sysConfig),
-          _scaderCommon(*this, sysConfig, pModuleName)
+          _scaderCommon(*this, sysConfig, pModuleName),
+          _scaderModuleState("scaderRelays")
 {
 }
 
@@ -212,9 +213,9 @@ void ScaderRelays::setup()
     _elemStates.resize(_maxElems);
     std::fill(_elemStates.begin(), _elemStates.end(), false);
 
-    // Set states from mutable config
+    // Set states from scader state
     std::vector<String> elemStateStrs;
-    if (configGetArrayElems("relayStates", elemStateStrs))
+    if (_scaderModuleState.getArrayElems("relayStates", elemStateStrs))
     {
         // Set states
         for (int i = 0; i < elemStateStrs.size(); i++)
@@ -226,10 +227,10 @@ void ScaderRelays::setup()
         }
     }
 
-    // Set pulse count from mutable config
+    // Set pulse count from scader state
     if (_pulseCounterEnabled)
     {
-        _pulseCount = configGetLong("pulseCount", 0);
+        _pulseCount = _scaderModuleState.getLong("pulseCount", 0);
     }
 
     // Element names
@@ -489,7 +490,7 @@ void ScaderRelays::saveMutableData()
 #ifdef DEBUG_RELAYS_MUTABLE_DATA
     LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
 #endif
-    SysModBase::configSaveData(jsonConfig);
+    _scaderModuleState.setJsonDoc(jsonConfig.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

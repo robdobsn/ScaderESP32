@@ -12,9 +12,7 @@ add_compile_definitions(FEATURE_WEB_SERVER_OR_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SERVER_STATIC_FILES)
 add_compile_definitions(FEATURE_MQTT_MANAGER)
-# add_compile_definitions(FEATURE_BLE_FUNCTIONALITY)
 add_compile_definitions(FEATURE_INCLUDE_SCADER)
-# add_compile_definitions(FEATURE_ETHERNET_HARDWARE_OLIMEX)
 
 # LittleFS configuration
 add_compile_definitions(CONFIG_LITTLEFS_MAX_PARTITIONS=3)

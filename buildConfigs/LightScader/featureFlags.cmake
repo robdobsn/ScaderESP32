@@ -6,15 +6,16 @@ add_compile_definitions(HW_DEFAULT_ADVNAME=Scader)
 add_compile_definitions(HW_SERIAL_NUMBER_BYTES=16)
 add_compile_definitions(HW_SERIAL_SET_MAGIC_STR=Magic)
 
+# Enable the ethernet hardware for Olimex ESP32 PoE-ISO boards
+add_compile_definitions(HW_ETH_PHY_LAN87XX)
+
 # Main features
 add_compile_definitions(FEATURE_NETWORK_FUNCTIONALITY)
 add_compile_definitions(FEATURE_WEB_SERVER_OR_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SOCKETS)
 add_compile_definitions(FEATURE_WEB_SERVER_STATIC_FILES)
 add_compile_definitions(FEATURE_MQTT_MANAGER)
-# add_compile_definitions(FEATURE_BLE_FUNCTIONALITY)
 add_compile_definitions(FEATURE_INCLUDE_SCADER)
-add_compile_definitions(FEATURE_ETHERNET_HARDWARE_OLIMEX)
 add_compile_definitions(FEATURE_FORCE_HARDWARE_REVISION=3)
 
 # LittleFS configuration

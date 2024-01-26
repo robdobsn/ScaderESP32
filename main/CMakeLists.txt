@@ -1,5 +1,5 @@
-set(_custom_headers_dir "${CMAKE_BINARY_DIR}/customHeaders/main")
-file(MAKE_DIRECTORY ${_custom_headers_dir})
+set(_generated_headers_dir "${CMAKE_BINARY_DIR}/customHeaders/main")
+file(MAKE_DIRECTORY ${_generated_headers_dir})
 
 idf_component_register(
                 SRCS
@@ -8,11 +8,11 @@ idf_component_register(
                     "DetectHardware.cpp"
                 INCLUDE_DIRS
                     "."
-                    ${_custom_headers_dir}
-                )
+                    ${_generated_headers_dir}                    
+)
 
 # Make sure the SysTypes header is (re)generated before compiling this component (main) if needed
-set(_systypes_header "${_custom_headers_dir}/SysTypes.h")
+set(_systypes_header "${_generated_headers_dir}/SysTypes.h")
 set(_systypes_json "${BUILD_CONFIG_DIR}/SysTypes")
 add_custom_target(generateSysTypesHeader
     COMMAND python3 ${raftcore_SOURCE_DIR}/scripts/GenerateSysTypesHeader.py ${_systypes_json} ${_systypes_header}
@@ -21,13 +21,13 @@ add_custom_target(generateSysTypesHeader
 add_dependencies(${COMPONENT_LIB} generateSysTypesHeader)
 
 # Clean up
-unset(_custom_headers_dir)
+unset(_generated_headers_dir)
 unset(_systypes_header)
 unset(_systypes_json)
 
 # Process WebUI files
 add_custom_target(generateWebUI
-    COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/GenWebUI.py ${WEB_UI_GEN_FLAGS} ${UI_SOURCE_PATH} ${FS_IMAGE_PATH}
+    COMMAND python3 ${raftcore_SOURCE_DIR}/scripts/GenWebUI.py ${WEB_UI_GEN_FLAGS} ${UI_SOURCE_PATH} ${FS_IMAGE_PATH}
     COMMENT "Generating Web UI"
 )
 add_dependencies(${COMPONENT_LIB} generateWebUI)

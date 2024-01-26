@@ -77,8 +77,8 @@ static const char* MODULE_NAME = "MainTask";
 // #define DEBUG_SHOW_RUNTIME_STATS
 // #define DEBUG_HEAP_ALLOCATION
 // #define DEBUG_TIMING_OF_STARTUP
-#define DEBUG_SHOW_NVS_INFO
-#define DEBUG_SHOW_NVS_CONTENTS
+// #define DEBUG_SHOW_NVS_INFO
+// #define DEBUG_SHOW_NVS_CONTENTS
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 #ifdef DEBUG_SHOW_TASK_INFO
@@ -113,7 +113,6 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include "freertos/FreeRTOS.h"
 
 // App
-#include "DetectHardware.h"
 #include "CommsChannelManager.h"
 #include "SysTypeManager.h"
 #include "SysManager.h"
@@ -137,8 +136,6 @@ static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in 
 #include "FileSystem.h"
 #include "ESPOTAUpdate.h"
 #include "ProtocolExchange.h"
-
-// #include "BusSerial.h"
 
 #ifdef FEATURE_MQTT_MANAGER
 #include "MQTTManager.h"

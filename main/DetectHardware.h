@@ -1,23 +1,15 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// DetectHardware for Scader PCBs
-// Rob Dobson 2023
+// DetectHardware
+// Rob Dobson 2023-24
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "RaftArduino.h"
-
-enum HWRevision {
-    HW_IS_GENERIC_BOARD = 0,
-    HW_IS_RFID_BOARD = 2,
-    HW_IS_LIGHT_SCADER_BOARD = 3,
-    HW_IS_SCADER_SHADES_BOARD = 4,
-    HW_IS_CONSV_OPENER_BOARD = 5,
-    };
+#include "RaftCoreApp.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Get hardware revision
+// Get hardware type
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class HWDetectPinDef
@@ -70,33 +62,8 @@ private:
 // Main detection function
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class DetectHardware
+namespace DetectHardware
 {
-public:
-    static int _hardwareRevision;
-    static int detectHardware();
-    static int getHWRevision()
-    {
-        if (_hardwareRevision == -1)
-            _hardwareRevision = detectHardware();
-        return _hardwareRevision;
-    }
-    static const char* getHWRevisionStr(int hwRev)
-    {
-        switch (hwRev)
-        {
-            case HW_IS_GENERIC_BOARD:
-                return "Generic";
-            case HW_IS_RFID_BOARD:
-                return "RFID";
-            case HW_IS_LIGHT_SCADER_BOARD:
-                return "LightScader";
-            case HW_IS_SCADER_SHADES_BOARD:
-                return "ScaderShades";
-            case HW_IS_CONSV_OPENER_BOARD:
-                return "ConsvOpener";
-        }
-        return "Unknown";
-    }
+    void detectHardware(RaftCoreApp& app);
 };
 

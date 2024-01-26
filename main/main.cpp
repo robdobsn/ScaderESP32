@@ -3,9 +3,56 @@
 // Main entry point
 //
 // Scader ESP32 V5 Firmware
-// Rob Dobson 2023
+// Rob Dobson 2015-24
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include "RaftCoreApp.h"
+#include "RegisterSysMods.h"
+#include "DetectHardware.h"
+// Scader components
+#include "ScaderRelays.h"
+#include "ScaderShades.h"
+#include "ScaderDoors.h"
+#include "ScaderOpener.h"
+// #include "ScaderCat.h"
+#include "ScaderLEDPixels.h"
+#include "ScaderRFID.h"
+// #include "ScaderWaterer.h"
+
+// Entry point
+extern "C" void app_main(void)
+{
+    RaftCoreApp raftCoreApp;
+
+    // Detect hardware
+    DetectHardware::detectHardware(raftCoreApp);
+
+    // Register SysMods from RaftSysMods library
+    RegisterSysMods::registerSysMods(raftCoreApp.getSysManager());
+
+    // Scader components
+    raftCoreApp.registerSysMod("ScaderRelays", ScaderRelays::create, true);
+    raftCoreApp.registerSysMod("ScaderShades", ScaderShades::create, true);
+    raftCoreApp.registerSysMod("ScaderDoors", ScaderDoors::create, true);
+    raftCoreApp.registerSysMod("ScaderOpener", ScaderOpener::create, true);
+    // raftCoreApp.registerSysMod("ScaderCat", ScaderCat::create, true);
+    raftCoreApp.registerSysMod("ScaderLEDPix", ScaderLEDPixels::create, true);
+    raftCoreApp.registerSysMod("ScaderRFID", ScaderRFID::create, true);
+    // raftCoreApp.registerSysMod("ScaderWaterer", ScaderWaterer::create, true);
+
+    // Loop forever
+    while (1)
+    {
+        // Yield for 1 tick
+        vTaskDelay(1);
+
+        // Service the app
+        raftCoreApp.service();
+    }
+}
+
+#ifdef USE_ORIGINAL_MAIN
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // System Name and Version
@@ -458,5 +505,6 @@ int runtime_stats()
     free(task_stats_buffer);
     return 0;
 }
+#endif
 #endif
 #endif

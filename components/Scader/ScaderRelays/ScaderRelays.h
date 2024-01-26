@@ -20,11 +20,17 @@ class APISourceInfo;
 
 class ScaderRelays : public SysModBase
 {
-  public:
+public:
     static const int DEFAULT_MAX_ELEMS = 24;
     static const int ELEMS_PER_CHIP = 8;
     static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
     ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig);
+
+    // Create function (for use by SysManager factory)
+    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderRelays(pModuleName, sysConfig);
+    }
 
 protected:
 

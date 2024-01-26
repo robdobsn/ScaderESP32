@@ -69,8 +69,9 @@ void ScaderLEDPixels::setup()
     }
 
     // Setup LEDs
-    bool rslt = _ledPixels.setup(configGetConfig(), "");
-    bool rslt2 = _ledPixels2.setup(configGetConfig(), "ledpix2");
+    bool rslt = _ledPixels.setup(modConfig());
+    RaftJsonPrefixed config2(modConfig(), "ledpix2");
+    bool rslt2 = _ledPixels2.setup(config2);
 
     // Patterns
 #ifndef RUN_PATTERNS_IN_SYSMOD

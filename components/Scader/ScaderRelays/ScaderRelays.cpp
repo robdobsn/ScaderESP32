@@ -19,6 +19,7 @@
 #include "CommsChannelMsg.h"
 #include "ESPUtils.h"
 #include "driver/gpio.h"
+#include "driver/spi_master.h"
 
 static const char *MODULE_PREFIX = "ScaderRelays";
 

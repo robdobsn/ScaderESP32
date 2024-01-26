@@ -1,22 +1,66 @@
-ROOTDIR = $(realpath $(CURDIR)/..)
-WORKING_DIR = $(realpath $(CURDIR))
-DOCKER_ESP_IDF ?= docker run --rm -v $(ROOTDIR):$(ROOTDIR) -w $(WORKING_DIR) espressif/idf:v5.1.2
-CMD ?= ./build.sh
+# Build Project
+BUILD_CONFIG_NAME ?= LightScader
+DOCKER ?= 1
+WSL ?= 1
+MONITOR ?= SerialMonitor.py
+BUILD_BASE_FOLDER ?= build
+BUILD_RAFT_ARTEFACTS_DIR ?= build_raft_artefacts
+BUILD_DIR = $(BUILD_BASE_FOLDER)/$(BUILD_CONFIG_NAME)
+BUILD_CONFIG_BASE_DIR = systypes
+BUILD_CONFIG_DIR = $(BUILD_CONFIG_BASE_DIR)/$(BUILD_CONFIG_NAME)
+ROOTDIR = $(realpath $(CURDIR))
+# DOCKER_EXEC ?= docker run --rm -v $(ROOTDIR):/project -w /project espressif/idf:v5.1.2
+DOCKER_EXEC = docker build -t sandbot7builder . && docker run --rm -v $(ROOTDIR):/project -w /project sandbot7builder
+LOCAL_EXEC = . ~/esp/esp-idf-v5.1.2/export.sh
+CMD ?= idf.py -B $(BUILD_DIR) build
+PORT ?= COM9
 
-all: buildall
+ifeq ($(WSL),1)
+	PYTHON_FOR_FLASH_MONITOR ?= python.exe
+else
+	PYTHON_FOR_FLASH_MONITOR ?= python3
+endif
 
-buildall: Makefile $(wildcard ./*) $(wildcard components/core/*) $(wildcard components/comms/*)
-	$(DOCKER_ESP_IDF) $(CMD)
+# Custom command to delete sdkconfig if sdkconfig.defaults is newer
+define DELETE_SDKCONFIG_IF_OUTDATED
+    if [ -f "$(BUILD_CONFIG_DIR)/sdkconfig.defaults" -a -f "$(BUILD_CONFIG_DIR)/sdkconfig" ]; then \
+        if [ "$(BUILD_CONFIG_DIR)/sdkconfig.defaults" -nt "$(BUILD_CONFIG_DIR)/sdkconfig" ]; then \
+            echo "-------------------- Deleting sdkconfig --------------------"; \
+            rm -f "$(BUILD_CONFIG_DIR)/sdkconfig"; \
+        fi; \
+    fi
+endef
 
+all: build
+
+ifeq ($(DOCKER),1)
+build: Makefile $(wildcard main/*) $(wildcard components/*) $(wildcard $(BUILD_CONFIG_DIR)/*)
+	@echo "-------------------- Rebuilding in Docker --------------------"
+	@$(DELETE_SDKCONFIG_IF_OUTDATED)
+	$(DOCKER_EXEC) $(CMD)
 clean:
-	$(DOCKER_ESP_IDF) rm -rf builds sdkconfig || true
+	$(DOCKER_EXEC) rm -rf ./build/ ./build_raft_artefacts/ $(BUILD_CONFIG_DIR)/sdkconfig || true
+else
+build: Makefile $(wildcard main/*) $(wildcard components/*) $(wildcard $(BUILD_CONFIG_DIR)/*)
+	@echo "-------------------- Rebuilding Locally --------------------"
+	@$(DELETE_SDKCONFIG_IF_OUTDATED)
+	$(LOCAL_EXEC) && $(CMD)
+clean:
+	rm -rf ./build/ ./build_raft_artefacts/ $(BUILD_CONFIG_DIR)/sdkconfig || true
+endif
 
-PORT ?= COM3
+ifeq ($(MONITOR),SerialMonitor.py)
+flash: build
+	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(BUILD_CONFIG_NAME).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
+	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/SerialMonitor.py $(PORT) -g
+else ifeq ($(MONITOR),serial-monitor)
+flash: build
+	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(BUILD_CONFIG_NAME).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
+	serial-monitor -p $(PORT)
+else
+flash: build
+	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(BUILD_CONFIG_NAME).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
+endif
 
-flashwsl: buildall
-	python.exe -m esptool -p $(PORT) -b 460800 --before default_reset --after hard_reset --chip esp32  write_flash --flash_mode dio --flash_size 4MB --flash_freq 40m 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin 0xe000 build/ota_data_initial.bin 0x10000 build/test_raft_core.bin
-	python.exe ../scripts/SerialMonitor.py $(PORT) -g
+.PHONY: build clean flash test
 
-erasewsl:
-	python.exe -m esptool -p $(PORT) -b 460800 erase_flash
-	

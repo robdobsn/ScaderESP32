@@ -12,9 +12,6 @@
 // Module
 static const char *MODULE_PREFIX = "DetectHardware";
 
-// Initial HW revision
-int DetectHardware::_hardwareRevision = -1;
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Check digital values
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -147,16 +144,10 @@ bool HWDetectConfig::isThisHW(bool forceTestAll)
 // Main detection function
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int DetectHardware::detectHardware()
+void DetectHardware::detectHardware(RaftCoreApp& app)
 {
     // Default to generic
-    _hardwareRevision = HW_IS_GENERIC_BOARD;
-
-#ifdef FEATURE_FORCE_HARDWARE_REVISION
-
-    _hardwareRevision = FEATURE_FORCE_HARDWARE_REVISION;
-
-#else
+    String hwTypeStr = "generic";
 
     // Check for RFID PCB hardware
     // Pins 13, 14, 32 are pulled high on that hardware so try to pull them low with the weak ESP32 internal
@@ -168,7 +159,7 @@ int DetectHardware::detectHardware()
             HWDetectPinDef(32, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
         }).isThisHW(true))
     {
-        _hardwareRevision = HW_IS_RFID_BOARD;
+        hwTypeStr = "rfid";
     }
 
     // Check for Conservatory opener hardware
@@ -178,20 +169,11 @@ int DetectHardware::detectHardware()
             HWDetectPinDef(5, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
         }).isThisHW(true))
     {
-        _hardwareRevision = HW_IS_CONSV_OPENER_BOARD;
+        hwTypeStr = "opener";
     }
 
-    // Assume must be a generic board as light-scader and shades-scader
-    // are handled by a separate buildConfig
-    else
-    {
-        // Default to light scader
-        _hardwareRevision = HW_IS_GENERIC_BOARD;
-    }
+    // Set the hardware revision in the system configuration
+    app.setBaseSysTypeVersion(hwTypeStr.c_str());
 
-#endif
-
-    ESP_LOGI(MODULE_PREFIX, "detectHardware() returning %s (%d)", 
-                getHWRevisionStr(_hardwareRevision), _hardwareRevision);
-    return _hardwareRevision;
+    ESP_LOGI(MODULE_PREFIX, "detectHardware() returning %s", hwTypeStr.c_str());
 }

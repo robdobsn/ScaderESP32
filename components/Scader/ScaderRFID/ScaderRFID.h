@@ -22,6 +22,12 @@ class ScaderRFID : public SysModBase
     static const int DEFAULT_MAX_ELEMS = 2;
     ScaderRFID(const char *pModuleName, RaftJsonIF& sysConfig);
 
+    // Create function (for use by SysManager factory)
+    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderRFID(pModuleName, sysConfig);
+    }
+    
 protected:
 
     // Setup

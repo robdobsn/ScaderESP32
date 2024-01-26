@@ -30,6 +30,12 @@ class ScaderLEDPixels : public SysModBase
   public:
     ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig);
 
+    // Create function (for use by SysManager factory)
+    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderLEDPixels(pModuleName, sysConfig);
+    }
+    
 protected:
 
     // Setup

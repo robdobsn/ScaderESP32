@@ -20,6 +20,12 @@ class ScaderCat : public SysModBase
 public:
     ScaderCat(const char *pModuleName, RaftJsonIF& sysConfig);
 
+    // Create function (for use by SysManager factory)
+    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderCat(pModuleName, sysConfig);
+    }
+    
     // Check if the shade is moving
     bool isBusy(int shadeIdx);
 

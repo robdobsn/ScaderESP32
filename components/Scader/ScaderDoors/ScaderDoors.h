@@ -24,6 +24,12 @@ class ScaderDoors : public SysModBase
     ScaderDoors(const char *pModuleName, RaftJsonIF& sysConfig);
     virtual ~ScaderDoors();
 
+    // Create function (for use by SysManager factory)
+    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderDoors(pModuleName, sysConfig);
+    }
+    
 protected:
 
     // Setup

@@ -21,6 +21,12 @@ class ScaderWaterer : public SysModBase
 public:
     ScaderWaterer(const char *pModuleName, RaftJsonIF& sysConfig);
 
+    // Create function (for use by SysManager factory)
+    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderWaterer(pModuleName, sysConfig);
+    }
+    
     // Check if moving
     bool isBusy();
 

@@ -88,6 +88,12 @@ public:
 
     ScaderShades(const char* pModuleName, RaftJsonIF& sysConfig);
 
+    // Create function (for use by SysManager factory)
+    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderShades(pModuleName, sysConfig);
+    }
+    
     // Perform commands
     bool doCommand(int shadeIdx, String &cmdStr, String &durationStr);
 

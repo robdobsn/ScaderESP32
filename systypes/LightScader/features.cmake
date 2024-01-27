@@ -4,9 +4,6 @@ set(IDF_TARGET "esp32")
 # System version
 add_compile_definitions(SYSTEM_VERSION="6.0.0")
 
-# Scader
-add_compile_definitions(FEATURE_INCLUDE_SCADER)
-
 # Enable the ethernet hardware for Olimex ESP32 PoE-ISO boards
 add_compile_definitions(HW_ETH_PHY_LAN87XX)
 

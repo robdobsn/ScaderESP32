@@ -113,8 +113,7 @@
                 "enable": true,
                 "type": "Papertrail",
                 "host": "logs2.papertrailapp.com",
-                "port": 48992,
-                "sysName": "Scader"
+                "port": 48992
             }
         ]
     },
@@ -170,7 +169,6 @@
         ]
     },
     "ScaderRelays": {
-        "enable": 0,
         "maxElems": 24,
         "SPI_MOSI": 33,
         "SPI_MISO": 32,
@@ -185,7 +183,6 @@
         "pulseCounterPin": 39
     },
     "ScaderLEDPix": {
-        "enable": 0,
         "brightnessPC": 20,
         "strips": [
             {

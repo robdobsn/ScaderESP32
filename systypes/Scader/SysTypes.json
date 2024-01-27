@@ -1,5 +1,5 @@
 {
-    "HWName": "ScaderDefault",
+    "HWName": "DefaultScader",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
@@ -8,24 +8,12 @@
             "NetMan",
             "Scader",
             "SysMan",
-            "ProtExchg",
             "StatsCB"
         ],
-        "pauseWiFiforBLE":1,
         "slowSysModMs": 100,
+        "pauseWiFiforBLE":1,
         "rebootAfterNHours": 24,
         "rebootIfDiscMins": 10
-    },
-    "LogManager": {
-        "logDests": [
-            {
-                "enable": true,
-                "type": "Papertrail",
-                "host": "logs2.papertrailapp.com",
-                "port": 48992,
-                "sysName": "Scader"
-            }
-        ]
     },
     "ProtExchg": {
         "RICSerial":{
@@ -34,6 +22,7 @@
         }
     },
     "NetMan": {
+        "enable": 1,
         "wifiSTAEn": 1,
         "wifiAPEn": 0,
         "ethEn": 0,
@@ -45,9 +34,19 @@
         "wifiAPChannel": 1,
         "wifiAPMaxConn": 4,
         "wifiAPAuthMode": "WPA2_PSK",
+        "ethLanChip": "LAN87XX",
+        "ethPowerPin": 12,
+        "ethMDCPin": 23,
+        "ethMDIOPin": 18,
+        "ethPhyAddr": 0,
+        "ethPhyRstPin": -1,
         "NTPServer": "pool.ntp.org",
         "timezone": "UTC",
         "logLevel": "D"
+    },
+    "ESPOTAUpdate": {
+        "enable": 1,
+        "OTADirect": 1
     },
     "MQTTMan": {
         "enable": true,
@@ -74,9 +73,6 @@
         "NTPServer": "pool.ntp.org",
         "GMTOffsetSecs": 0,
         "DSTOffsetSecs": 0
-    },
-    "ESPOTAUpdate": {
-        "OTADirect": 1
     },
     "WebServer": {
         "enable": 1,
@@ -110,6 +106,17 @@
         "taskStack": 5000,
         "taskPriority": 9
     },
+    "LogManager": {
+        "enable": 1,
+        "logDests": [
+            {
+                "enable": true,
+                "type": "Papertrail",
+                "host": "logs2.papertrailapp.com",
+                "port": 48992
+            }
+        ]
+    },
     "SerialConsole": {
         "enable": 1,
         "uartNum": 0,
@@ -120,6 +127,7 @@
         "logLevel": "D"
     },
     "CommandSerial": {
+        "enable": 0,
         "logLevel": "D",
         "ports": [
         ]
@@ -131,8 +139,8 @@
         "logLevel": "D"
     },
     "FileManager": {
-        "SPIFFSEnabled": 1,
-        "LittleFSEnabled": 0,
+        "enable": 1,
+        "LocalFsDefault": "littlefs",
         "LocalFSFormatIfCorrupt": 1,
         "CacheFileSysInfo": 0,
         "SDEnabled": 0,
@@ -143,6 +151,7 @@
         "SDCS": 13
     },
     "Publish": {
+        "enable": 1,
         "pubList": [
             {
                 "type": "HW",

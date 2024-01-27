@@ -1,13 +1,13 @@
 # Build Project
-BUILD_CONFIG_NAME ?= LightScader
+SYSTYPE ?= LightScader
 DOCKER ?= 1
 WSL ?= 1
 MONITOR ?= SerialMonitor.py
 BUILD_BASE_FOLDER ?= build
 BUILD_RAFT_ARTEFACTS_DIR ?= build_raft_artefacts
-BUILD_DIR = $(BUILD_BASE_FOLDER)/$(BUILD_CONFIG_NAME)
+BUILD_DIR = $(BUILD_BASE_FOLDER)/$(SYSTYPE)
 BUILD_CONFIG_BASE_DIR = systypes
-BUILD_CONFIG_DIR = $(BUILD_CONFIG_BASE_DIR)/$(BUILD_CONFIG_NAME)
+BUILD_CONFIG_DIR = $(BUILD_CONFIG_BASE_DIR)/$(SYSTYPE)
 ROOTDIR = $(realpath $(CURDIR))
 # DOCKER_EXEC ?= docker run --rm -v $(ROOTDIR):/project -w /project espressif/idf:v5.1.2
 DOCKER_EXEC = docker build -t sandbot7builder . && docker run --rm -v $(ROOTDIR):/project -w /project sandbot7builder
@@ -51,15 +51,15 @@ endif
 
 ifeq ($(MONITOR),SerialMonitor.py)
 flash: build
-	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(BUILD_CONFIG_NAME).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
+	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(SYSTYPE).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
 	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/SerialMonitor.py $(PORT) -g
 else ifeq ($(MONITOR),serial-monitor)
 flash: build
-	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(BUILD_CONFIG_NAME).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
+	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(SYSTYPE).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
 	serial-monitor -p $(PORT)
 else
 flash: build
-	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(BUILD_CONFIG_NAME).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
+	$(PYTHON_FOR_FLASH_MONITOR) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(SYSTYPE).bin $(PORT) -s $(BUILD_CONFIG_DIR)/sdkconfig -f spiffs.bin
 endif
 
 .PHONY: build clean flash test

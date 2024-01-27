@@ -9,6 +9,7 @@
 
 #include "RaftCoreApp.h"
 #include "RegisterSysMods.h"
+#include "RegisterWebServer.h"
 #include "DetectHardware.h"
 // Scader components
 #include "ScaderRelays.h"
@@ -30,6 +31,9 @@ extern "C" void app_main(void)
 
     // Register SysMods from RaftSysMods library
     RegisterSysMods::registerSysMods(raftCoreApp.getSysManager());
+
+    // Register WebServer
+    RegisterSysMods::registerWebServer(raftCoreApp.getSysManager(), true);
 
     // Scader components
     raftCoreApp.registerSysMod("ScaderRelays", ScaderRelays::create, true);

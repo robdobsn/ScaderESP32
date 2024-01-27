@@ -237,8 +237,8 @@ export default function ScaderShades(props:ScaderScreenProps) {
               <div className="ScaderElem-lightlevels">
                 <div className="ScaderElem-lightlevels-list">Light levels
                   {/* Light-levels in the lux member of state */}
-                  {state.lux ? state.lux.map((val) => (
-                    <p>{val}</p>
+                  {state.lux ? state.lux.map((val, index) => (
+                    <p key={index}>{val}</p>
                   )) : null}
                 </div>
               </div>

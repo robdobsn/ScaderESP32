@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import './ScaderApp.css';
 import { ScaderCommon } from './ScaderCommon';
 import { ScaderManager } from './ScaderManager';
 import ScaderRelays from './ScaderRelays';
@@ -9,13 +8,15 @@ import ScaderDoors from './ScaderDoors';
 import ScaderLEDPix from './ScaderLEDPix';
 import ScaderOpener from './ScaderOpener';
 import ScaderRFID from './ScaderRFID';
+import ReactDOM from 'react-dom';
+import './ScaderApp.css';
 
 // const testServerPath = "http://localhost:3123";
 const testServerPath = "http://192.168.86.105";
 
 ScaderManager.getInstance().setTestServerPath(testServerPath);
 
-function ScaderApp() {
+export default function ScaderApp() {
 
   const [isEditingMode, setEditingMode] = React.useState(false);
 
@@ -54,7 +55,7 @@ function ScaderApp() {
 
   const bodyClasses = isEditingMode ? "ScaderApp-bodyeditmode" : "ScaderApp-body";
   return (
-    <div className="ScaderApp">
+    <div className="ScaderApp h-full">
     <div className={bodyClasses}>
       {/* Header */}
       <ScaderCommon config={screenProps.config} 
@@ -73,5 +74,5 @@ function ScaderApp() {
   </div>
   );
 }
-  
-export default ScaderApp;
+
+ReactDOM.render(<ScaderApp />, document.getElementById('root'));

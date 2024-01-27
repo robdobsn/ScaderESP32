@@ -15,6 +15,7 @@ set(RAFT_COMPONENTS
     RaftSysMods@ReWorkConfigBase
     RaftI2C@ReWorkConfigBase
     RaftMotorControl@ReWorkConfigBase
+    RaftWebServer@ReWorkConfigBase
 )
 
 # File system
@@ -22,6 +23,5 @@ set(FS_TYPE "littlefs")
 set(FS_IMAGE_PATH "../Common/FSImage")
 
 # Web UI
-# set(UI_SOURCE_PATH "../Common/WebUI")
-# set(WEB_UI_GEN_FLAGS --deletefirst)
-# set(WEB_UI_GEN_FLAGS --deletefirst --nogzip)
+set(UI_SOURCE_PATH "../Common/WebUI")
+# set(WEB_UI_GEN_FLAGS --nogzip)

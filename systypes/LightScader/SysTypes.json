@@ -22,6 +22,7 @@
         }
     },
     "NetMan": {
+        "enable": 1,
         "wifiSTAEn": 1,
         "wifiAPEn": 0,
         "ethEn": 1,
@@ -106,6 +107,7 @@
         "taskPriority": 9
     },
     "LogManager": {
+        "enable": 1,
         "logDests": [
             {
                 "enable": true,
@@ -168,7 +170,7 @@
         ]
     },
     "ScaderRelays": {
-        "enable": 1,
+        "enable": 0,
         "maxElems": 24,
         "SPI_MOSI": 33,
         "SPI_MISO": 32,
@@ -183,7 +185,7 @@
         "pulseCounterPin": 39
     },
     "ScaderLEDPix": {
-        "enable": 1,
+        "enable": 0,
         "brightnessPC": 20,
         "strips": [
             {

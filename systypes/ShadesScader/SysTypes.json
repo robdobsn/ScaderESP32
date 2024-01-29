@@ -68,12 +68,6 @@
             }
         ]
     },
-    "NTPClient": {
-        "enable": 1,
-        "NTPServer": "pool.ntp.org",
-        "GMTOffsetSecs": 0,
-        "DSTOffsetSecs": 0
-    },
     "WebServer": {
         "enable": 1,
         "webServerPort": 80,

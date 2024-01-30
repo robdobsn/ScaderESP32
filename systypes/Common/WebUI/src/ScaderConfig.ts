@@ -11,6 +11,10 @@ export class DoorConfig {
     name: string = "";
 }
 
+export class PulseCounterConfig {
+    name: string = "";
+}
+
 export class ScaderConfig {
     ScaderCommon: {
         name: string,
@@ -24,14 +28,12 @@ export class ScaderConfig {
         maxElems: number,
         name: string,
         elems: Array<RelayConfig>;
-        enablePulseCounter: boolean,
         relays?: Array<RelayConfig>;
     } = {
         enable: false,
         maxElems: 24,
         name: "ScaderRelays",
-        elems: [],
-        enablePulseCounter: false
+        elems: []
     }
     ScaderCat: {
         enable: boolean
@@ -95,5 +97,12 @@ export class ScaderConfig {
     } = {
         enable: false,
         name: "ScaderRFID",
+    }
+    ScaderPulseCounter: {
+        enable: boolean,
+        name: string,
+    } = {
+        enable: false,
+        name: "ScaderPulseCounter",
     }
 }

@@ -92,14 +92,29 @@ export class ScaderOpenerStates {
         }
     }
 }
+
+export class ScaderPulseCounterStates {
+    module: string = "";
+    pulseCount?: number = 0;
+    constructor(obj: any) {
+        if (obj) {
+            if (obj.module)
+                this.module = obj.module;
+            if (obj.pulseCount)
+                this.pulseCount = obj.pulseCount;
+        }
+    }
+}
+
 export class ScaderState {
     ScaderRelays: ScaderRelayStates = {} as ScaderRelayStates;
     ScaderShades: ScaderShadeStates = {} as ScaderShadeStates;
     ScaderDoors: ScaderDoorStates = {} as ScaderDoorStates;
     ScaderLEDPix: ScaderLEDPixStates = {} as ScaderLEDPixStates;
     ScaderOpener: ScaderOpenerStates = {} as ScaderOpenerStates;
+    ScaderPulseCounter: ScaderPulseCounterStates = {} as ScaderPulseCounterStates;
 }
 
 export type ScaderStateType = 
-    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates | ScaderOpenerStates;
+    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates | ScaderOpenerStates | ScaderPulseCounterStates;
     

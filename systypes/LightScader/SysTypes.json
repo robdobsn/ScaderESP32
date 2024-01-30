@@ -159,6 +159,19 @@
                         "rateHz": 0.1
                     }
                 ]
+            },
+            {
+                "type": "HW",
+                "name": "ScaderPulseCounter",
+                "trigger": "Time",
+                "msgID": "ScaderPulseCounter",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
             }
         ]
     },
@@ -172,9 +185,7 @@
         "SPI_CS3": 13,
         "ONOFF_KEY": 34,
         "MAINS_SYNC": 35,
-        "mainsSync": false,
-        "enablePulseCounter": false,
-        "pulseCounterPin": 39
+        "mainsSync": false
     },
     "ScaderLEDPix": {
         "brightnessPC": 20,
@@ -194,5 +205,8 @@
                 }
             ]                
         }
+    },
+    "ScaderPulseCounter": {
+        "pulseCounterPin": 39
     }
 }

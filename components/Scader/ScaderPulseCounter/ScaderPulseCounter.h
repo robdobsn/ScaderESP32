@@ -13,22 +13,22 @@
 #include "RaftJsonIF.h"
 #include "SysModBase.h"
 #include "ScaderCommon.h"
-#include "driver/spi_master.h"
+#include "DebounceButton.h"
 
 class APISourceInfo;
 
-class ScaderRelays : public SysModBase
+class ScaderPulseCounter : public SysModBase
 {
 public:
     static const int DEFAULT_MAX_ELEMS = 24;
     static const int ELEMS_PER_CHIP = 8;
     static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
-    ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig);
+    ScaderPulseCounter(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
     static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
-        return new ScaderRelays(pModuleName, sysConfig);
+        return new ScaderPulseCounter(pModuleName, sysConfig);
     }
 
 protected:
@@ -53,38 +53,19 @@ private:
     // Initialised flag
     bool _isInitialised = false;
 
-    // Settings
-    uint32_t _maxElems = DEFAULT_MAX_ELEMS;
-
-    // SPI control
-    int _spiMosi = -1;
-    int _spiMiso = -1;
-    int _spiClk = -1;
-    int _spiChipSelects[SPI_MAX_CHIPS] = {};
-
-    // SPI device handles
-    spi_device_handle_t _spiDeviceHandles[SPI_MAX_CHIPS] = {};
-
-    // On/Off Key
-    int _onOffKey = -1;
-
-    // Mains sync detection
-    int _mainsSyncPin = -1;
-    bool _enableMainsSync = false;
-
     // Names of control elements
-    std::vector<String> _elemNames;
-
-    // Current state of elements
-    std::vector<bool> _elemStates;
+    String _pulseCountName;
 
     // Mutable data saving
     static const uint32_t MUTABLE_DATA_SAVE_MIN_MS = 5000;
     uint32_t _mutableDataChangeLastMs = 0;
     bool _mutableDataDirty = false;
 
-    // Helpers
-    bool applyCurrentState();
+    // Pulse counter functionality
+    int _pulseCounterPin = -1;
+    DebounceButton _pulseCounterButton;
+    void pulseCounterCallback(bool val, uint32_t msSinceLastChange, uint16_t repeatCount);
+    uint32_t _pulseCount = 0;
 
     // Helper functions
     void deinit();
@@ -93,19 +74,6 @@ private:
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
 
-    // Mains sync ISR
-    static void IRAM_ATTR mainsSyncISRStatic(void *pArg)
-    {
-        // if (pArg)
-        //     ((ScaderRelays *)pArg)->mainsSyncISR();
-    }
-    // void IRAM_ATTR mainsSyncISR();
-
-    // Relay states, etc
+    // Pulse count
     RaftJsonNVS _scaderModuleState;
-
-    // TODO
-    // Debug count of ISR
-    volatile uint32_t _isrCount = 0;
-    uint32_t _debugServiceLastMs = 0;
 };

@@ -8,6 +8,7 @@ import ScaderDoors from './ScaderDoors';
 import ScaderLEDPix from './ScaderLEDPix';
 import ScaderOpener from './ScaderOpener';
 import ScaderRFID from './ScaderRFID';
+import ScaderPulseCounter from './ScaderPulseCounter';
 import ReactDOM from 'react-dom';
 import './ScaderApp.css';
 
@@ -70,6 +71,7 @@ export default function ScaderApp() {
       {<ScaderLEDPix {...screenProps} />}
       {<ScaderOpener {...screenProps} />}
       {<ScaderRFID {...screenProps} />}
+      {<ScaderPulseCounter {...screenProps} />}
     </div>
   </div>
   );

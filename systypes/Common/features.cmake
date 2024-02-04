@@ -2,7 +2,7 @@
 set(IDF_TARGET "esp32")
 
 # System version
-add_compile_definitions(SYSTEM_VERSION="6.0.5")
+add_compile_definitions(SYSTEM_VERSION="6.0.7")
 
 # Raft components
 set(RAFT_COMPONENTS

@@ -33,8 +33,8 @@
 #ifndef TinyPICO_h
     #define TinyPICO_h
 
-    #include <stdint.h>
-    #include <RaftArduino.h>
+    #include <cstdint>
+    #include "RaftArduino.h"
 
     // #include <SPI.h>
 

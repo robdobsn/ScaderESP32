@@ -6,20 +6,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include <ScaderDoors.h>
-#include <ConfigPinMap.h>
-#include <RaftUtils.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
-#include <CommsCoreIF.h>
-#include <NetworkSystem.h>
-#include <CommsChannelMsg.h>
-#include <JSONParams.h>
-#include <ESPUtils.h>
-#include <time.h>
-#include <driver/gpio.h>
+#include <ctime>
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "ScaderDoors.h"
+#include "ConfigPinMap.h"
+#include "RaftUtils.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
+#include "CommsCoreIF.h"
+#include "NetworkSystem.h"
+#include "CommsChannelMsg.h"
+#include "ESPUtils.h"
+#include "driver/gpio.h"
 
 static const char *MODULE_PREFIX = "ScaderDoors";
 
@@ -27,9 +26,9 @@ static const char *MODULE_PREFIX = "ScaderDoors";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderDoors::ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
-          _scaderCommon(*this, pModuleName)
+ScaderDoors::ScaderDoors(const char *pModuleName, RaftJsonIF& sysConfig)
+    : RaftSysMod(pModuleName, sysConfig),
+          _scaderCommon(*this, sysConfig, pModuleName)
 {
 }
 
@@ -95,7 +94,7 @@ void ScaderDoors::setup()
         // Set names
         for (int i = 0; i < numNames; i++)
         {
-            JSONParams elemInfo = elemInfos[i];
+            RaftJson elemInfo = elemInfos[i];
             _elemNames[i] = elemInfo.getString("name", ("Door " + String(i+1)).c_str());
             LOG_I(MODULE_PREFIX, "Door %d name %s", i+1, _elemNames[i].c_str());
         }
@@ -117,7 +116,7 @@ void ScaderDoors::setup()
         }
 
         // Extract door config
-        ConfigBase doorConfig(doorConfigStr);
+        RaftJson doorConfig(doorConfigStr);
 
         // Get active/sense levels of pins
         bool strikePinUnlockLevel = doorConfig.getBool("strikeOn", false);
@@ -179,10 +178,10 @@ void ScaderDoors::setup()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Service
+// Loop
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::service()
+void ScaderDoors::loop()
 {
     // Check if initialised
     if (!_isInitialised)
@@ -319,7 +318,7 @@ RaftRetCode ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const
     std::vector<String> params;
     std::vector<RaftJson::NameValuePair> nameValues;
     RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
-    JSONParams paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
+    RaftJson paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
 
     // Publish to MQTT
     String tagID = paramsJSON.getString("tagID", "");

@@ -9,30 +9,35 @@
 
 #pragma once
 
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <SysModBase.h>
-#include <ScaderCommon.h>
-#include "DebounceButton.h"
-#include <driver/spi_master.h>
+#include "RaftUtils.h"
+#include "RaftJsonIF.h"
+#include "RaftSysMod.h"
+#include "ScaderCommon.h"
+#include "driver/spi_master.h"
 
 class APISourceInfo;
 
-class ScaderRelays : public SysModBase
+class ScaderRelays : public RaftSysMod
 {
-  public:
+public:
     static const int DEFAULT_MAX_ELEMS = 24;
     static const int ELEMS_PER_CHIP = 8;
     static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
-    ScaderRelays(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig);
+
+    // Create function (for use by SysManager factory)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderRelays(pModuleName, sysConfig);
+    }
 
 protected:
 
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
-    virtual void service() override final;
+    // Loop (called frequently)
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;
@@ -78,13 +83,6 @@ private:
     uint32_t _mutableDataChangeLastMs = 0;
     bool _mutableDataDirty = false;
 
-    // Pulse counter functionality
-    bool _pulseCounterEnabled = false;
-    int _pulseCounterPin = -1;
-    DebounceButton _pulseCounterButton;
-    void pulseCounterCallback(bool val, uint32_t msSinceLastChange, uint16_t repeatCount);
-    uint32_t _pulseCount = 0;
-
     // Helpers
     bool applyCurrentState();
 
@@ -102,6 +100,9 @@ private:
         //     ((ScaderRelays *)pArg)->mainsSyncISR();
     }
     // void IRAM_ATTR mainsSyncISR();
+
+    // Relay states, etc
+    RaftJsonNVS _scaderModuleState;
 
     // TODO
     // Debug count of ISR

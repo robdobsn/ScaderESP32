@@ -8,29 +8,35 @@
 
 #pragma once
 
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <SysModBase.h>
-#include <ScaderCommon.h>
-#include <DoorStrike.h>
-#include <ThreadSafeQueue.h>
+#include "RaftUtils.h"
+#include "RaftJsonIF.h"
+#include "RaftSysMod.h"
+#include "ScaderCommon.h"
+#include "DoorStrike.h"
+#include "ThreadSafeQueue.h"
 
 class APISourceInfo;
 
-class ScaderDoors : public SysModBase
+class ScaderDoors : public RaftSysMod
 {
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
-    ScaderDoors(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderDoors(const char *pModuleName, RaftJsonIF& sysConfig);
     virtual ~ScaderDoors();
 
+    // Create function (for use by SysManager factory)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderDoors(pModuleName, sysConfig);
+    }
+    
 protected:
 
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
-    virtual void service() override final;
+    // Loop (called frequently)
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;

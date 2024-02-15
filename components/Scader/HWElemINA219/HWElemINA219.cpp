@@ -7,8 +7,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "HWElemINA219.h"
-#include <Logger.h>
-#include <Utils.h>
+#include "Logger.h"
+#include "Utils.h"
 #include "BusRequestResult.h"
 
 static const char *MODULE_PREFIX = "HWElemINA219";
@@ -40,7 +40,7 @@ HWElemINA219::~HWElemINA219()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void HWElemINA219::setup(ConfigBase &config, ConfigBase* pDefaults)
+void HWElemINA219::setup(const RaftJsonIF &config, RaftJsonIF* pDefaults)
 {
     // Base setup
     HWElemBase::setup(config, pDefaults);

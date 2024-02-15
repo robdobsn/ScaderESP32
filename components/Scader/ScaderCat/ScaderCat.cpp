@@ -7,11 +7,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderCat.h"
-#include <RaftArduino.h>
-#include <ConfigPinMap.h>
-#include <RaftUtils.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
+#include "RaftArduino.h"
+#include "ConfigPinMap.h"
+#include "RaftUtils.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
 
 static const char *MODULE_PREFIX = "ScaderCat";
 
@@ -19,8 +19,8 @@ static const char *MODULE_PREFIX = "ScaderCat";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderCat::ScaderCat(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true)
+ScaderCat::ScaderCat(const char *pModuleName, RaftJsonIF& sysConfig)
+    : RaftSysMod(pModuleName, sysConfig)
 {
 }
 

@@ -6,20 +6,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include <ScaderRFID.h>
-#include <ConfigPinMap.h>
-#include <RaftUtils.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
-#include <NetworkSystem.h>
-#include <CommsChannelMsg.h>
-#include <JSONParams.h>
-#include <ESPUtils.h>
 #include <time.h>
-#include <driver/gpio.h>
-#include <CommsCoreIF.h>
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "ScaderRFID.h"
+#include "ConfigPinMap.h"
+#include "RaftUtils.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
+#include "NetworkSystem.h"
+#include "CommsChannelMsg.h"
+#include "ESPUtils.h"
+#include "driver/gpio.h"
+#include "CommsCoreIF.h"
 #include "RFIDModule_EccelA1SPI.h"
 
 static const char *MODULE_PREFIX = "ScaderRFID";
@@ -28,9 +27,9 @@ static const char *MODULE_PREFIX = "ScaderRFID";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderRFID::ScaderRFID(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
-          _scaderCommon(*this, pModuleName)
+ScaderRFID::ScaderRFID(const char *pModuleName, RaftJsonIF& sysConfig)
+    : RaftSysMod(pModuleName, sysConfig),
+          _scaderCommon(*this, sysConfig, pModuleName)
 {
 }
 
@@ -121,10 +120,10 @@ void ScaderRFID::setup()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Service
+// Loop (called frequently)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderRFID::service()
+void ScaderRFID::loop()
 {
     // Check if initialised
     if (!_isInitialised)
@@ -222,7 +221,7 @@ RaftRetCode ScaderRFID::apiDoorStatusChange(const String &reqStr, String &respSt
     std::vector<String> params;
     std::vector<RaftJson::NameValuePair> nameValues;
     RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
-    JSONParams paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
+    RaftJson paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
 
     // Result
     bool rslt = true;

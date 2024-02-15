@@ -9,20 +9,20 @@
 
 #pragma once
 
-#include <RaftArduino.h>
-#include <SysModBase.h>
-#include <SpiramAwareAllocator.h>
-#include <APISourceInfo.h>
+#include "RaftArduino.h"
+#include "RaftSysMod.h"
+#include "SpiramAwareAllocator.h"
+#include "APISourceInfo.h"
 #include "RestAPIEndpointManager.h"
 #include "RaftUtils.h"
 #include "FileSystem.h"
 
 template <class T>
-class SampleCollector : public SysModBase
+class SampleCollector : public RaftSysMod
 {
 public:
-    SampleCollector(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-        :   SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig)
+    SampleCollector(const char* pModuleName, RaftJsonIF& sysConfig)
+        :   RaftSysMod(pModuleName, sysConfig)
     {
     }
     virtual ~SampleCollector()
@@ -101,8 +101,8 @@ protected:
     virtual void setup() override final
     {}
 
-    // Service
-    virtual void service() override final
+    // Loop - called frequently
+    virtual void loop() override final
     {}
 
     // Add endpoints

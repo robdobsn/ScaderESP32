@@ -8,10 +8,10 @@
 
 #include "AS5600Sensor.h"
 #include "BusBase.h"
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <BusRequestInfo.h>
-#include <BusRequestResult.h>
+#include "RaftUtils.h"
+#include "RaftJsonIF.h"
+#include "BusRequestInfo.h"
+#include "BusRequestResult.h"
 
 // Module prefix
 static const char *MODULE_PREFIX = "AS5600Sensor";
@@ -34,22 +34,22 @@ AS5600Sensor::~AS5600Sensor()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void AS5600Sensor::setup(ConfigBase& config, const char* pConfigPrefix, BusBase* pBus)
+void AS5600Sensor::setup(RaftJsonIF& config, BusBase* pBus)
 {
     // Store bus
     _pBus = pBus;
 
     // Get address
-    _i2cAddr = config.getLong("i2cAddr", AS5600_DEFAULT_I2C_ADDR, pConfigPrefix);
+    _i2cAddr = config.getLong("i2cAddr", AS5600_DEFAULT_I2C_ADDR);
 
     // Get poll rate
-    _pollRatePerSec = config.getLong("pollsPerSec", AS5600_DEFAULT_POLL_RATE_PER_SEC, pConfigPrefix);
+    _pollRatePerSec = config.getLong("pollsPerSec", AS5600_DEFAULT_POLL_RATE_PER_SEC);
 
     // Check if rotation direction is reversed (default to reverse as AS5600 values increase CCW normally)
-    _rotationDirectionReversed = config.getBool("reverse", true, pConfigPrefix);
+    _rotationDirectionReversed = config.getBool("reverse", true);
 
     // Get hysteresis
-    double hysteresis = config.getDouble("hysteresis", 150.0, pConfigPrefix);
+    double hysteresis = config.getDouble("hysteresis", 150.0);
     _angleFilter.setHysteresis(hysteresis);
 
     // Log

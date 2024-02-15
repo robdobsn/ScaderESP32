@@ -8,10 +8,9 @@
 
 #include "MT6701Sensor.h"
 #include "BusBase.h"
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <BusRequestInfo.h>
-#include <BusRequestResult.h>
+#include "RaftUtils.h"
+#include "BusRequestInfo.h"
+#include "BusRequestResult.h"
 
 // Module prefix
 static const char *MODULE_PREFIX = "MT6701Sensor";
@@ -34,22 +33,22 @@ MT6701Sensor::~MT6701Sensor()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MT6701Sensor::setup(ConfigBase& config, const char* pConfigPrefix, BusBase* pBus)
+void MT6701Sensor::setup(RaftJsonIF& config, BusBase* pBus)
 {
     // Store bus
     _pBus = pBus;
 
     // Get address
-    uint32_t i2cAddr = config.getLong("i2cAddr", MT6701_DEFAULT_I2C_ADDR, pConfigPrefix);
+    uint32_t i2cAddr = config.getLong("i2cAddr", MT6701_DEFAULT_I2C_ADDR);
 
     // Get poll rate
-    uint32_t pollRatePerSec = config.getLong("pollsPerSec", MT6701_DEFAULT_POLL_RATE_PER_SEC, pConfigPrefix);
+    uint32_t pollRatePerSec = config.getLong("pollsPerSec", MT6701_DEFAULT_POLL_RATE_PER_SEC);
 
     // Check if rotation direction is reversed (default to reverse as MT6701 values increase CCW normally)
-    _rotationDirectionReversed = config.getBool("reverse", true, pConfigPrefix);
+    _rotationDirectionReversed = config.getBool("reverse", true);
 
     // Get hysteresis
-    double hysteresis = config.getDouble("hysteresis", 150.0, pConfigPrefix);
+    double hysteresis = config.getDouble("hysteresis", 150.0);
     _angleFilter.setHysteresis(hysteresis);
 
     // Command to get MT6701 data

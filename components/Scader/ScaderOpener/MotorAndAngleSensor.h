@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include <MotorControl.h>
-#include <BusSerial.h>
-#include <BusI2C.h>
-#include <AS5600Sensor.h>
-#include <MovingRate.h>
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "MotorControl.h"
+#include "BusSerial.h"
+#include "BusI2C.h"
+#include "AS5600Sensor.h"
+#include "MovingRate.h"
 
 class MotorAndAngleSensor
 {
@@ -24,7 +24,7 @@ public:
     virtual ~MotorAndAngleSensor();
 
     // Setup
-    void setup(ConfigBase& config, String configPrefix);
+    void setup(RaftJsonIF& config);
 
     // Service
     void service();

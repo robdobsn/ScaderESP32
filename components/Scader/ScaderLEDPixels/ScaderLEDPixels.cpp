@@ -6,20 +6,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include "ScaderLEDPixels.h"
-#include <ConfigPinMap.h>
-#include <RaftUtils.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
-#include <JSONParams.h>
-#include "time.h"
+#include <ctime>
 #include "driver/gpio.h"
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "ScaderLEDPixels.h"
+#include "ConfigPinMap.h"
+#include "RaftUtils.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
 #include "LEDPatternRainbowSnake.h"
 
 #ifdef USE_FASTLED_LIBRARY
-// #include <FastLED.h>
+// #include "FastLED.h"
 
 // #define NUM_STRIPS 2
 // #define NUM_LEDS_PER_STRIP 100
@@ -45,9 +44,9 @@ static const char *MODULE_PREFIX = "ScaderLEDPixels";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true),
-          _scaderCommon(*this, pModuleName)
+ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig)
+    : RaftSysMod(pModuleName, sysConfig),
+          _scaderCommon(*this, sysConfig, pModuleName)
 {
 }
 
@@ -70,8 +69,9 @@ void ScaderLEDPixels::setup()
     }
 
     // Setup LEDs
-    bool rslt = _ledPixels.setup(configGetConfig(), "");
-    bool rslt2 = _ledPixels2.setup(configGetConfig(), "ledpix2");
+    bool rslt = _ledPixels.setup(modConfig());
+    RaftJsonPrefixed config2(modConfig(), "ledpix2");
+    bool rslt2 = _ledPixels2.setup(config2);
 
     // Patterns
 #ifndef RUN_PATTERNS_IN_SYSMOD
@@ -112,7 +112,7 @@ void ScaderLEDPixels::setup()
     if (configGetArrayElems("strips", stripInfos))
     {
         // Create LED info (one for all strips)
-        for (const JSONParams& stripInfo : stripInfos)
+        for (const RaftJson& stripInfo : stripInfos)
         {
             totalNumPix += stripInfo.getLong("num", 0);
         }
@@ -123,7 +123,7 @@ void ScaderLEDPixels::setup()
         for (size_t i = 0; i < stripInfos.size(); i++)
         {
             // Get strip info
-            JSONParams stripInfo = stripInfos[i];
+            RaftJson stripInfo = stripInfos[i];
 
             // Extract pin and number of pixels
             uint8_t pixPin = stripInfo.getLong("pin", 0);
@@ -154,7 +154,7 @@ void ScaderLEDPixels::setup()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Service
+// Loop (called frequently)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // int blinkyLed = 0;
@@ -162,7 +162,7 @@ void ScaderLEDPixels::setup()
 // static const int TAIL_LEN = 20;
 // #define NUM_LEDS 100
 
-void ScaderLEDPixels::service()
+void ScaderLEDPixels::loop()
 {
 //   for (int i = 0; i < TAIL_LEN+1; i++)
 //   {

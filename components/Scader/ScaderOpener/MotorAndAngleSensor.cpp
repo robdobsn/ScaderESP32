@@ -37,7 +37,7 @@ MotorAndAngleSensor::~MotorAndAngleSensor()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::setup(ConfigBase& config, String configPrefix)
+void MotorAndAngleSensor::setup(RaftJsonIF& config)
 {
     // Check if already setup
     if (_pBusSerial)
@@ -50,7 +50,8 @@ void MotorAndAngleSensor::setup(ConfigBase& config, String configPrefix)
     _pBusSerial = new BusSerial(nullptr, nullptr);
     if (_pBusSerial)
     {
-        _pBusSerial->setup(config, (configPrefix + "/MotorSerial").c_str());
+        RaftJsonPrefixed motorSerialConfig(config, "MotorSerial");
+        _pBusSerial->setup(motorSerialConfig);
     }
     else
     {
@@ -61,7 +62,8 @@ void MotorAndAngleSensor::setup(ConfigBase& config, String configPrefix)
     _pStepper = new MotorControl();
     if (_pStepper)
     {
-        _pStepper->setup(config, nullptr, (configPrefix + "/DoorMotor").c_str());
+        RaftJsonPrefixed doorMotorConfig(config, "DoorMotor");
+        _pStepper->setup(doorMotorConfig);
         _pStepper->setBusNameIfValid(_pBusSerial ? _pBusSerial->getBusName().c_str() : nullptr);
         _pStepper->connectToBus(_pBusSerial);
         _pStepper->postSetup();
@@ -82,10 +84,12 @@ void MotorAndAngleSensor::setup(ConfigBase& config, String configPrefix)
         _pStepper->setMaxMotorCurrentAmps(0, maxMotorCurrentAmps);
 
     // Setup I2C
-    _busI2C.setup(config, (configPrefix + "/BusI2C").c_str());
+    RaftJsonPrefixed i2cConfig(config, "BusI2C");
+    _busI2C.setup(i2cConfig);
 
     // Rotation sensor address
-    _rotationSensor.setup(config, (configPrefix + "/AngleSensor").c_str(), &_busI2C);
+    RaftJsonPrefixed angleSensorConfig(config, "AngleSensor");
+    _rotationSensor.setup(angleSensorConfig, &_busI2C);
 
     // Set hysteresis for angle filter
     _rotationSensor.setHysteresis(1);

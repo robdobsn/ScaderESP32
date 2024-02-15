@@ -9,11 +9,10 @@
 
 #pragma once
 
-#include <RaftArduino.h>
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <ScaderCommon.h>
-#include <SysModBase.h>
+#include "RaftArduino.h"
+#include "RaftUtils.h"
+#include "ScaderCommon.h"
+#include "RaftSysMod.h"
 
 class APISourceInfo;
 
@@ -76,7 +75,7 @@ public:
     }
 };
 
-class ScaderShades : public SysModBase
+class ScaderShades : public RaftSysMod
 {
 public:
     static const int DEFAULT_MAX_ELEMS = 5;
@@ -87,8 +86,14 @@ public:
     static const int SHADE_DOWN_BIT_MASK = 4;
     static const int BITS_PER_SHADE = 3;
 
-    ScaderShades(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderShades(const char* pModuleName, RaftJsonIF& sysConfig);
 
+    // Create function (for use by SysManager factory)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderShades(pModuleName, sysConfig);
+    }
+    
     // Perform commands
     bool doCommand(int shadeIdx, String &cmdStr, String &durationStr);
 
@@ -100,8 +105,8 @@ protected:
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
-    virtual void service() override final;
+    // Loop (called frequently)
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;

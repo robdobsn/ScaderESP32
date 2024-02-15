@@ -6,12 +6,12 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <RaftArduino.h>
-#include <RaftUtils.h>
-#include <ScaderWaterer.h>
-#include <ConfigPinMap.h>
-#include <RestAPIEndpointManager.h>
-#include <SysManager.h>
+#include "RaftArduino.h"
+#include "RaftUtils.h"
+#include "ScaderWaterer.h"
+#include "ConfigPinMap.h"
+#include "RestAPIEndpointManager.h"
+#include "SysManager.h"
 
 static const char *MODULE_PREFIX = "ScaderWaterer";
 
@@ -19,8 +19,8 @@ static const char *MODULE_PREFIX = "ScaderWaterer";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderWaterer::ScaderWaterer(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig)
-    : SysModBase(pModuleName, defaultConfig, pGlobalConfig, pMutableConfig, NULL, true)
+ScaderWaterer::ScaderWaterer(const char *pModuleName, RaftJsonIF& sysConfig)
+    : RaftSysMod(pModuleName, sys)
 {
     // Init
     _isEnabled = false;

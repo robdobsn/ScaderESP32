@@ -8,19 +8,18 @@
 
 #pragma once
 
-#include <Logger.h>
-#include <RaftArduino.h>
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <driver/ledc.h>
-#include <stdint.h>
+#include <cstdint>
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "RaftUtils.h"
+#include "driver/ledc.h"
 
 class PumpControl
 {
 public:
     PumpControl();
     virtual ~PumpControl();
-    void setup(ConfigBase& config);
+    void setup(RaftJsonIF& config);
     void service();
     bool isBusy();
     void deinit();

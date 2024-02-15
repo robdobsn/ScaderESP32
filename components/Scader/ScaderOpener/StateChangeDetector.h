@@ -9,7 +9,7 @@
 #pragma once
 
 #include <functional>
-#include <RaftArduino.h>
+#include "RaftArduino.h"
 
 typedef std::function<void(bool isActive, uint32_t msSinceLastChange)> StateChangeDetectorCallback;
 

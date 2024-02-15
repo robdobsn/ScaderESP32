@@ -8,8 +8,8 @@
 
 #include "DoorOpener.h"
 #include "ConfigPinMap.h"
-#include <MotorControl.h>
-#include <HWElemConsts.h>
+#include "MotorControl.h"
+#include "HWElemConsts.h"
 
 #define DEBUG_DOOR_OPENER_STATUS_RATE_MS 5000
 
@@ -28,10 +28,11 @@ DoorOpener::~DoorOpener()
 /// Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::setup(ConfigBase& config)
+void DoorOpener::setup(RaftJsonIF& config)
 {
     // Setup motor and angle sensor
-    _motorAndAngleSensor.setup(config, "MotorAndAngleSensor");
+    RaftJsonPrefixed motorAndAngleSensorConfig(config, "MotorAndAngleSensor");
+    _motorAndAngleSensor.setup(motorAndAngleSensorConfig);
 
     // Record config
     recordConfig(config);

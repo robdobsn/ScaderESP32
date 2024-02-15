@@ -7,13 +7,10 @@
 
 #include "DetectHardware.h"
 #include "esp_log.h"
-#include <SimpleMovingAverage.h>
+#include "SimpleMovingAverage.h"
 
 // Module
 static const char *MODULE_PREFIX = "DetectHardware";
-
-// Initial HW revision
-int DetectHardware::_hardwareRevision = -1;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Check digital values
@@ -147,10 +144,10 @@ bool HWDetectConfig::isThisHW(bool forceTestAll)
 // Main detection function
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int DetectHardware::detectHardware()
+void DetectHardware::detectHardware(RaftCoreApp& app)
 {
     // Default to generic
-    _hardwareRevision = HW_IS_GENERIC_BOARD;
+    String hwTypeStr = "generic";
 
     // Check for RFID PCB hardware
     // Pins 13, 14, 32 are pulled high on that hardware so try to pull them low with the weak ESP32 internal
@@ -162,7 +159,7 @@ int DetectHardware::detectHardware()
             HWDetectPinDef(32, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
         }).isThisHW(true))
     {
-        _hardwareRevision = HW_IS_RFID_BOARD;
+        hwTypeStr = "rfid";
     }
 
     // Check for Conservatory opener hardware
@@ -172,30 +169,11 @@ int DetectHardware::detectHardware()
             HWDetectPinDef(5, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
         }).isThisHW(true))
     {
-        _hardwareRevision = HW_IS_CONSV_OPENER_BOARD;
+        hwTypeStr = "opener";
     }
 
-    // Assume must be light-scaders
-    else
-    {
-        // Default to light scader
-        _hardwareRevision = HW_IS_LIGHT_SCADER_BOARD;
+    // Set the hardware revision in the system configuration
+    app.setBaseSysTypeVersion(hwTypeStr.c_str());
 
-        // Check for scader shades
-        // Pins 4, 13, 14 and 16 are pulled low on scader shades
-        if (HWDetectConfig(
-            {
-                HWDetectPinDef(4, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-                HWDetectPinDef(13, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH),
-                HWDetectPinDef(14, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-                HWDetectPinDef(16, HWDetectPinDef::PIN_EXPECTED_HELD_HIGH)
-            }).isThisHW())
-        {
-            _hardwareRevision = HW_IS_SCADER_SHADES_BOARD;
-        }
-    }
-
-    ESP_LOGI(MODULE_PREFIX, "detectHardware() returning %s (%d)", 
-                getHWRevisionStr(_hardwareRevision), _hardwareRevision);
-    return _hardwareRevision;
+    ESP_LOGI(MODULE_PREFIX, "detectHardware() returning %s", hwTypeStr.c_str());
 }

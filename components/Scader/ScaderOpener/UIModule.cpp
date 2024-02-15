@@ -6,12 +6,12 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <Logger.h>
-#include <RaftUtils.h>
-#include <UIModule.h>
-#include <driver/uart.h>
-#include <SpiramAwareAllocator.h>
-#include <JSONParams.h>
+#include "Logger.h"
+#include "RaftUtils.h"
+#include "UIModule.h"
+#include "driver/uart.h"
+#include "SpiramAwareAllocator.h"
+#include "RaftJson.h"
 
 static const char *MODULE_PREFIX = "UIModule";
 
@@ -41,7 +41,7 @@ UIModule::~UIModule()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void UIModule::setup(ConfigBase &config, OpenerStatus* pOpenerParams)
+void UIModule::setup(RaftJsonIF &config, OpenerStatus* pOpenerParams)
 {
     // Clear previous if we've been here before
     if (_isInitialised)
@@ -184,8 +184,8 @@ void UIModule::service()
 
 void UIModule::processStatus(const String &status)
 {
-    // Use JSONParams
-    JSONParams params(status);
+    // Use JSON
+    RaftJson params(status);
 
     // Get the status
     String cmdStr = params.getString("cmd", "");

@@ -8,19 +8,24 @@
 
 #pragma once
 
-#include <RaftArduino.h>
-#include <ConfigBase.h>
-#include <ScaderCommon.h>
-#include <RaftUtils.h>
-#include <SysModBase.h>
+#include "RaftArduino.h"
+#include "ScaderCommon.h"
+#include "RaftUtils.h"
+#include "RaftSysMod.h"
 
 class APISourceInfo;
 
-class ScaderCat : public SysModBase
+class ScaderCat : public RaftSysMod
 {
 public:
-    ScaderCat(const char *pModuleName, ConfigBase &defaultConfig, ConfigBase *pGlobalConfig, ConfigBase *pMutableConfig);
+    ScaderCat(const char *pModuleName, RaftJsonIF& sysConfig);
 
+    // Create function (for use by SysManager factory)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    {
+        return new ScaderCat(pModuleName, sysConfig);
+    }
+    
     // Check if the shade is moving
     bool isBusy(int shadeIdx);
 
@@ -29,7 +34,7 @@ protected:
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
+    // Loop (called frequently)
     virtual void service() override final;
 
     // Add endpoints

@@ -1,6 +1,8 @@
 build
-builds
+logs
 sdkconfig
+build_raft_artefacts
+managed_components
 compile_commands_win.json
 *.pyc
 logs/
@@ -10,23 +12,6 @@ scripts/config.ini
 .venv
 test/eepromPartitionTest/prewritedata.bin
 test/eepromPartitionTest/readbackdata.bin
+node_modules
 
-# Generated updater files
-current_version.json
-ot[ac]_current_version.json
-updates/
-node_modules/
-
-# Remove generated webui files
-buildConfigs/Scader/FSImage/*.gz
-buildConfigs/Scader/FSImage/manifest.json
-buildConfigs/Scader/FSImage/asset-manifest.json
-buildConfigs/Scader/FSImage/favicon.ico
-buildConfigs/Scader/FSImage/logo192.png
-buildConfigs/Scader/FSImage/logo512.png
-buildConfigs/Scader/FSImage/robots.txt
-buildConfigs/Scader/FSImage/*.LICENSE.txt
-
-WebUIOld.old
-WebUIReact.old
 

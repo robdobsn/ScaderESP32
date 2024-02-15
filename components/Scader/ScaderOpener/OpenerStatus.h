@@ -7,16 +7,16 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <RaftArduino.h>
-#include <ConfigBase.h>
 #include <vector>
+#include "RaftArduino.h"
+#include "RaftJsonIF.h"
 
 class OpenerStatus
 {
 public:
 
     // Setup
-    void recordConfig(ConfigBase& config)
+    void recordConfig(RaftJsonIF& config)
     {
         _pConfig = &config;
     }
@@ -185,5 +185,5 @@ private:
     std::vector<String> _statusStrs = { "", "", "" };
 
     // Config
-    ConfigBase* _pConfig = nullptr;
+    RaftJsonIF* _pConfig = nullptr;
 };

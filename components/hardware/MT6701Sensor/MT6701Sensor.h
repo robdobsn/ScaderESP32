@@ -8,12 +8,11 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <AngleMovingAverage.h>
-#include <SampleCollector.h>
+#include <cstdint>
+#include "AngleMovingAverage.h"
+#include "SampleCollector.h"
 
 class BusBase;
-class ConfigBase;
 class BusRequestResult;
 
 class MT6701Sensor
@@ -23,7 +22,7 @@ public:
     virtual ~MT6701Sensor();
 
     // Setup
-    void setup(ConfigBase& config, const char* pConfigPrefix, BusBase* pBus);
+    void setup(RaftJsonIF& config, BusBase* pBus);
 
     // Service
     void service();

@@ -1,0 +1,304 @@
+{
+    "HWName": "DefaultScader",
+    "CmdsAtStart": "",
+    "WebUI": "",
+    "SysManager": {
+        "monitorPeriodMs":30000,
+        "reportList":[
+            "NetMan",
+            "Scader",
+            "SysMan",
+            "StatsCB",
+            "ESPOTAUpdate"
+        ],
+        "slowSysModMs": 100,
+        "pauseWiFiforBLE":1,
+        "rebootAfterNHours": 24,
+        "rebootIfDiscMins": 10
+    },
+    "ProtExchg": {
+        "RICSerial":{
+            "FrameBound":"0xE7",
+            "CtrlEscape":"0xD7"
+        }
+    },
+    "NetMan": {
+        "enable": 1,
+        "wifiSTAEn": 1,
+        "wifiAPEn": 0,
+        "ethEn": 0,
+        "wifiSSID": "",
+        "wifiPW": "",
+        "wifiSTAScanThreshold": "OPEN",
+        "wifiAPSSID": "",
+        "wifiAPPW": "",
+        "wifiAPChannel": 1,
+        "wifiAPMaxConn": 4,
+        "wifiAPAuthMode": "WPA2_PSK",
+        "ethLanChip": "LAN87XX",
+        "ethPowerPin": 12,
+        "ethMDCPin": 23,
+        "ethMDIOPin": 18,
+        "ethPhyAddr": 0,
+        "ethPhyRstPin": -1,
+        "NTPServer": "pool.ntp.org",
+        "timezone": "UTC",
+        "logLevel": "D"
+    },
+    "ESPOTAUpdate": {
+        "enable": 1,
+        "OTADirect": 1
+    },
+    "MQTTMan": {
+        "enable": 1,
+        "brokerHostname": "benbecula",
+        "brokerPort": 1883,
+        "clientID": "Scader",
+        "topics": [
+            {
+                "name": "scaderIn",
+                "inbound": 1,
+                "path": "scader/in",
+                "qos": 1
+            },
+            {
+                "name": "scaderOut",
+                "inbound": 0,
+                "path": "scader/out",
+                "qos": 1
+            }
+        ]
+    },
+    "WebServer": {
+        "enable": 1,
+        "webServerPort": 80,
+        "stdRespHeaders": [
+            "Access-Control-Allow-Origin: *"
+        ],
+        "apiPrefix": "api/",
+        "fileServer": 1,
+        "numConnSlots": 12,
+        "websockets": [
+            {
+                "pfix": "ws",
+                "pcol": "RICSerial",
+                "maxConn": 4,
+                "txQueueMax": 20,
+                "pingMs": 30000
+            },
+            {
+                "pfix": "scader",
+                "pcol": "RICJSON",
+                "maxConn": 4,
+                "txQueueMax": 20,
+                "pingMs": 30000,
+                "content": "text"
+            }
+        ],
+        "logLevel": "D",
+        "sendMax": 5000,
+        "taskCore": 0,
+        "taskStack": 5000,
+        "taskPriority": 9
+    },
+    "LogManager": {
+        "enable": 1,
+        "logDests": [
+            {
+                "enable": true,
+                "type": "Papertrail",
+                "host": "logs2.papertrailapp.com",
+                "port": 48992
+            }
+        ]
+    },
+    "SerialConsole": {
+        "enable": 1,
+        "uartNum": 0,
+        "rxBuf": 5000,
+        "txBuf": 1500,
+        "crlfOnTx": 1,
+        "protocol": "RICSerial",
+        "logLevel": "D"
+    },
+    "CommandSerial": {
+        "enable": 0,
+        "logLevel": "D",
+        "ports": [
+        ]
+    },
+    "CommandSocket": {
+        "enable": 0,
+        "socketPort": 24,
+        "protocol": "RICSerial",
+        "logLevel": "D"
+    },
+    "FileManager": {
+        "enable": 1,
+        "LocalFsDefault": "littlefs",
+        "LocalFSFormatIfCorrupt": 1,
+        "CacheFileSysInfo": 0,
+        "SDEnabled": 0,
+        "DefaultSD": 1,
+        "SDMOSI": 15,
+        "SDMISO": 4,
+        "SDCLK": 14,
+        "SDCS": 13
+    },
+    "Publish": {
+        "enable": 1,
+        "pubList": [
+            {
+                "type": "HW",
+                "name": "ScaderDoors",
+                "trigger": "Time",
+                "msgID": "ScaderDoors",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
+            }
+        ]
+    },
+    "ScaderOpener": {
+        "DoorRemainOpenTimeSecs": 45,
+        "DoorTimeToOpenSecs": 20,
+        "MotorOnTimeAfterMoveSecs": 5,
+        "MaxMotorCurrentAmps": 0.4,
+        "DoorOpenAngleDegs": 0,
+        "DoorClosedAngleDegs": 0,
+        "consvPirPin": 15,
+        "consvButtonPin": 32,
+        "i2cBusFreqHz": 100000,
+        "MotorAndAngleSensor": {
+            "BusI2C": {
+                "name": "I2CA",
+                "type": "I2C",
+                "reqFIFOLen": 10,
+                "i2cPort": 0,
+                "sdaPin": 21,
+                "sclPin": 22,
+                "i2cFreq": 100000,
+                "taskCore": 0,
+                "taskStack": 10000,
+                "taskPriority": 24                
+            },
+            "AngleSensor": {
+                "i2cAddr": 54,
+                "pollsPerSec": 1000,
+                "reverse": false,
+                "hysteresis": 0
+            },            
+            "MotorSerial":
+            {
+                "name": "SERA",
+                "type": "serial",
+                "uartNum": 2,
+                "rxPin": "23",
+                "txPin": "4",
+                "baudRate": 115200,
+                "minAfterSendMs": 5
+            },
+            "DoorMotor":
+            {
+                "name": "DoorMotor",
+                "type": "Steppers",
+                "bus": "SERA",
+                "motion": {
+                    "geom": "XYZ",
+                    "blockDist": 10,
+                    "allowOutOfBounds": 0,
+                    "homeBeforeMove": 0,
+                    "junctionDeviation": 0.05
+                },
+                "ramp": {
+                    "rampTimerEn": 1,
+                    "rampTimerUs": 100,
+                    "pipelineLen": 100
+                },
+                "motorEn": {
+                    "stepEnablePin": "27",
+                    "stepEnLev": 0,
+                    "stepDisableSecs": 1
+                },
+                "axes": [
+                    {
+                        "name": "X",
+                        "params": {
+                            "unitsPerRot": 360,
+                            "stepsPerRot": 28000,
+                            "maxSpeed": 10,
+                            "maxAcc": 10
+                        },
+                        "driver": {
+                            "driver": "TMC2209",
+                            "hw": "local",
+                            "addr": 0,
+                            "stepPin": "25",
+                            "dirnPin": "26",
+                            "invDirn": 0,
+                            "writeOnly": 0,
+                            "extSenseOhms": 0.15,
+                            "extVRef": 0,
+                            "extMStep": 0,
+                            "intpol": 1,
+                            "microsteps": 1,
+                            "rmsAmps": 0.01,
+                            "holdModeOrFactor": 0.5,
+                            "holdDelay": 1,
+                            "pwmFreqKHz": 35
+                        }
+                    }
+                ]
+            }
+        },
+        "uiModule":
+        {
+            "rxPin": "19",
+            "txPin": "18",
+            "uartNum": 1,
+            "baudRate": 115200	
+        }
+
+    },
+    "ScaderCat": {
+        "LIGHT_CTRL": 23,
+        "VALVE_CTRL": 19,
+        "FET_1": 18,
+        "FET_2": 5
+    },
+    "ScaderLEDPix": {
+        "brightnessPC": 20,
+        "strips": [
+            {
+                "pin": "32",
+                "num": 16
+            }
+        ],
+        "ledpix2":
+        {
+            "brightnessPC": 20,
+            "strips": [
+                {
+                    "pin": "33",
+                    "num": 16
+                }
+            ]                
+        }
+    },
+    "ScaderWaterer": {
+        "i2cPort": 0,
+        "sdaPin": "21",
+        "sclPin": "22",
+        "i2cFreq": 100000,
+        "adcI2CAddr": "0x48",
+        "reportSecs": 10,
+        "Pump0": "23",
+        "Pump1": "25",
+        "Pump2": "26",
+        "Pump3": "27"
+    }
+}

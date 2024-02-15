@@ -21,7 +21,7 @@ MoistureSensors::~MoistureSensors()
         delete _pI2CBus;
 }
 
-void MoistureSensors::setup(ConfigBase& config)
+void MoistureSensors::setup(const RaftJsonIF& config)
 {
     // Clear
     if (_pI2CBus)

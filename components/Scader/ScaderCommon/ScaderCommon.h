@@ -8,16 +8,17 @@
 
 #pragma once
 
-#include <SysModBase.h>
-#include <SysManager.h>
-#include <JSONParams.h>
-#include <NetworkSystem.h>
-#include <ESPUtils.h>
+#include "RaftSysMod.h"
+#include "SysManager.h"
+#include "NetworkSystem.h"
+#include "ESPUtils.h"
 
 class ScaderCommon
 {
 public:
-    ScaderCommon(SysModBase& base, const char* moduleName) : _base(base)
+    ScaderCommon(RaftSysMod& base, RaftJsonIF& sysConfig, const char* moduleName) : 
+                _base(base),
+                _sysConfig(sysConfig)
     {
         _moduleName = moduleName;
     }
@@ -25,13 +26,26 @@ public:
     void setup()
     {
         // Get settings
-        _isEnabled = _base.configGetLong("enable", false) != 0;
+        _isEnabled = _base.configGetBool("enable", false);
 
         // Name set in UI
-        _scaderUIName = _base.configGetString("/ScaderCommon/name", "Scader");
+        _scaderUIName = _sysConfig.getString("ScaderCommon/name", "Scader");
 
         // Hostname set in UI
-        _scaderHostname = _base.configGetString("/ScaderCommon/hostname", "Scader");
+        _scaderHostname = _sysConfig.getString("ScaderCommon/hostname", "Scader");
+
+        // If not blank set the UI name as the friendly name for the system
+        if (_scaderUIName.length() > 0)
+        {
+            String respStr;
+            _base.getSysManager()->setFriendlyName(_scaderUIName.c_str(), false, respStr);
+        }
+
+        // Set the hostname if not blank
+        if (_scaderHostname.length() > 0)
+        {
+            networkSystem.setHostname(_scaderHostname.c_str());
+        }
 
         // Debug
         LOG_I("ScaderCommon", "setup scaderUIName %s scaderHostname %s", 
@@ -41,7 +55,7 @@ public:
     String getStatusJSON()
     {
         // Get network information
-        JSONParams networkJson = _base.sysModGetStatusJSON("NetMan");
+        RaftJson networkJson = _base.sysModGetStatusJSON("NetMan");
 
         // Extract hostname
         String hostname = networkJson.getString("hostname", "");
@@ -105,10 +119,13 @@ private:
     // Enabled flag
     bool _isEnabled = false;
 
-    // Sysmodbase
-    SysModBase& _base;
+    // RaftSysMod
+    RaftSysMod& _base;
 
     // Module name
     String _moduleName;
+
+    // System config
+    RaftJsonIF& _sysConfig;
 };
 

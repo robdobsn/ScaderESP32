@@ -8,14 +8,14 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <Logger.h>
-#include <RaftArduino.h>
-#include <DebounceButton.h>
-#include <RaftUtils.h>
-#include <ConfigBase.h>
-#include <SimpleMovingAverage.h>
-#include <OpenerStatus.h>
+#include <cstdint>
+#include "Logger.h"
+#include "RaftArduino.h"
+#include "DebounceButton.h"
+#include "RaftUtils.h"
+#include "RaftJsonIF.h"
+#include "SimpleMovingAverage.h"
+#include "OpenerStatus.h"
 #include "MotorAndAngleSensor.h"
 #include "StateChangeDetector.h"
 
@@ -27,7 +27,7 @@ public:
     virtual ~DoorOpener();
 
     // Setup
-    void setup(ConfigBase& config);
+    void setup(RaftJsonIF& config);
 
     // Service
     void service();

@@ -8,7 +8,8 @@
             "NetMan",
             "Scader",
             "SysMan",
-            "StatsCB"
+            "StatsCB",
+            "ESPOTAUpdate"
         ],
         "slowSysModMs": 100,
         "pauseWiFiforBLE":1,
@@ -49,7 +50,7 @@
         "OTADirect": 1
     },
     "MQTTMan": {
-        "enable": true,
+        "enable": 1,
         "brokerHostname": "benbecula",
         "brokerPort": 1883,
         "clientID": "Scader",

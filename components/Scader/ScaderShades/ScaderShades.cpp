@@ -23,9 +23,9 @@ static const char *MODULE_PREFIX = "ScaderShades";
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO - config is global was passed to SysModBase constructor
+// TODO - config is global was passed to RaftSysMod constructor
 ScaderShades::ScaderShades(const char *pModuleName, RaftJsonIF& sysConfig)
-    : SysModBase(pModuleName, sysConfig),
+    : RaftSysMod(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)
 {
 }
@@ -145,10 +145,10 @@ void ScaderShades::setup()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// service
+// Loop (called frequently)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderShades::service()
+void ScaderShades::loop()
 {
     if (!_isInitialised)
         return;

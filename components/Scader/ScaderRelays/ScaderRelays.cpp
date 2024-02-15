@@ -33,7 +33,7 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderRelays::ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig)
-        : SysModBase(pModuleName, sysConfig),
+        : RaftSysMod(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName),
           _scaderModuleState("scaderRelays")
 {
@@ -86,6 +86,7 @@ void ScaderRelays::setup()
 #endif
 
     // Configure GPIOs
+    // The MOSI, MISO, CLK pins are configured as INPUT as they are driven by the SPI master
     ConfigPinMap::PinDef gpioPins[] = {
         ConfigPinMap::PinDef("SPI_MOSI", ConfigPinMap::GPIO_INPUT, &_spiMosi),
         ConfigPinMap::PinDef("SPI_MISO", ConfigPinMap::GPIO_INPUT, &_spiMiso),
@@ -259,10 +260,10 @@ void ScaderRelays::setup()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Service
+// Loop (called frequently)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderRelays::service()
+void ScaderRelays::loop()
 {
     // Check init
     if (!_isInitialised)

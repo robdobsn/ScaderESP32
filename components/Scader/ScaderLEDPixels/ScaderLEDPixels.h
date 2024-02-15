@@ -12,7 +12,7 @@
 // #define USE_FASTLED_LIBRARY
 #define RUN_PATTERNS_IN_SYSMOD
 
-#include "SysModBase.h"
+#include "RaftSysMod.h"
 #include "ScaderCommon.h"
 #include "RaftUtils.h"
 
@@ -25,13 +25,13 @@
 
 class APISourceInfo;
 
-class ScaderLEDPixels : public SysModBase
+class ScaderLEDPixels : public RaftSysMod
 {
   public:
     ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
-    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
         return new ScaderLEDPixels(pModuleName, sysConfig);
     }
@@ -41,8 +41,8 @@ protected:
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
-    virtual void service() override final;
+    // Loop (called frequently)
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;

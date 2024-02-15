@@ -106,6 +106,23 @@ export class ScaderPulseCounterStates {
     }
 }
 
+export class ScaderElecMeterState {
+    name: string = "";
+    powerkW: number = 0;
+}
+
+export class ScaderElecMeterStates {
+    module: string = "";
+    elems: Array<ScaderElecMeterState> = [];
+    constructor(obj: any) {
+        if (obj) {
+            if (obj.module)
+                this.module = obj.module;
+            this.elems = obj.elems;
+        }
+    }
+}
+
 export class ScaderState {
     ScaderRelays: ScaderRelayStates = {} as ScaderRelayStates;
     ScaderShades: ScaderShadeStates = {} as ScaderShadeStates;
@@ -113,8 +130,9 @@ export class ScaderState {
     ScaderLEDPix: ScaderLEDPixStates = {} as ScaderLEDPixStates;
     ScaderOpener: ScaderOpenerStates = {} as ScaderOpenerStates;
     ScaderPulseCounter: ScaderPulseCounterStates = {} as ScaderPulseCounterStates;
+    ScaderElecMeters: ScaderElecMeterStates = {} as ScaderElecMeterStates;
 }
 
 export type ScaderStateType = 
-    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates | ScaderOpenerStates | ScaderPulseCounterStates;
+    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates | ScaderOpenerStates | ScaderPulseCounterStates | ScaderElecMeterStates;
     

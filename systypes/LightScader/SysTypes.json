@@ -72,6 +72,12 @@
                 "inbound": 0,
                 "path": "scader/gas",
                 "qos": 1
+            },
+            {
+                "name": "scaderElec",
+                "inbound": 0,
+                "path": "scader/elec",
+                "qos": 1
             }
         ]
     },
@@ -184,6 +190,24 @@
                         "rateHz": 0.1
                     }
                 ]
+            },
+            {
+                "type": "HW",
+                "name": "ScaderElecMeter",
+                "trigger": "Time",
+                "msgID": "ScaderElecMeter",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.01
+                    },
+                    {
+                        "if": "scaderElec",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
             }
         ]
     },
@@ -198,6 +222,17 @@
         "ONOFF_KEY": 34,
         "MAINS_SYNC": 35,
         "mainsSync": false
+    },
+    "ScaderElecMeters": {
+        "maxElems": 16,
+        "SPI_MOSI": 33,
+        "SPI_MISO": 32,
+        "SPI_CLK": 16,
+        "SPI_CS1": 15,
+        "SPI_CS2": 14,
+        "taskCore": 1,
+        "taskStack": 5000,
+        "taskPriority": 1
     },
     "ScaderLEDPix": {
         "brightnessPC": 20,

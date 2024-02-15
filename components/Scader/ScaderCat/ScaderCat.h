@@ -11,17 +11,17 @@
 #include "RaftArduino.h"
 #include "ScaderCommon.h"
 #include "RaftUtils.h"
-#include "SysModBase.h"
+#include "RaftSysMod.h"
 
 class APISourceInfo;
 
-class ScaderCat : public SysModBase
+class ScaderCat : public RaftSysMod
 {
 public:
     ScaderCat(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
-    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
         return new ScaderCat(pModuleName, sysConfig);
     }
@@ -34,7 +34,7 @@ protected:
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
+    // Loop (called frequently)
     virtual void service() override final;
 
     // Add endpoints

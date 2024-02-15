@@ -8,7 +8,7 @@
 
 #include "OpenerStatus.h"
 #include "RaftUtils.h"
-#include "SysModBase.h"
+#include "RaftSysMod.h"
 
 static const char* MODULE_PREFIX = "OpenerStatus";
 #define DEBUG_OPENER_MUTABLE_DATA

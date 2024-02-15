@@ -29,7 +29,7 @@ static const char *MODULE_PREFIX = "ScaderPulseCounter";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderPulseCounter::ScaderPulseCounter(const char *pModuleName, RaftJsonIF& sysConfig)
-        : SysModBase(pModuleName, sysConfig),
+        : RaftSysMod(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName),
           _scaderModuleState("scaderPulses")
 {
@@ -98,10 +98,10 @@ void ScaderPulseCounter::setup()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Service
+// Loop
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderPulseCounter::service()
+void ScaderPulseCounter::loop()
 {
     // Check init
     if (!_isInitialised)

@@ -1,1 +1,1 @@
-node -e "console.log(require('fs').readFileSync('path/to/favicon.png').toString('base64'))"
+node -e "console.log(require('fs').readFileSync('logo.svg').toString('base64'))"

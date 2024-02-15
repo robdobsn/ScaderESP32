@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { ScaderCommon } from './ScaderCommon';
 import { ScaderManager } from './ScaderManager';
 import ScaderRelays from './ScaderRelays';
+import ScaderElecMeters from './ScaderElecMeters';
 import { ScaderScreenProps } from './ScaderCommon';
 import ScaderShades from './ScaderShades';
 import ScaderDoors from './ScaderDoors';
@@ -65,13 +66,14 @@ export default function ScaderApp() {
             onClickCancel={handleSettingsCancel}
             isEditMode={isEditingMode}/>
       {/* Render screens pass config as props */}
-      {<ScaderRelays {...screenProps} />}  
+      {<ScaderRelays {...screenProps} />}
       {<ScaderShades {...screenProps} />}
       {<ScaderDoors {...screenProps} />}
       {<ScaderLEDPix {...screenProps} />}
       {<ScaderOpener {...screenProps} />}
       {<ScaderRFID {...screenProps} />}
       {<ScaderPulseCounter {...screenProps} />}
+      {<ScaderElecMeters {...screenProps} />}
     </div>
   </div>
   );

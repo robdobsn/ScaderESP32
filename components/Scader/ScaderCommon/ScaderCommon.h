@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "SysModBase.h"
+#include "RaftSysMod.h"
 #include "SysManager.h"
 #include "NetworkSystem.h"
 #include "ESPUtils.h"
@@ -16,7 +16,7 @@
 class ScaderCommon
 {
 public:
-    ScaderCommon(SysModBase& base, RaftJsonIF& sysConfig, const char* moduleName) : 
+    ScaderCommon(RaftSysMod& base, RaftJsonIF& sysConfig, const char* moduleName) : 
                 _base(base),
                 _sysConfig(sysConfig)
     {
@@ -119,8 +119,8 @@ private:
     // Enabled flag
     bool _isEnabled = false;
 
-    // Sysmodbase
-    SysModBase& _base;
+    // RaftSysMod
+    RaftSysMod& _base;
 
     // Module name
     String _moduleName;

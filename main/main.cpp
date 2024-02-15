@@ -19,6 +19,7 @@
 #include "ScaderLEDPixels.h"
 #include "ScaderRFID.h"
 #include "ScaderPulseCounter.h"
+#include "ScaderElecMeters.h"
 // #include "ScaderCat.h"
 // #include "ScaderWaterer.h"
 
@@ -45,6 +46,7 @@ extern "C" void app_main(void)
     raftCoreApp.registerSysMod("ScaderLEDPix", ScaderLEDPixels::create, true);
     raftCoreApp.registerSysMod("ScaderRFID", ScaderRFID::create, true);
     raftCoreApp.registerSysMod("ScaderPulseCounter", ScaderPulseCounter::create, true);
+    raftCoreApp.registerSysMod("ScaderElecMeters", ScaderElecMeters::create, true);
     // raftCoreApp.registerSysMod("ScaderCat", ScaderCat::create, true);
     // raftCoreApp.registerSysMod("ScaderWaterer", ScaderWaterer::create, true);
 
@@ -54,7 +56,7 @@ extern "C" void app_main(void)
         // Yield for 1 tick
         vTaskDelay(1);
 
-        // Service the app
-        raftCoreApp.service();
+        // Loop the RaftCoreApp
+        raftCoreApp.loop();
     }
 }

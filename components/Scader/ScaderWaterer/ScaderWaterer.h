@@ -10,19 +10,19 @@
 
 #include "RaftArduino.h"
 #include "RaftUtils.h"
-#include "SysModBase.h"
+#include "RaftSysMod.h"
 #include "MoistureSensors.h"
 #include "PumpControl.h"
 
 class APISourceInfo;
 
-class ScaderWaterer : public SysModBase
+class ScaderWaterer : public RaftSysMod
 {
 public:
     ScaderWaterer(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
-    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
         return new ScaderWaterer(pModuleName, sysConfig);
     }
@@ -35,7 +35,7 @@ protected:
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
+    // Loop (called frequently)
     virtual void service() override final;
 
     // Add endpoints

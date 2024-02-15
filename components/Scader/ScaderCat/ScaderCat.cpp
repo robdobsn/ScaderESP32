@@ -20,7 +20,7 @@ static const char *MODULE_PREFIX = "ScaderCat";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderCat::ScaderCat(const char *pModuleName, RaftJsonIF& sysConfig)
-    : SysModBase(pModuleName, sysConfig)
+    : RaftSysMod(pModuleName, sysConfig)
 {
 }
 

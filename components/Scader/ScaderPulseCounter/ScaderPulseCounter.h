@@ -11,13 +11,13 @@
 
 #include "RaftUtils.h"
 #include "RaftJsonIF.h"
-#include "SysModBase.h"
+#include "RaftSysMod.h"
 #include "ScaderCommon.h"
 #include "DebounceButton.h"
 
 class APISourceInfo;
 
-class ScaderPulseCounter : public SysModBase
+class ScaderPulseCounter : public RaftSysMod
 {
 public:
     static const int DEFAULT_MAX_ELEMS = 24;
@@ -26,7 +26,7 @@ public:
     ScaderPulseCounter(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
-    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
         return new ScaderPulseCounter(pModuleName, sysConfig);
     }
@@ -36,8 +36,8 @@ protected:
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
-    virtual void service() override final;
+    // Loop (called frequently)
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;

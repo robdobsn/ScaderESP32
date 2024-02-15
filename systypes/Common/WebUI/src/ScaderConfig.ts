@@ -3,6 +3,10 @@ export class RelayConfig {
     name: string = "";
 }
 
+export class ElecMeterConfig {
+    name: string = "";
+}
+
 export class ShadesConfig {
     name: string = "";
 }
@@ -104,5 +108,16 @@ export class ScaderConfig {
     } = {
         enable: false,
         name: "ScaderPulseCounter",
+    }
+    ScaderElecMeters: {
+        enable: boolean,
+        maxElems: number,
+        name: string,
+        elems: Array<ElecMeterConfig>;
+    } = {
+        enable: false,
+        maxElems: 4,
+        name: "ScaderElecMeters",
+        elems: [],
     }
 }

@@ -9,21 +9,21 @@
 #pragma once
 
 #include "RaftUtils.h"
-#include "SysModBase.h"
+#include "RaftSysMod.h"
 #include "ScaderCommon.h"
 #include "RFIDModuleBase.h"
 #include "StatusIndicator.h"
 
 class APISourceInfo;
 
-class ScaderRFID : public SysModBase
+class ScaderRFID : public RaftSysMod
 {
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
     ScaderRFID(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
-    static SysModBase* create(const char* pModuleName, RaftJsonIF& sysConfig)
+    static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
         return new ScaderRFID(pModuleName, sysConfig);
     }
@@ -33,8 +33,8 @@ protected:
     // Setup
     virtual void setup() override final;
 
-    // Service (called frequently)
-    virtual void service() override final;
+    // Loop (called frequently)
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;

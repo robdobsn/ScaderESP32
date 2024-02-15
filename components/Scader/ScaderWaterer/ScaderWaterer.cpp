@@ -20,7 +20,7 @@ static const char *MODULE_PREFIX = "ScaderWaterer";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderWaterer::ScaderWaterer(const char *pModuleName, RaftJsonIF& sysConfig)
-    : SysModBase(pModuleName, sys)
+    : RaftSysMod(pModuleName, sys)
 {
     // Init
     _isEnabled = false;

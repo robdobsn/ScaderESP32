@@ -45,7 +45,7 @@ static const char *MODULE_PREFIX = "ScaderLEDPixels";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig)
-    : SysModBase(pModuleName, sysConfig),
+    : RaftSysMod(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)
 {
 }
@@ -154,7 +154,7 @@ void ScaderLEDPixels::setup()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Service
+// Loop (called frequently)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // int blinkyLed = 0;
@@ -162,7 +162,7 @@ void ScaderLEDPixels::setup()
 // static const int TAIL_LEN = 20;
 // #define NUM_LEDS 100
 
-void ScaderLEDPixels::service()
+void ScaderLEDPixels::loop()
 {
 //   for (int i = 0; i < TAIL_LEN+1; i++)
 //   {

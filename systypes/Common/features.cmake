@@ -2,14 +2,14 @@
 set(IDF_TARGET "esp32")
 
 # System version
-add_compile_definitions(SYSTEM_VERSION="6.0.7")
+add_compile_definitions(SYSTEM_VERSION="6.0.8")
 
 # Raft components
 set(RAFT_COMPONENTS
-    RaftSysMods@ReWorkConfigBase
-    RaftI2C@ReWorkConfigBase
-    RaftMotorControl@ReWorkConfigBase
-    RaftWebServer@ReWorkConfigBase
+    RaftSysMods@v1.2.0
+    RaftI2C@v1.2.0
+    RaftMotorControl@v1.2.0
+    RaftWebServer@v1.2.0
 )
 
 # File system

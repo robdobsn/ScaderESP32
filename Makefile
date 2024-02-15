@@ -23,7 +23,7 @@ ifeq ($(WSL),1)
 	PYTHON_FOR_FLASH ?= python.exe
 	PORT ?= COM3
 else
-	SERIAL_MONITOR ?= "./raft monitor"
+	SERIAL_MONITOR ?= "raft monitor"
 	PYTHON_FOR_FLASH ?= python3
 	PORT ?= /dev/ttyUSB0
 endif

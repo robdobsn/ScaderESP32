@@ -9,19 +9,21 @@ Two build methods are available:
 ### Makefile build
 
 To build with the Makefile:
-- make clean
-- make
 
-Should build a fresh image. And to build and also flash using WSL - and then open a serial monitor in the same terminal window
-- make flashwsl PORT=COM???
-- OR
-- make flashwsl PORT=/dev/ttyUSB???
+```
+make
+```
 
-### Build script build
-To build with the build.sh script:
-- chmod +x ./build.sh
-- ./build.sh
+Build, flash and monitor with this:
 
-This will build and then flash and then open the serial monitor in the terminal window
+```
+make flash PORT=<your-serial-port>
+```
 
+Where \<your-serial-port> is COMxxxx on Windows or /dev/ttyxxxx on Mac/Linux
 
+And clean in case you want a full rebuild with:
+
+```
+make clean
+```

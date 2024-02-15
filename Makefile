@@ -1,6 +1,10 @@
 # Build Project
 DOCKER ?= 1
-WSL ?= $(if $(findstring Windows_NT,$(OS)),1,0)
+ifeq ($(OS),Windows_NT)
+	WSL ?= 0
+else
+	WSL ?= $(shell uname -r | grep -i microsoft > /dev/null && echo 1 || echo 0)
+endif
 ESP_IDF_PATH ?= ~/esp/esp-idf-v5.1.2
 BUILD_BASE_FOLDER ?= build
 BUILD_CONFIG_BASE_DIR = systypes
@@ -19,11 +23,11 @@ LOCAL_EXEC = . $(ESP_IDF_PATH)/export.sh
 CMD ?= idf.py -B $(BUILD_DIR) build
 
 ifeq ($(WSL),1)
-	SERIAL_MONITOR ?= "raft.exe monitor"
+	SERIAL_MONITOR ?= raft.exe monitor
 	PYTHON_FOR_FLASH ?= python.exe
 	PORT ?= COM3
 else
-	SERIAL_MONITOR ?= "raft monitor"
+	SERIAL_MONITOR ?= raft monitor
 	PYTHON_FOR_FLASH ?= python3
 	PORT ?= /dev/ttyUSB0
 endif

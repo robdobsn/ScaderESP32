@@ -34,6 +34,8 @@ ScaderElecMeters::ScaderElecMeters(const char *pModuleName, RaftJsonIF& sysConfi
         : RaftSysMod(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)
 {
+    // Initialize semaphore
+    _dataAcqSemaphore = xSemaphoreCreateBinary();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,6 +180,14 @@ void ScaderElecMeters::setup()
         );
     }
 
+    // Samples
+    _dataAcqSamples.resize(_elemNames.size());
+    for (int i = 0; i < _elemNames.size(); i++)
+        _dataAcqSamples[i].resize(DATA_ACQ_SAMPLES_FOR_BATCH);
+
+    // Mean levels
+    _dataAcqMeanLevels.resize(_elemNames.size());
+
     // Start the worker task
     BaseType_t retc = pdPASS;
     if (_dataAcqWorkerTaskStatic == nullptr)
@@ -192,16 +202,29 @@ void ScaderElecMeters::setup()
                     taskCore);                                      // pin task to core N
     }
 
-    // Elem averages
-    _dataAcqMeanLevels.resize(_maxElems);
-   
+    // Start GPTimer for data acquisition
+    if (retc == pdPASS)
+    {
+        // Start the timer
+        esp_timer_create_args_t timerArgs = {
+            .callback = dataAcqTimerCallbackStatic,
+            .arg = this,
+            .dispatch_method = ESP_TIMER_TASK,
+            .name = "ElecTimer",
+            .skip_unhandled_events = false
+        };
+        esp_timer_create(&timerArgs, &_dataAcqTimer);
+        esp_timer_start_periodic(_dataAcqTimer, DATA_ACQ_SAMPLE_INTERVAL_US);
+    }
+
     // HW Now initialised
-    _isInitialised = true;
+    _isInitialised = retc == pdPASS;
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s maxCTClamps %d MOSI %d MISO %d CLK %d CS1 %d CS2 %d taskRetc %d",
+    LOG_I(MODULE_PREFIX, "setup %s scaderUIName %s numCTClamps %d (max %d) MOSI %d MISO %d CLK %d CS1 %d CS2 %d taskRetc %d",
+                _isInitialised ? "OK" : "FAILED",
                 _scaderCommon.getUIName().c_str(),
-                _maxElems, 
+                _elemNames.size(), _maxElems, 
                 _spiMosi, _spiMiso, _spiClk, 
                 _spiChipSelects[0], _spiChipSelects[1],
                 retc);
@@ -273,25 +296,55 @@ void ScaderElecMeters::getStatusHash(std::vector<uint8_t>& stateHash)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Worker task
+// Acquire one sample
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderElecMeters::dataAcqWorkerTaskStatic(void* pTaskParm)
+uint16_t ScaderElecMeters::acquireSample(uint32_t elemIdx)
 {
-    // Get this
-    ScaderElecMeters* pThis = (ScaderElecMeters*)pTaskParm;
+    // Check init
+    if (!_isInitialised)
+        return 0;
 
-    // Run the worker task
-    pThis->dataAcqWorkerTask();
+    static const uint32_t NUM_BITS_TO_READ_WRITE = 24;
+    // Setup tx buffer - 3 bytes to cover the 
+    uint8_t txBuf[NUM_BITS_TO_READ_WRITE / 8] = {
+        uint8_t(0x06 | ((elemIdx & 0x04) << 1)), 
+        uint8_t((elemIdx & 0x03) << 6), 
+        0x00};
+    uint8_t rxBuf[NUM_BITS_TO_READ_WRITE / 8] = {0, 0, 0};
+
+    // SPI transaction
+    spi_transaction_t spiTransaction = {
+        .flags = 0,
+        .cmd = 0,
+        .addr = 0,
+        .length = NUM_BITS_TO_READ_WRITE /* bits */,
+        .rxlength = NUM_BITS_TO_READ_WRITE /* bits */,
+        .user = nullptr,
+        .tx_buffer = txBuf,
+        .rx_buffer = rxBuf,
+    };
+
+    // Chip select
+    int chipIdx = elemIdx / ELEMS_PER_CHIP;
+
+    // Send the data
+    spi_device_acquire_bus(_spiDeviceHandles[chipIdx], portMAX_DELAY);
+    spi_device_transmit(_spiDeviceHandles[chipIdx], &spiTransaction);
+    spi_device_release_bus(_spiDeviceHandles[chipIdx]);
+
+    // Extract value
+    uint32_t val = ((rxBuf[1] & 0x0f) << 8) | rxBuf[2];
+    return val;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Worker task
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ScaderElecMeters::dataAcqWorkerTask()
 {
     // Acquisition loop
-    uint64_t lastAcqTimeUs = 0;
-    uint64_t lastPrintTimeUs = 0;
-    uint32_t samples[200];
-    int numSamples = 0;
     while (true)
     {
         // Check init
@@ -301,65 +354,76 @@ void ScaderElecMeters::dataAcqWorkerTask()
             continue;
         }
 
-        // Check if time for sample
-        if (Raft::isTimeout(micros(), lastAcqTimeUs, 1000000 / DATA_ACQ_SAMPLES_PER_SECOND))
+        // Wait for the semaphore to be available
+        if(xSemaphoreTake(_dataAcqSemaphore, portMAX_DELAY) == pdTRUE) 
         {
-            // Update time
-            lastAcqTimeUs = micros();
+            // Debugging
+#ifdef DEBUG_ELEC_METER_ANALYZE_TIMING_INTERVAL
+            uint64_t timeNowUs = micros();
+            if (_debugLastDataAcqSampleTimeUs != 0)
+            {
+                int64_t timeSinceLastSampleUs = timeNowUs - _debugLastDataAcqSampleTimeUs;
+                _dataAcqSampleIntervals.sample(timeSinceLastSampleUs - DATA_ACQ_SAMPLE_INTERVAL_US);
+            }
+            _debugLastDataAcqSampleTimeUs = timeNowUs;
+
+            // Debug
+            _debugSampleTimeUsCount++;
+            if (_debugSampleTimeUsCount == 5000)
+            {
+                _debugSampleTimeUsCount = 0;
+                LOG_I(MODULE_PREFIX, "dataAcqWorkerTask mean time %duS std.dev. %fuS", 
+                    _dataAcqSampleIntervals.getAverage(), _dataAcqSampleIntervals.getStandardDeviation());
+            }
+#endif
+
+            // Check if not processing a batch and not yet time to start a new one
+            if ((_dataAcqNumSamples == 0) && !Raft::isTimeout(millis(), _dataAcqBatchStartTimeMs, DATA_ACQ_TIME_BETWEEN_BATCHES_MS))
+                continue;
+
+            // Check for first sample in batch and record time if so
+            if (_dataAcqNumSamples == 0)
+                _dataAcqBatchStartTimeMs = millis();
 
             // Acquire data
-            for (uint32_t elemIdx = 0; elemIdx < _maxElems; elemIdx++)
+            for (uint32_t elemIdx = 0; elemIdx < _elemNames.size(); elemIdx++)
             {
-                static const uint32_t NUM_BITS_TO_READ_WRITE = 24;
-                // Setup tx buffer - 3 bytes to cover the 
-                uint8_t txBuf[NUM_BITS_TO_READ_WRITE / 8] = {
-                    uint8_t(0x06 | ((elemIdx & 0x04) << 1)), 
-                    uint8_t((elemIdx & 0x03) << 6), 
-                    0x00};
-                uint8_t rxBuf[NUM_BITS_TO_READ_WRITE / 8] = {0, 0, 0};
+                // Acquire data
+                uint16_t val = acquireSample(elemIdx);
 
-                // SPI transaction
-                spi_transaction_t spiTransaction = {
-                    .flags = 0,
-                    .cmd = 0,
-                    .addr = 0,
-                    .length = NUM_BITS_TO_READ_WRITE /* bits */,
-                    .rxlength = NUM_BITS_TO_READ_WRITE /* bits */,
-                    .user = nullptr,
-                    .tx_buffer = txBuf,
-                    .rx_buffer = rxBuf,
-                };
-
-                // Chip select
-                int chipIdx = elemIdx / ELEMS_PER_CHIP;
-
-                // Send the data
-                spi_device_acquire_bus(_spiDeviceHandles[chipIdx], portMAX_DELAY);
-                spi_device_transmit(_spiDeviceHandles[chipIdx], &spiTransaction);
-                spi_device_release_bus(_spiDeviceHandles[chipIdx]);
-
-                // Analyse the data
-                uint32_t val = ((rxBuf[1] & 0x0f) << 8) | rxBuf[2];
+                // Update mean level
                 _dataAcqMeanLevels[elemIdx].sample(val);
 
                 // Save the sample
-                if (elemIdx == 0)
-                {
-                    if (numSamples < sizeof(samples) / sizeof(samples[0]))
-                        samples[numSamples++] = val;
-                }
+                _dataAcqSamples[elemIdx][_dataAcqNumSamples] = val;
+            }
 
-                // Output the values
-                if ((numSamples >= sizeof(samples) / sizeof(samples[0])) && Raft::isTimeout(micros(), lastPrintTimeUs, 5000000))
+            // Increment the number of samples
+            _dataAcqNumSamples++;
+
+            // Check if the batch is complete
+            if (_dataAcqNumSamples >= DATA_ACQ_SAMPLES_FOR_BATCH)
+            {
+                // uint32_t timeNowMs = timeNowUs / 1000;
+                // LOG_I(MODULE_PREFIX, "dataAcqWorkerTask batch complete %d startedAt %dms endedAt %dms duration %dms sampleInterval %dus expectedTotalTime %dms", 
+                //             _dataAcqNumSamples, _dataAcqBatchStartTimeMs, timeNowMs, timeNowMs - _dataAcqBatchStartTimeMs,
+                //             DATA_ACQ_SAMPLE_INTERVAL_US, _dataAcqNumSamples * DATA_ACQ_SAMPLE_INTERVAL_US / 1000);
+
+                // Debug
+                double sampleTimeMs = _dataAcqBatchStartTimeMs;
+                for (uint32_t sampleIdx = 0; sampleIdx < _dataAcqNumSamples; sampleIdx++)
                 {
-                    for (int i = 0; i < sizeof(samples) / sizeof(samples[0]); i++)
+                    sampleTimeMs += DATA_ACQ_SAMPLE_INTERVAL_US / 1000.0;
+                    printf("T %.3f", sampleTimeMs);
+                    for (uint32_t elemIdx = 0; elemIdx < _elemNames.size(); elemIdx++)
                     {
-                        printf("Raw: %d\n", int(samples[i]));
+                        printf(" %d", _dataAcqSamples[elemIdx][sampleIdx]);
                     }
-                    lastPrintTimeUs = micros();
-                    numSamples = 0;
+                    printf("\n");
                 }
 
+                // Clear the number of samples
+                _dataAcqNumSamples = 0;
             }
         }
     }

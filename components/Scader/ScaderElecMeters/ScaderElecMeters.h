@@ -15,6 +15,7 @@
 #include "ScaderCommon.h"
 #include "ExpMovingAverage.h"
 #include "SimpleMovingAverage.h"
+#include "CTProcessor.h"
 #include "driver/spi_master.h"
 
 #define DEBUG_ELEC_METER_ANALYZE_TIMING_INTERVAL
@@ -72,6 +73,10 @@ private:
     // Names of control elements - the size of this array is the number of elements
     std::vector<String> _elemNames;
 
+    // Calibration values for Current Transformer input scaling
+    static constexpr float DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL = 0.04;
+    std::vector<float> _ctCalibrationVals;
+
     // Data acquisition worker task
     volatile TaskHandle_t _dataAcqWorkerTaskStatic = nullptr;
     static const int DEFAULT_TASK_CORE = 1;
@@ -87,11 +92,18 @@ private:
     static const uint32_t DATA_ACQ_SAMPLES_FOR_BATCH = DATA_ACQ_SAMPLES_PER_CYCLE * 2;
     static const uint32_t DATA_ACQ_TIME_BETWEEN_BATCHES_MS = 5000;
 
+    // CTProcessors
+    std::vector<CTProcessor<uint16_t>> _ctProcessors;
+
     // ADC data
     std::vector<std::vector<uint16_t>> _dataAcqSamples;
 
     // Mean levels
     std::vector<ExpMovingAverage<8>> _dataAcqMeanLevels;
+
+
+
+    std::vector<CTProcessorDebugVals> _debugVals;
 
     // Data acq timer
     SemaphoreHandle_t _dataAcqSemaphore = nullptr;

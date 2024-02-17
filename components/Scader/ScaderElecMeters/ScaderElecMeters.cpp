@@ -151,15 +151,20 @@ void ScaderElecMeters::setup()
     if (configGetArrayElems("elems", elemInfos))
     {
         // Names array
-        uint32_t numNames = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();
-        _elemNames.resize(numNames);
+        uint32_t numElems = elemInfos.size() > _maxElems ? _maxElems : elemInfos.size();
+        _elemNames.resize(numElems);
+        _ctCalibrationVals.resize(numElems);
 
         // Set names
-        for (int i = 0; i < numNames; i++)
+        for (int i = 0; i < numElems; i++)
         {
             RaftJson elemInfo = elemInfos[i];
             _elemNames[i] = elemInfo.getString("name", ("CTClamp " + String(i+1)).c_str());
-            LOG_I(MODULE_PREFIX, "CTClamp %d name %s", i+1, _elemNames[i].c_str());
+            _ctCalibrationVals[i] = elemInfo.getDouble("calibADCToI", DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL);
+            if (_ctCalibrationVals[i] < 0.0001 || _ctCalibrationVals[i] > 1.0)
+                _ctCalibrationVals[i] = DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL;
+            LOG_I(MODULE_PREFIX, "CTClamp %d name %s calibrationADCToI %.4f", 
+                    i+1, _elemNames[i].c_str(), _ctCalibrationVals[i]);
         }
     }
 
@@ -180,10 +185,19 @@ void ScaderElecMeters::setup()
         );
     }
 
+    // CT Processors
+    _ctProcessors.resize(_elemNames.size());
+    for (int i = 0; i < _elemNames.size(); i++)
+    {
+        _ctProcessors[i].setup(_ctCalibrationVals[i], DATA_ACQ_SAMPLES_PER_SECOND, DATA_ACQ_SIGNAL_FREQ_HZ);
+    }
+
     // Samples
     _dataAcqSamples.resize(_elemNames.size());
     for (int i = 0; i < _elemNames.size(); i++)
         _dataAcqSamples[i].resize(DATA_ACQ_SAMPLES_FOR_BATCH);
+
+    _debugVals.resize(DATA_ACQ_SAMPLES_FOR_BATCH);
 
     // Mean levels
     _dataAcqMeanLevels.resize(_elemNames.size());
@@ -357,9 +371,22 @@ void ScaderElecMeters::dataAcqWorkerTask()
         // Wait for the semaphore to be available
         if(xSemaphoreTake(_dataAcqSemaphore, portMAX_DELAY) == pdTRUE) 
         {
+            // Get the time
+            uint64_t timeNowUs = micros();
+
+            // Acquire data
+            uint16_t samples[_elemNames.size()];
+            for (uint32_t elemIdx = 0; elemIdx < _elemNames.size(); elemIdx++)
+            {
+                // Acquire data
+                samples[elemIdx] = acquireSample(elemIdx);
+
+                // Process the sample
+                _ctProcessors[elemIdx].newADCReading(samples[elemIdx], timeNowUs);
+            }
+
             // Debugging
 #ifdef DEBUG_ELEC_METER_ANALYZE_TIMING_INTERVAL
-            uint64_t timeNowUs = micros();
             if (_debugLastDataAcqSampleTimeUs != 0)
             {
                 int64_t timeSinceLastSampleUs = timeNowUs - _debugLastDataAcqSampleTimeUs;
@@ -385,11 +412,11 @@ void ScaderElecMeters::dataAcqWorkerTask()
             if (_dataAcqNumSamples == 0)
                 _dataAcqBatchStartTimeMs = millis();
 
-            // Acquire data
+            // Store in batch
             for (uint32_t elemIdx = 0; elemIdx < _elemNames.size(); elemIdx++)
             {
-                // Acquire data
-                uint16_t val = acquireSample(elemIdx);
+                // Get the sample
+                uint16_t val = samples[elemIdx];
 
                 // Update mean level
                 _dataAcqMeanLevels[elemIdx].sample(val);
@@ -397,6 +424,10 @@ void ScaderElecMeters::dataAcqWorkerTask()
                 // Save the sample
                 _dataAcqSamples[elemIdx][_dataAcqNumSamples] = val;
             }
+
+            CTProcessorDebugVals debugVals;
+            _ctProcessors[0].getDebugInfo(debugVals);
+            _debugVals[_dataAcqNumSamples] = debugVals;
 
             // Increment the number of samples
             _dataAcqNumSamples++;
@@ -419,6 +450,12 @@ void ScaderElecMeters::dataAcqWorkerTask()
                     {
                         printf(" %d", _dataAcqSamples[elemIdx][sampleIdx]);
                     }
+                    printf(" %.2f %u %.2f %u RMS %.2f ZXT %u mean %.2f last-mean %.2f", 
+                        _debugVals[sampleIdx].peakValPos, (int)_debugVals[sampleIdx].peakTimePos,
+                        _debugVals[sampleIdx].peakValNeg, (int)_debugVals[sampleIdx].peakTimeNeg,
+                        _debugVals[sampleIdx].rmsVal, (int)_debugVals[sampleIdx].lastZeroCrossingTimeUs,
+                        _debugVals[sampleIdx].meanADCValue, _debugVals[sampleIdx].prevACADCSample);
+
                     printf("\n");
                 }
 

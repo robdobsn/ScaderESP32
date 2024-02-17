@@ -56,7 +56,7 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
       console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
       let newElems:Array<ElecMeterConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
-        newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`});
+        newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`, calibADCToI: 0.05});
       }
       newConfig[configElemsName].push(...newElems);
     } else {
@@ -67,15 +67,24 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
     updateMutableConfig(newConfig);
   };
 
-  const handleElemNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(`${scaderName}.handleElemNameChange ${event.target.id} = ${event.target.value}`);
+  const handleElemConfigChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(`${scaderName}.handleElemConfigChange ${event.target.id} = ${event.target.value}`);
     // Update config
     const newConfig = {...config};
     let elemIndex = Number(event.target.id.split("-")[1]);
-    newConfig[configElemsName][elemIndex].name = event.target.value;
+    // Get the value for the element name using the id of the input element `${configElemsName}-name-${index}`
+    const nameElem = document.getElementById(`${configElemsName}_name-${elemIndex}`) as HTMLInputElement;
+    if (nameElem) {
+      newConfig[configElemsName][elemIndex].name = nameElem.value;
+    }
+    // Get the value for the element calibration using the id of the input element `${configElemsName}-calibADCToI-${index}`
+    const calibADCToIElem = document.getElementById(`${configElemsName}_calibADCToI-${elemIndex}`) as HTMLInputElement;
+    if (calibADCToIElem) {
+      newConfig[configElemsName][elemIndex].calibADCToI = Number(calibADCToIElem.value);
+    }
     setConfig(newConfig);
     updateMutableConfig(newConfig);
-    console.log(`${scaderName}.handleElemNameChange ${JSON.stringify(newConfig)}`);
+    console.log(`${scaderName}.handleElemConfigChange ${JSON.stringify(newConfig)}`);
   };
 
   const editModeScreen = () => {
@@ -105,9 +114,17 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
                 <label key={index}>
                   {subElemsFriendlyCaps} {index+1} name:
                   <input className="ScaderElem-input" type="text" 
-                      id={`${configElemsName}-${index}`}
+                      id={`${configElemsName}_name-${index}`}
                       value={config[configElemsName][index].name} 
-                      onChange={handleElemNameChange} />
+                      onChange={handleElemConfigChange} />
+                </label>
+                {/* Input box for Current Transformer calibration value ADC -> Current */}
+                <label key={index}>
+                  {subElemsFriendlyCaps} {index+1} CT Calibration:
+                  <input className="ScaderElem-input" type="number" 
+                      id={`${configElemsName}_calibADCToI-${index}`}
+                      value={config[configElemsName][index].calibADCToI ? config[configElemsName][index].calibADCToI : 0.05} 
+                      onChange={handleElemConfigChange} />
                 </label>
               </div>
             ))}

@@ -140,23 +140,23 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
       config.enable ?
         <div className="ScaderElem">
           <div className="ScaderElem-header">
-            {/* Grid of elements */}
-            {config[configElemsName].map((elem, index) => (
-              <div className="ScaderElem-status-grid" key={index}>
-                <div>
-                  {elem.name}
-                </div>
-                <div>
-                  {state?.[stateElemsName]?.[index]?.rmsCurrentA + "A" || ""}
-                </div>
-                <div>
-                  {state?.[stateElemsName]?.[index]?.powerkW + "kW" || ""}
-                </div>
-                <div>
-                  {state?.[stateElemsName]?.[index]?.rmsVoltageV + "V" || ""}
-                </div>
+            <div className="ScaderElem-status-grid">
+              <div>
+                {/* Grid of elements */}
+                {config[configElemsName].map((elem, index) => (
+                  <div key={index+1000}>
+                    {elem.name}
+                  </div>
+                ))}
               </div>
-            ))}
+              <div>
+                {config[configElemsName].map((elem, index) => (
+                  <div key={index}>
+                    {state?.[stateElemsName]?.[index]?.rmsCurrentA + "A" || ""}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       : null

@@ -109,8 +109,6 @@ export class ScaderPulseCounterStates {
 export class ScaderElecMeterState {
     name: string = "";
     rmsCurrentA: number = 0;
-    rmsVoltageV: number = 0;
-    powerkW: number = 0;
 }
 
 export class ScaderElecMeterStates {

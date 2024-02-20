@@ -56,7 +56,7 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
       console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
       let newElems:Array<ElecMeterConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
-        newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`, calibADCToI: 0.05});
+        newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`, calibADCToAmps: 0.05});
       }
       newConfig[configElemsName].push(...newElems);
     } else {
@@ -77,10 +77,10 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
     if (nameElem) {
       newConfig[configElemsName][elemIndex].name = nameElem.value;
     }
-    // Get the value for the element calibration using the id of the input element `${configElemsName}-calibADCToI-${index}`
-    const calibADCToIElem = document.getElementById(`${configElemsName}_calibADCToI-${elemIndex}`) as HTMLInputElement;
-    if (calibADCToIElem) {
-      newConfig[configElemsName][elemIndex].calibADCToI = Number(calibADCToIElem.value);
+    // Get the value for the element calibration using the id of the input element `${configElemsName}-calibADCToAmps-${index}`
+    const calibADCToAmpsElem = document.getElementById(`${configElemsName}_calibADCToAmps-${elemIndex}`) as HTMLInputElement;
+    if (calibADCToAmpsElem) {
+      newConfig[configElemsName][elemIndex].calibADCToAmps = Number(calibADCToAmpsElem.value);
     }
     setConfig(newConfig);
     updateMutableConfig(newConfig);
@@ -122,8 +122,8 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
                 <label key={index}>
                   {subElemsFriendlyCaps} {index+1} CT Calibration:
                   <input className="ScaderElem-input" type="number" 
-                      id={`${configElemsName}_calibADCToI-${index}`}
-                      value={config[configElemsName][index].calibADCToI ? config[configElemsName][index].calibADCToI : 0.05} 
+                      id={`${configElemsName}calibADCToAmps-${index}`}
+                      value={config[configElemsName][index].calibADCToAmps ? config[configElemsName][index].calibADCToAmps : 0.05} 
                       onChange={handleElemConfigChange} />
                 </label>
               </div>
@@ -142,12 +142,19 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
           <div className="ScaderElem-header">
             {/* Grid of elements */}
             {config[configElemsName].map((elem, index) => (
-              <div className="ScaderElem-cell" key={index}>
-                {state[stateElemsName] && 
-                      state[stateElemsName][index] &&
-                      state[stateElemsName][index].powerkW ? 
-                          state[stateElemsName][index].powerkW : 
-                          "0.0"} kW
+              <div className="ScaderElem-status-grid" key={index}>
+                <div>
+                  {elem.name}
+                </div>
+                <div>
+                  {state?.[stateElemsName]?.[index]?.rmsCurrentA + "A" || ""}
+                </div>
+                <div>
+                  {state?.[stateElemsName]?.[index]?.powerkW + "kW" || ""}
+                </div>
+                <div>
+                  {state?.[stateElemsName]?.[index]?.rmsVoltageV + "V" || ""}
+                </div>
               </div>
             ))}
           </div>

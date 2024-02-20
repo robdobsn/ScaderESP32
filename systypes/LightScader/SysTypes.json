@@ -193,9 +193,9 @@
             },
             {
                 "type": "HW",
-                "name": "ScaderElecMeter",
+                "name": "ScaderElecMeters",
                 "trigger": "Time",
-                "msgID": "ScaderElecMeter",
+                "msgID": "ScaderElecMeters",
                 "rates": [
                     {
                         "if": "scaderOut",
@@ -232,7 +232,8 @@
         "SPI_CS2": 14,
         "taskCore": 1,
         "taskStack": 5000,
-        "taskPriority": 1
+        "taskPriority": 2,
+        "calibADCToAmps": 0.0889
     },
     "ScaderLEDPix": {
         "brightnessPC": 20,

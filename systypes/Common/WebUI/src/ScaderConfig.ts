@@ -5,7 +5,7 @@ export class RelayConfig {
 
 export class ElecMeterConfig {
     name: string = "";
-    calibADCToI: number = 0.05;
+    calibADCToAmps: number = 0.05;
 }
 
 export class ShadesConfig {

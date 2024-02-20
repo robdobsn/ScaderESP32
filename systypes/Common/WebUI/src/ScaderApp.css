@@ -134,6 +134,15 @@ code {
   background-color: #505050;
 }
 
+.ScaderElem-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0px;
+  padding: 0px;
+}
+
 .ScaderElem-button-text {
   width: 100%;
   position: absolute;

@@ -18,8 +18,6 @@
 #include "CTProcessor.h"
 #include "driver/spi_master.h"
 
-#define DEBUG_ELEC_METER_ANALYZE_TIMING_INTERVAL
-
 class APISourceInfo;
 
 class ScaderElecMeters : public RaftSysMod
@@ -74,7 +72,7 @@ private:
     std::vector<String> _elemNames;
 
     // Calibration values for Current Transformer input scaling
-    static constexpr float DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL = 0.04;
+    static constexpr float DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL = 0.089;
     std::vector<float> _ctCalibrationVals;
 
     // Data acquisition worker task
@@ -95,30 +93,19 @@ private:
     // CTProcessors
     std::vector<CTProcessor<uint16_t>> _ctProcessors;
 
-    // ADC data
-    std::vector<std::vector<uint16_t>> _dataAcqSamples;
-
-    // Mean levels
-    std::vector<ExpMovingAverage<8>> _dataAcqMeanLevels;
-
-
-
-    std::vector<CTProcessorDebugVals> _debugVals;
+    // Data acquisition semaphore
+    SemaphoreHandle_t _dataAcqSemaphore = nullptr;
 
     // Data acq timer
-    SemaphoreHandle_t _dataAcqSemaphore = nullptr;
     esp_timer_handle_t _dataAcqTimer = nullptr;
 
-    // Data acq progress
-    uint32_t _dataAcqNumSamples = 0;
-    uint32_t _dataAcqBatchStartTimeMs = 0;
+    // Sample queue
+    static const uint32_t DATA_ACQ_SAMPLE_QUEUE_SIZE = 250;
+    QueueHandle_t _dataAcqSampleQueue = nullptr;
 
-    // Debug timing
-#ifdef DEBUG_ELEC_METER_ANALYZE_TIMING_INTERVAL
-    SimpleMovingAverage<100, int16_t, int32_t> _dataAcqSampleIntervals;
-    uint64_t _debugLastDataAcqSampleTimeUs = 0;
-    uint32_t _debugSampleTimeUsCount = 0;
-#endif
+    // Current element index for ISR
+    volatile uint32_t _isrElemIdxCur = 0;
+    volatile uint32_t _isrElemIdxMax = 0;
 
     // Helper functions
     void deinit();
@@ -133,13 +120,16 @@ private:
     void dataAcqWorkerTask();
 
     // Timer for data acquisition
-    static void dataAcqTimerCallbackStatic(void* pArg) 
-    {
-        // Set the semaphore to signal data acquisition can occur
-        xSemaphoreGive(((ScaderElecMeters*)pArg)->_dataAcqSemaphore);
-    }
+    static void dataAcqTimerCallbackStatic(void* pArg);
 
     // Data acquisition
     void acquireSamples(uint32_t numSamples, uint64_t betweenChSamplesUs, uint32_t numChannels, std::vector<uint16_t>& samples);
     uint16_t acquireSample(uint32_t elemIdx);
+
+    // Debug vals
+    std::vector<DebugCTProcessorVals> _debugVals;
+
+    // Debug raw samples in batches 
+    uint32_t _debugBatchSampleCounter = 0;
+    uint32_t _debugBatchStartTimeMs = 0;
 };

@@ -1,21 +1,33 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Current transformer processor
+//
+// Rob Dobson 2024
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
 
 #include <stdint.h>
 #include "ExpMovingAverage.h"
 #include "PeakValueFollower.h"
 
+
 // Debug vals
-struct CTProcessorDebugVals
+struct DebugCTProcessorVals
 {
     float peakValPos;
     uint64_t peakTimePos = 0;
     float peakValNeg = 0;
     uint64_t peakTimeNeg = 0;
-    float rmsVal = 0;
+    float rmsCurrentAmps = 0;
     uint64_t lastZeroCrossingTimeUs = 0;
     float meanADCValue = 0;
     float prevACADCSample = 0;
+    uint16_t sampleIntervalErrUsMean = 0;
+    float sampleIntervalErrUsStdDev = 0;
+    uint16_t curADCSample = 0;
 };
-
 
 template <typename ADC_DATA_TYPE>
 class CTProcessor
@@ -27,10 +39,12 @@ public:
     ~CTProcessor()
     {
     }
+
+    // Setup
     void setup(float currentScalingFactor, uint32_t sampleRateHz, float signalFreqHz)
     {
         _currentScalingFactor = currentScalingFactor;
-        _currentScalingFactorSquared = currentScalingFactor * currentScalingFactor;
+        _scaleADCToAmpsSquared = currentScalingFactor * currentScalingFactor;
         _sampleRateHz = sampleRateHz;
         _signalFreqHz = signalFreqHz;
         _numSamplesPerCycle = sampleRateHz / signalFreqHz;
@@ -42,10 +56,15 @@ public:
         // Setup the peak follower to use 10 cycles for 100% decay
         _peakValueFollower.setup(10 * 1000000 / signalFreqHz);
     }
+
+    // Handle a new ADC reading
     void newADCReading(uint16_t sample, uint64_t sampleTimeUs)
     {
+        // Store the sample
+        _curSample = sample;
+
         // Update the exponential moving average
-        _expMovingAverage.sample(sample);
+        _adcValueAverager.sample(sample);
 
         // Update the peak value follower
         _peakValueFollower.sample(sample, sampleTimeUs);
@@ -64,10 +83,10 @@ public:
         ADC_DATA_TYPE smoothedSample = _adcData.getAverage();
 
         // Calculate sample AC value
-        double sampleACADCValue = (float)smoothedSample - _expMovingAverage.getAverage();
+        double sampleACADCValue = (float)smoothedSample - _adcValueAverager.getAverage();
 
-        // Accumulate the RMS value
-        _curSquareACSamples += sampleACADCValue * sampleACADCValue * _currentScalingFactorSquared;
+        // Accumulate the square of the current values
+        _sumAmpsSquared += sampleACADCValue * sampleACADCValue * _scaleADCToAmpsSquared;
         _curRMSSampleCount++;
 
         // Check for zero crossing (from negative to positive) and at least 1/2 cycle has passed
@@ -76,10 +95,12 @@ public:
         {
             // Store the accumulated RMS value (unless this is the first zero crossing time)
             if (_lastZeroCrossingTimeUs != 0)
-                _curRMSACValue = sqrt(_curSquareACSamples / _curRMSSampleCount);
+            {
+                _rmsAmpsAverager.sample(sqrt(_sumAmpsSquared / _curRMSSampleCount));
+            }
 
             // Reset the RMS value
-            _curSquareACSamples = 0;
+            _sumAmpsSquared = 0;
             _curRMSSampleCount = 0;
 
             // Store the last zero crossing time
@@ -89,72 +110,56 @@ public:
         // Store the previous sample
         _prevACADCSample = sampleACADCValue;
 
+        // Compute time interval stats for debugging
+        if (_debugLastDataAcqSampleTimeUs != 0)
+        {
+            int64_t timeSinceLastSampleUs = sampleTimeUs - _debugLastDataAcqSampleTimeUs;
+            _dataAcqSampleIntervals.sample(timeSinceLastSampleUs - _sampleIntervalUs);
+        }
+        _debugLastDataAcqSampleTimeUs = sampleTimeUs;
 
-
-
-        //     // Calculate the time since the last zero crossing
-        //     uint64_t timeSinceLastZeroCrossingUs = timestamp - _prevSampleTimeUs;
-
-        //     // Calculate the RMS value
-        //     float rmsValue = _expMovingAverage.getAverage() * _currentScalingFactor;
-
-        //     // Calculate the peak value
-        //     float peakValue = _peakValue * _currentScalingFactor;
-
-        //     // Check for a new peak value
-        //     if (rmsValue > peakValue)
-        //     {
-        //         _peakValue = rmsValue;
-        //         _peakValueTimeUs = timestamp;
-        //     }
-
-        //     // Debug
-        //     // LOG_I("CTProcessor", "RMS: %f, Peak: %f, PeakTime: %u, TimeSinceLastZeroCrossing: %llu", rmsValue, peakValue, _peakValueTimeUs, timeSinceLastZeroCrossingUs);
-
-        //     // Reset the exponential moving average
-        //     _expMovingAverage.sample(0);
-
-        //     // Reset the total samples
-        //     _totalSamples = 0;
-
-        //     // Update the last zero crossing time
-        //     _lastZeroCrossingTimeUs = timestamp;
-        // }
-
-        // // Update the previous sample
-        // _prevSample = sample;
-        // _prevSampleTimeUs = timestamp;
     }
 
-    // Get the current RMS value
-    float getCurrentRMS() const;
-
-    // Get the current peak value
-    float getCurrentPeak() const;
-
-    // Get the current peak time
-    uint32_t getCurrentPeakTime() const;
+    // Get JSON status
+    String getStatusJSON() const
+    {
+        return "{\"rmsCurrentA\":" + String(_rmsAmpsAverager.getAverage(), 3) + "}";
+    }
 
     // Debug
-    void getDebugInfo(CTProcessorDebugVals& debugVals) const
+    void getDebugInfo(DebugCTProcessorVals& debugVals) const
     {
         debugVals.peakValPos =_peakValueFollower.getPositivePeakValue();
         debugVals.peakTimePos = _peakValueFollower.getPositivePeakTimeUs();
         debugVals.peakValNeg = _peakValueFollower.getNegativePeakValue();
         debugVals.peakTimeNeg = _peakValueFollower.getNegativePeakTimeUs();
-        debugVals.rmsVal = _curRMSACValue;
+        debugVals.rmsCurrentAmps = _rmsAmpsAverager.getAverage();
         debugVals.lastZeroCrossingTimeUs = _lastZeroCrossingTimeUs;
-        debugVals.meanADCValue = _expMovingAverage.getAverage();
+        debugVals.meanADCValue = _adcValueAverager.getAverage();
         debugVals.prevACADCSample = _prevACADCSample;
+        debugVals.sampleIntervalErrUsMean = _dataAcqSampleIntervals.getAverage();
+        debugVals.sampleIntervalErrUsStdDev = _dataAcqSampleIntervals.getStandardDeviation();
+        debugVals.curADCSample = _curSample;
+    }
+
+    void getStatusHash(std::vector<uint8_t>& stateHash)
+    {
+        // Hash changes on 200mA intervals
+        uint8_t hashVal = 0;
+        float rmsVal = _rmsAmpsAverager.getAverage();
+        uint16_t rmsValInt = (uint16_t)(rmsVal*5);
+        for (uint32_t i = 0; i < sizeof(rmsValInt); i++)
+            hashVal ^= ((uint8_t*)&rmsValInt)[i];
+        stateHash.push_back(hashVal);
     }
 
 private:
 
-    // ADC data
-    SimpleMovingAverage<5, ADC_DATA_TYPE, uint32_t> _adcData;
+    // Smoothing of ADC data
+    SimpleMovingAverage<10, ADC_DATA_TYPE, uint32_t> _adcData;
 
     // Mean value
-    ExpMovingAverage<3, ADC_DATA_TYPE> _expMovingAverage;
+    ExpMovingAverage<4, ADC_DATA_TYPE> _adcValueAverager;
 
     // Last zero crossing time
     uint64_t _lastZeroCrossingTimeUs = 0;
@@ -163,17 +168,18 @@ private:
     uint32_t _totalSamples = 0;
     uint32_t _numSamplesForMeanValid = 0;
 
-    // Previous sample
+    // Samples
+    ADC_DATA_TYPE _curSample = 0;
     float _prevACADCSample = 0;
 
     // RMS calculation
-    double _curSquareACSamples = 0;
-    double _curRMSACValue = 0;
+    double _sumAmpsSquared = 0;
+    SimpleMovingAverage<25, float, float> _rmsAmpsAverager;
     uint32_t _curRMSSampleCount = 0;
 
     // Setup
     double _currentScalingFactor = 1.0;
-    double _currentScalingFactorSquared = 1.0;
+    double _scaleADCToAmpsSquared = 1.0;
     uint32_t _sampleRateHz = 0;
     double _signalFreqHz = 0;
     uint32_t _numSamplesPerCycle = 0;
@@ -186,4 +192,9 @@ private:
 
     // Peak value follower
     PeakValueFollower<float, uint64_t> _peakValueFollower;
+
+    // Debug timing
+    SimpleMovingAverage<100, int16_t, int32_t> _dataAcqSampleIntervals;
+    uint64_t _debugLastDataAcqSampleTimeUs = 0;
+    uint32_t _debugSampleTimeUsCount = 0;
 };

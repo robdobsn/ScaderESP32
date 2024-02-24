@@ -24,8 +24,8 @@
 static const char *MODULE_PREFIX = "ScaderElecMeters";
 
 // Debug
-#define DEBUG_RAW_SAMPLES_IN_BATCHES
-// #define USE_BITBANG_SPI
+// #define DEBUG_IN_BATCHES_CHANNEL_NO 0
+#define DEBUG_ELEC_METER_MUTABLE_DATA
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -33,15 +33,11 @@ static const char *MODULE_PREFIX = "ScaderElecMeters";
 
 ScaderElecMeters::ScaderElecMeters(const char *pModuleName, RaftJsonIF& sysConfig)
         : RaftSysMod(pModuleName, sysConfig),
-          _scaderCommon(*this, sysConfig, pModuleName)
+          _scaderCommon(*this, sysConfig, pModuleName),
+          _scaderModuleState("scaderKWh")
 {
-#ifdef USE_BITBANG_SPI
-    // Sample queue
-    _dataAcqSampleQueue = xQueueCreate(DATA_ACQ_SAMPLE_QUEUE_SIZE, sizeof(uint16_t));
-#else
     // Initialize semaphore
     _dataAcqSemaphore = xSemaphoreCreateBinary();
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +50,7 @@ void ScaderElecMeters::setup()
     _scaderCommon.setup();
 
     // Max elems
-    _maxElems = _config.getLong("maxElems", DEFAULT_MAX_ELEMS);
+    _maxElems = config.getLong("maxElems", DEFAULT_MAX_ELEMS);
     if (_maxElems > DEFAULT_MAX_ELEMS)
         _maxElems = DEFAULT_MAX_ELEMS;
 
@@ -84,10 +80,6 @@ void ScaderElecMeters::setup()
         return;
     }
 
-#ifdef USE_BITBANG_SPI
-    pinMode(_spiClk, OUTPUT);
-    pinMode(_spiMosi, OUTPUT);
-#else
     // Configure SPI
     const spi_bus_config_t buscfg = {
         .mosi_io_num = _spiMosi,
@@ -150,10 +142,12 @@ void ScaderElecMeters::setup()
             return;
         }
     }
-#endif
 
     // Get default calibration factor
-    float defaultADCToAmps = _config.getDouble("calibADCToAmps", DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL);
+    float defaultADCToAmps = config.getDouble("calibADCToAmps", DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL);
+
+    // Get the voltage lovel
+    float mainsVoltageRMS = config.getDouble("mainsVoltage", DEFAULT_MAINS_RMS_VOLTAGE); 
 
     // Element names
     std::vector<String> elemInfos;
@@ -201,19 +195,23 @@ void ScaderElecMeters::setup()
     _ctProcessors.resize(_elemNames.size());
     for (int i = 0; i < _elemNames.size(); i++)
     {
-        _ctProcessors[i].setup(_ctCalibrationVals[i], DATA_ACQ_SAMPLES_PER_SECOND, DATA_ACQ_SIGNAL_FREQ_HZ);
+        // Get stored total kWh
+        float totalKWh = _scaderModuleState.getDouble(("totalKWh[" + String(i) + "]").c_str(), 0);
+        _ctProcessors[i].setup(_ctCalibrationVals[i], DATA_ACQ_SAMPLES_PER_SECOND, DATA_ACQ_SIGNAL_FREQ_HZ, mainsVoltageRMS, totalKWh);
     }
 
-#ifdef DEBUG_RAW_SAMPLES_IN_BATCHES
+    // No need to save mutable data for a bit
+    _mutableDataChangeLastMs = millis();
+
+#ifdef DEBUG_IN_BATCHES_CHANNEL_NO
     _debugVals.resize(DATA_ACQ_SAMPLES_FOR_BATCH);
 #endif
 
     BaseType_t retc = pdPASS;
-#ifndef USE_BITBANG_SPI
     // Task settings
-    UBaseType_t taskCore = _config.getLong("taskCore", DEFAULT_TASK_CORE);
-    BaseType_t taskPriority = _config.getLong("taskPriority", DEFAULT_TASK_PRIORITY);
-    int taskStackSize = _config.getLong("taskStack", DEFAULT_TASK_STACK_SIZE_BYTES);
+    UBaseType_t taskCore = config.getLong("taskCore", DEFAULT_TASK_CORE);
+    BaseType_t taskPriority = config.getLong("taskPriority", DEFAULT_TASK_PRIORITY);
+    int taskStackSize = config.getLong("taskStack", DEFAULT_TASK_STACK_SIZE_BYTES);
 
     // Start the worker task
     if (_dataAcqWorkerTaskStatic == nullptr)
@@ -227,7 +225,6 @@ void ScaderElecMeters::setup()
                     (TaskHandle_t*)&_dataAcqWorkerTaskStatic,       // task handle
                     taskCore);                                      // pin task to core N
     }
-#endif
 
     // Start GPTimer for data acquisition
     if (retc == pdPASS)
@@ -267,6 +264,20 @@ void ScaderElecMeters::loop()
     if (!_isInitialised)
         return;
 
+    // Store total kwh when required
+    if (Raft::isTimeout(millis(), _mutableDataChangeLastMs, MUTABLE_DATA_SAVE_CHECK_MS))
+    {
+        // Check if any of the ct processors require persistence of total kWh
+        for (int i = 0; i < _elemNames.size(); i++)
+        {
+            if (_ctProcessors[i].isPersistenceReqd())
+            {
+                saveMutableData();
+                _mutableDataChangeLastMs = millis();
+                break;
+            }
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -278,7 +289,7 @@ void ScaderElecMeters::addRestAPIEndpoints(RestAPIEndpointManager &endpointManag
     // Control shade
     endpointManager.addEndpoint("elecmeter", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderElecMeters::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "setup elec");
+                            "elecmeter/value/N - get elecmeter value, elecmeter/value/N/M - set elecmeter value");
     LOG_I(MODULE_PREFIX, "addRestAPIEndpoints setup elec");
 }
 
@@ -293,6 +304,38 @@ RaftRetCode ScaderElecMeters::apiControl(const String &reqStr, String &respStr, 
     {
         LOG_I(MODULE_PREFIX, "apiControl disabled");
         return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
+    }
+
+    // Get command
+    String cmdStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
+    if (cmdStr.startsWith("value"))
+    {
+        // Get element number
+        String elemNoStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
+        if (elemNoStr.length() == 0)
+        {
+            LOG_E(MODULE_PREFIX, "apiControl invalid elemNo (1 based)");
+            return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
+        }
+        int elemNo = elemNoStr.toInt();
+        if (elemNo < 1)
+        {
+            LOG_E(MODULE_PREFIX, "apiControl invalid elemNo (1 based)");
+            return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
+        }
+
+        // Get value
+        String valueStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3);
+        if (valueStr.length() > 0)
+        {
+            // Set value
+            _ctProcessors[elemNo-1].setTotalKWh(valueStr.toFloat());
+            return Raft::setJsonBoolResult(reqStr.c_str(), respStr, true);
+        }
+
+        // Get value
+        respStr = String(_ctProcessors[elemNo-1].getTotalKWh());
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, true);
     }
 
     // Set result
@@ -342,79 +385,13 @@ void ScaderElecMeters::getStatusHash(std::vector<uint8_t>& stateHash)
 
 void ScaderElecMeters::dataAcqTimerCallbackStatic(void* pArg)
 {
-#ifdef USE_BITBANG_SPI
-
-    // Get pointer to this object
-    ScaderElecMeters* pThis = (ScaderElecMeters*)pArg;
-
-    // Get element index and chip select
-    uint32_t elemIdx = pThis->_isrElemIdxCur;
-    int chipIdx = elemIdx / ELEMS_PER_CHIP;
-    int csPin = pThis->_spiChipSelects[chipIdx];
-
-    // Buffer
-    static const uint32_t NUM_BITS_TO_READ_WRITE = 24;
-    // Setup tx buffer & rx buffers - 3 bytes
-    uint8_t txBuf[NUM_BITS_TO_READ_WRITE / 8] = {
-        uint8_t(0x06 | ((elemIdx & 0x04) << 1)), 
-        uint8_t((elemIdx & 0x03) << 6), 
-        0x00};
-    uint8_t rxBuf[NUM_BITS_TO_READ_WRITE / 8] = {0, 0, 0};
-
-    // Set chip select for appropriate chip
-    digitalWrite(csPin, LOW);
-
-    // // Bitbang SPI
-    // for (int i = 0; i < NUM_BITS_TO_READ_WRITE; i++)
-    // {
-    //     // Clock low
-    //     digitalWrite(pThis->_spiClk, LOW);
-
-    //     // Set MOSI
-    //     digitalWrite(pThis->_spiMosi, (txBuf[1] & (1 << (NUM_BITS_TO_READ_WRITE - 1 - i))) ? HIGH : LOW);
-
-    //     // Clock high
-    //     digitalWrite(pThis->_spiClk, HIGH);
-
-    //     // Read MISO
-    //     rxBuf[1] |= (digitalRead(pThis->_spiMiso) << (NUM_BITS_TO_READ_WRITE - 1 - i));
-    // }
-
-    // Clock low
-    digitalWrite(pThis->_spiClk, LOW);
-
-    // Set chip select high
-    digitalWrite(csPin, HIGH);
-
-    // Form the data using top 4 bits for the element index and bottom 12 bits for the value
-    uint32_t val = (elemIdx & 0x0f) << 12 | ((rxBuf[1] & 0x0f) << 8) | rxBuf[2];
-
-    // Place the data on a queue
-    // xQueueSendFromISR(((ScaderElecMeters*)pArg)->_dataAcqSampleQueue, &val, nullptr);
-
-    // Move to next element
-    elemIdx++;
-    if (elemIdx >= pThis->_isrElemIdxMax)
-        elemIdx = 0;
-    ((ScaderElecMeters*)pArg)->_isrElemIdxCur = elemIdx;
- 
-#else
         // Set the semaphore to signal data acquisition can occur
         xSemaphoreGive(((ScaderElecMeters*)pArg)->_dataAcqSemaphore);
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Worker task
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef USE_BITBANG_SPI
-
-void ScaderElecMeters::dataAcqWorkerTask()
-{
-}
-
-#else
 
 void ScaderElecMeters::dataAcqWorkerTask()
 {
@@ -445,7 +422,7 @@ void ScaderElecMeters::dataAcqWorkerTask()
                 _ctProcessors[elemIdx].newADCReading(samples[elemIdx], timeNowUs);
             }
 
-#ifdef DEBUG_RAW_SAMPLES_IN_BATCHES
+#ifdef DEBUG_IN_BATCHES_CHANNEL_NO
 
             // Check if not processing a batch and not yet time to start a new one
             if ((_debugBatchSampleCounter == 0) && !Raft::isTimeout(millis(), _debugBatchStartTimeMs, DATA_ACQ_TIME_BETWEEN_BATCHES_MS))
@@ -457,7 +434,7 @@ void ScaderElecMeters::dataAcqWorkerTask()
 
             // Get the state
             DebugCTProcessorVals debugVals;
-            _ctProcessors[3].getDebugInfo(debugVals);
+            _ctProcessors[DEBUG_IN_BATCHES_CHANNEL_NO].getDebugInfo(debugVals);
             _debugVals[_debugBatchSampleCounter] = debugVals;
 
             // Increment the number of samples
@@ -470,12 +447,15 @@ void ScaderElecMeters::dataAcqWorkerTask()
                 for (uint32_t sampleIdx = 0; sampleIdx < _debugBatchSampleCounter; sampleIdx++)
                 {
                     sampleTimeMs += DATA_ACQ_SAMPLE_INTERVAL_US / 1000.0;
-                    printf("T %.3f ADC %d max %.2f %u min %.2f %u Irms %.2f Zx %u ADCmean %.2f Offs %.2f",
+                    printf("T %.3f ADC %d max %.2f %u min %.2f %u Irms %.2f P %.0f TKWh %02f Zx %u ADCmean %.2f Offs %.2f",
                         sampleTimeMs,
                         _debugVals[sampleIdx].curADCSample,
                         _debugVals[sampleIdx].peakValPos, (int)_debugVals[sampleIdx].peakTimePos,
                         _debugVals[sampleIdx].peakValNeg, (int)_debugVals[sampleIdx].peakTimeNeg,
-                        _debugVals[sampleIdx].rmsCurrentAmps, (int)_debugVals[sampleIdx].lastZeroCrossingTimeUs,
+                        _debugVals[sampleIdx].rmsCurrentAmps, 
+                        _debugVals[sampleIdx].rmsPowerW,
+                        _debugVals[sampleIdx].totalKWh,
+                        (int)_debugVals[sampleIdx].lastZeroCrossingTimeUs,
                         _debugVals[sampleIdx].meanADCValue, _debugVals[sampleIdx].prevACADCSample);
                     printf("\n");
                 }
@@ -532,4 +512,32 @@ uint16_t ScaderElecMeters::acquireSample(uint32_t elemIdx)
     return val;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Write mutable data
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ScaderElecMeters::saveMutableData()
+{
+    // Save total kWh for each element
+    String jsonConfig = "\"totalKWh\":[";
+    for (int i = 0; i < _elemNames.size(); i++)
+    {
+        if (i > 0)
+            jsonConfig += ",";
+        jsonConfig += String(_ctProcessors[i].getTotalKWh());
+    }
+    jsonConfig += "]";
+
+    // Add outer brackets
+    jsonConfig = "{" + jsonConfig + "}";
+
+#ifdef DEBUG_ELEC_METER_MUTABLE_DATA
+    LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
 #endif
+
+    _scaderModuleState.setJsonDoc(jsonConfig.c_str());
+
+    // Set persistence done
+    for (int i = 0; i < _elemNames.size(); i++)
+        _ctProcessors[i].setPersistenceDone();
+}

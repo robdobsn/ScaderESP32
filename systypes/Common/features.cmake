@@ -6,7 +6,7 @@ add_compile_definitions(SYSTEM_VERSION="6.0.8")
 
 # Raft components
 set(RAFT_COMPONENTS
-    RaftSysMods@v1.2.0
+    RaftSysMods@v1.2.1
     RaftI2C@v1.2.0
     RaftMotorControl@v1.2.0
     RaftWebServer@v1.2.0

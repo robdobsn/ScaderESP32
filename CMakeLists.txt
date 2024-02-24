@@ -6,7 +6,7 @@ include(FetchContent)
 FetchContent_Declare(
     raftcore
     GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-    GIT_TAG        v1.5.7
+    GIT_TAG        v1.5.8
 )
 FetchContent_Populate(raftcore)
 

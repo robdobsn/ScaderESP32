@@ -14,7 +14,7 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
   const stateElemsName = "elems";
   const subElemsFriendly = "ctclamps";
   const subElemsFriendlyCaps = "CTClamp";
-  const restCommandName = "elecmeter";
+  const restCommandName = "elecmeter/value";
   const [config, setConfig] = React.useState(props.config[scaderName]);
   const [state, setState] = React.useState(new ScaderState()[scaderName]);
 
@@ -101,6 +101,17 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
         </div>
         {config.enable && 
           <div className="ScaderElem-body">
+            {/* Mains voltage to use */}
+            <label>
+              Mains Voltage:
+              <input className="ScaderElem-input" type="number" 
+                  value={config.mainsVoltage} 
+                  onChange={(event) => {
+                    const newConfig = {...config, mainsVoltage: Number(event.target.value)};
+                    setConfig(newConfig);
+                    updateMutableConfig(newConfig);
+                  }} />
+            </label>
             {/* Input spinner with number of elems */}
             <label>
               Number of {subElemsFriendly}:
@@ -120,13 +131,15 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
                 </label>
                 {/* Input box for Current Transformer calibration value ADC -> Current */}
                 <label key={index}>
-                  {subElemsFriendlyCaps} {index+1} CT Calibration:
+                  CT Calibration:
                   <input className="ScaderElem-input" type="number" 
+                      onChange={handleElemConfigChange}
                       id={`${configElemsName}calibADCToAmps-${index}`}
                       value={config[configElemsName][index].calibADCToAmps ? config[configElemsName][index].calibADCToAmps : 0.05} 
-                      onChange={handleElemConfigChange} />
+                      />
                 </label>
               </div>
+
             ))}
           </div>
         }
@@ -140,25 +153,39 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
       config.enable ?
         <div className="ScaderElem">
           <div className="ScaderElem-header">
-            <div className="ScaderElem-status-grid">
-              <div>
-                {/* Grid of elements */}
-                {config[configElemsName].map((elem, index) => (
-                  <div key={index+1000}>
+            <div className="ScaderElem-status-grid5">
+              {/* Grid of elements */}
+              {config[configElemsName].map((elem, index) => (
+                <>
+                  <div key={index}>
                     {elem.name}
                   </div>
-                ))}
-              </div>
-              <div>
-                {config[configElemsName].map((elem, index) => (
-                  <div key={index}>
+                  <div key={index+1000}>
                     {state?.[stateElemsName]?.[index]?.rmsCurrentA + "A" || ""}
                   </div>
-                ))}
+                  <div key={index+2000}>
+                    {state?.[stateElemsName]?.[index]?.rmsPowerW + "W" || ""}
+                  </div>
+                  <div key={index+3000}>
+                    {state?.[stateElemsName]?.[index]?.totalKWh + "kWh" || ""}
+                  </div>
+                  <div key={index+4000}>
+                    <input className='ScaderElem-input-inline' type="number" id={`elem-${index}-kwh-input`} />
+                    <button className='ScaderElem-button-inline' onClick={() => {
+                          // Send rest command to set the total kWh
+                          const kwh = document.getElementById(`elem-${index}-kwh-input`) as HTMLInputElement;
+                          if (kwh) {
+                            scaderManager.sendCommand(`/${restCommandName}/${index+1}/${kwh.value}`);
+                          }
+                        }}>
+                      Set
+                    </button>
+                  </div>
+                </>
+              ))}
               </div>
             </div>
           </div>
-        </div>
       : null
     )
   }

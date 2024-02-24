@@ -175,9 +175,24 @@ code {
   top: 0rem;
 }
 
+.ScaderElem-button-inline {
+  display: inline-flex;
+  top: -2px;
+  position: relative;
+  margin-left: 10px;
+  padding: 5px;
+}
+
 .ScaderElem-input {
   font-size: calc(10px + 1vmin);
   margin-left: 10px;
+}
+
+.ScaderElem-input-inline {
+  font-size: calc(10px + 1vmin);
+  margin-left: 10px;
+  max-width: 5rem;
+  display: inline-flex;
 }
 
 .ScaderElem-input-small {
@@ -215,6 +230,17 @@ code {
 }
 
 .ScaderElem-status-grid div {
+  padding: 10px;
+}
+
+.ScaderElem-status-grid5 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
+  grid-gap: 0px 0px 0px 0px;
+}
+
+.ScaderElem-status-grid5 div {
   padding: 10px;
 }
 

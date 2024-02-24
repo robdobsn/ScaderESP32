@@ -114,11 +114,13 @@ export class ScaderConfig {
         enable: boolean,
         maxElems: number,
         name: string,
+        mainsVoltage: number,
         elems: Array<ElecMeterConfig>;
     } = {
         enable: false,
         maxElems: 4,
         name: "ScaderElecMeters",
+        mainsVoltage: 240,
         elems: [],
     }
 }

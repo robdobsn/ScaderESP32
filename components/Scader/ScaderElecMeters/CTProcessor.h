@@ -21,12 +21,14 @@ struct DebugCTProcessorVals
     float peakValNeg = 0;
     uint64_t peakTimeNeg = 0;
     float rmsCurrentAmps = 0;
+    float rmsPowerW = 0;
     uint64_t lastZeroCrossingTimeUs = 0;
     float meanADCValue = 0;
     float prevACADCSample = 0;
     uint16_t sampleIntervalErrUsMean = 0;
     float sampleIntervalErrUsStdDev = 0;
     uint16_t curADCSample = 0;
+    float totalKWh = 0;
 };
 
 template <typename ADC_DATA_TYPE>
@@ -41,7 +43,7 @@ public:
     }
 
     // Setup
-    void setup(float currentScalingFactor, uint32_t sampleRateHz, float signalFreqHz)
+    void setup(float currentScalingFactor, uint32_t sampleRateHz, float signalFreqHz, float mainVoltageRMS, double totalKWh)
     {
         _currentScalingFactor = currentScalingFactor;
         _scaleADCToAmpsSquared = currentScalingFactor * currentScalingFactor;
@@ -52,6 +54,10 @@ public:
         _sampleIntervalUs = 1000000 / sampleRateHz;
         _halfCycleTimeUs = 1000000 / (signalFreqHz * 2);
         _halfCycleSamples = _numSamplesPerCycle / 2;
+        _mainsVoltageRMS = mainVoltageRMS;
+        _totalKWh = totalKWh;
+        _lastReportedTotalKWh = totalKWh;
+        _totalKWhPersistanceReqd = false;
 
         // Setup the peak follower to use 10 cycles for 100% decay
         _peakValueFollower.setup(10 * 1000000 / signalFreqHz);
@@ -97,6 +103,9 @@ public:
             if (_lastZeroCrossingTimeUs != 0)
             {
                 _rmsAmpsAverager.sample(sqrt(_sumAmpsSquared / _curRMSSampleCount));
+
+                // Update total KWh
+                _totalKWh += _rmsAmpsAverager.getAverage() * _mainsVoltageRMS * Raft::timeElapsed(sampleTimeUs, _lastZeroCrossingTimeUs) / 3600000000000.0;
             }
 
             // Reset the RMS value
@@ -105,6 +114,13 @@ public:
 
             // Store the last zero crossing time
             _lastZeroCrossingTimeUs = sampleTimeUs;
+        }
+
+        // Check if the difference between lastReportedKWh and actual totalKWh is sufficient to trigger persistence
+        if (fabs(_totalKWh - _lastReportedTotalKWh) > TOTAL_KWH_PERSISTENCE_THRESHOLD)
+        {
+            _totalKWhPersistanceReqd = true;
+            _lastReportedTotalKWh = _totalKWh;
         }
 
         // Store the previous sample
@@ -117,13 +133,40 @@ public:
             _dataAcqSampleIntervals.sample(timeSinceLastSampleUs - _sampleIntervalUs);
         }
         _debugLastDataAcqSampleTimeUs = sampleTimeUs;
-
     }
 
     // Get JSON status
     String getStatusJSON() const
     {
-        return "{\"rmsCurrentA\":" + String(_rmsAmpsAverager.getAverage(), 3) + "}";
+        return String("{") + 
+            "\"rmsCurrentA\":" + String(_rmsAmpsAverager.getAverage(), 1) + 
+            ",\"rmsPowerW\":" + String(_rmsAmpsAverager.getAverage() * _mainsVoltageRMS, 1) +
+            ",\"totalKWh\":" + String(_lastReportedTotalKWh, 1) +
+            "}";
+    }
+
+    // Check if persistence is required
+    bool isPersistenceReqd()
+    {
+        return _totalKWhPersistanceReqd;
+    }
+    void setPersistenceDone()
+    {
+        _totalKWhPersistanceReqd = false;
+    }
+
+    // Get total KWh
+    float getTotalKWh() const
+    {
+        return _lastReportedTotalKWh;
+    }
+
+    // Set total KWh
+    void setTotalKWh(float totalKWh)
+    {
+        _totalKWh = totalKWh;
+        _lastReportedTotalKWh = totalKWh;
+        _totalKWhPersistanceReqd = true;
     }
 
     // Debug
@@ -134,12 +177,14 @@ public:
         debugVals.peakValNeg = _peakValueFollower.getNegativePeakValue();
         debugVals.peakTimeNeg = _peakValueFollower.getNegativePeakTimeUs();
         debugVals.rmsCurrentAmps = _rmsAmpsAverager.getAverage();
+        debugVals.rmsPowerW = _rmsAmpsAverager.getAverage() * _mainsVoltageRMS;
         debugVals.lastZeroCrossingTimeUs = _lastZeroCrossingTimeUs;
         debugVals.meanADCValue = _adcValueAverager.getAverage();
         debugVals.prevACADCSample = _prevACADCSample;
         debugVals.sampleIntervalErrUsMean = _dataAcqSampleIntervals.getAverage();
         debugVals.sampleIntervalErrUsStdDev = _dataAcqSampleIntervals.getStandardDeviation();
         debugVals.curADCSample = _curSample;
+        debugVals.totalKWh = _totalKWh;
     }
 
     void getStatusHash(std::vector<uint8_t>& stateHash)
@@ -150,6 +195,9 @@ public:
         uint16_t rmsValInt = (uint16_t)(rmsVal*5);
         for (uint32_t i = 0; i < sizeof(rmsValInt); i++)
             hashVal ^= ((uint8_t*)&rmsValInt)[i];
+        uint32_t totalKWhInt = (uint32_t)(_totalKWh*10);
+        for (uint32_t i = 0; i < sizeof(totalKWhInt); i++)
+            hashVal ^= ((uint8_t*)&totalKWhInt)[i];
         stateHash.push_back(hashVal);
     }
 
@@ -177,12 +225,21 @@ private:
     SimpleMovingAverage<25, float, float> _rmsAmpsAverager;
     uint32_t _curRMSSampleCount = 0;
 
+    // total KWh
+    double _totalKWh = 0;
+
+    // total KWh reporting & persistence
+    static constexpr float TOTAL_KWH_PERSISTENCE_THRESHOLD = 0.5;
+    double _lastReportedTotalKWh = 0;
+    bool _totalKWhPersistanceReqd = false;
+
     // Setup
     double _currentScalingFactor = 1.0;
     double _scaleADCToAmpsSquared = 1.0;
     uint32_t _sampleRateHz = 0;
     double _signalFreqHz = 0;
     uint32_t _numSamplesPerCycle = 0;
+    float _mainsVoltageRMS = 230;
     static constexpr float MIN_AC_VALUE_ABOVE_NOISE_FOR_ZERO_CROSSING = 50;
 
     // Calculated timing

@@ -74,6 +74,7 @@ private:
     // Calibration values for Current Transformer input scaling
     static constexpr float DEFAULT_ADC_TO_CURRENT_CALIBRATION_VAL = 0.089;
     std::vector<float> _ctCalibrationVals;
+    static constexpr float DEFAULT_MAINS_RMS_VOLTAGE = 236.0;
 
     // Data acquisition worker task
     volatile TaskHandle_t _dataAcqWorkerTaskStatic = nullptr;
@@ -106,6 +107,12 @@ private:
     // Current element index for ISR
     volatile uint32_t _isrElemIdxCur = 0;
     volatile uint32_t _isrElemIdxMax = 0;
+
+    // Module state
+    RaftJsonNVS _scaderModuleState;
+    uint32_t _mutableDataChangeLastMs = 0;
+    static const uint32_t MUTABLE_DATA_SAVE_CHECK_MS = 1000;
+    void saveMutableData();
 
     // Helper functions
     void deinit();

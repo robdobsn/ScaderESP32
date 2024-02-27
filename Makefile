@@ -11,11 +11,11 @@ BUILD_CONFIG_BASE_DIR = systypes
 SYSTYPE ?= $(notdir $(firstword $(filter-out $(BUILD_CONFIG_BASE_DIR)/Common, $(wildcard $(BUILD_CONFIG_BASE_DIR)/*))))
 BUILD_CONFIG_DIR = $(BUILD_CONFIG_BASE_DIR)/$(SYSTYPE)
 COMMON_CONFIG_DIR = $(BUILD_CONFIG_BASE_DIR)/Common
-BUILD_RAFT_ARTEFACTS_DIR ?= build_raft_artefacts
+BUILD_RAFT_ARTIFACTS_DIR ?= build_raft_artifacts
 BUILD_DIR = $(BUILD_BASE_FOLDER)/$(SYSTYPE)
 ROOTDIR = $(realpath $(CURDIR))
 SDKCONFIG_DEFAULTS_FILE ?= $(BUILD_CONFIG_DIR)/sdkconfig.defaults
-SDKCONFIG_FILE ?= $(BUILD_RAFT_ARTEFACTS_DIR)/sdkconfig
+SDKCONFIG_FILE ?= $(BUILD_RAFT_ARTIFACTS_DIR)/sdkconfig
 TARGET_BINARY = $(BUILD_DIR)/$(SYSTYPE).bin
 # DOCKER_EXEC ?= docker run --rm -v $(ROOTDIR):/project -w /project espressif/idf:v5.1.2
 DOCKER_EXEC = docker build -t raftbuilder . && docker run --rm -v $(ROOTDIR):/project -w /project raftbuilder
@@ -36,14 +36,14 @@ endif
 ifeq ($(DOCKER),1)
 DELETE_BUILD_FOLDERS=\
 	@echo "-------------------- Deleting build folders --------------------"; \
-	$(DOCKER_EXEC) rm -rf ./build/ ./build_raft_artefacts/ || true
+	$(DOCKER_EXEC) rm -rf ./build/ ./build_raft_artifacts/ || true
 BUILD_TARGET=\
 	@echo "-------------------- Building in Docker --------------------"; \
 	$(DOCKER_EXEC) $(CMD)
 else
 DELETE_BUILD_FOLDERS=\
 	@echo "-------------------- Deleting build folders --------------------"; \
-	rm -rf ./build/ ./build_raft_artefacts/ || true
+	rm -rf ./build/ ./build_raft_artifacts/ || true
 BUILD_TARGET=\
 	@echo "-------------------- Building Locally --------------------"; \
 	$(LOCAL_EXEC) && $(CMD)
@@ -63,11 +63,11 @@ build: $(TARGET_BINARY)
 
 ifneq ($(SERIAL_MONITOR),)
 flash: build
-	@$(PYTHON_FOR_FLASH) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(SYSTYPE).bin $(PORT) -s $(SDKCONFIG_FILE) -f fs.bin
+	@$(PYTHON_FOR_FLASH) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTIFACTS_DIR)/partitions.csv $(BUILD_DIR) $(SYSTYPE).bin $(PORT) -s $(SDKCONFIG_FILE) -f fs.bin
 	$(SERIAL_MONITOR) $(PORT) -l
 else
 flash: build
-	@$(PYTHON_FOR_FLASH) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTEFACTS_DIR)/partitions.csv $(BUILD_DIR) $(SYSTYPE).bin $(PORT) -s $(SDKCONFIG_FILE) -f fs.bin
+	@$(PYTHON_FOR_FLASH) $(BUILD_DIR)/_deps/raftcore-src/scripts/flashUsingPartitionCSV.py $(BUILD_RAFT_ARTIFACTS_DIR)/partitions.csv $(BUILD_DIR) $(SYSTYPE).bin $(PORT) -s $(SDKCONFIG_FILE) -f fs.bin
 endif
 
 .PHONY: build clean flash test

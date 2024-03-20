@@ -93,7 +93,7 @@ void ScaderElecMeters::setup()
         .data7_io_num = -1,
         .max_transfer_sz = 0,
         .flags = 0,
-        .isr_cpu_id = INTR_CPU_ID_AUTO,
+        .isr_cpu_id = ESP_INTR_CPU_AFFINITY_AUTO,
         .intr_flags = 0,
     };
 

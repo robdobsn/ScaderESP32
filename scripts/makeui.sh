@@ -1,1 +1,0 @@
-python3 ./scripts/UITemplater.py ./buildConfigs/Scader/WebUI ./buildConfigs/Scader/FSImage

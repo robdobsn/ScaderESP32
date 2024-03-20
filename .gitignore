@@ -1,7 +1,7 @@
 build
 logs
 sdkconfig
-build_raft_artefacts
+build_raft_artifacts
 managed_components
 compile_commands_win.json
 *.pyc

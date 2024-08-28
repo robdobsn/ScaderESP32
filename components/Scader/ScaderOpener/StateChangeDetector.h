@@ -54,7 +54,7 @@ public:
         return false;
     }
 
-    bool getState()
+    bool getState() const
     {
         return _lastLevel == _activeLevel;
     }

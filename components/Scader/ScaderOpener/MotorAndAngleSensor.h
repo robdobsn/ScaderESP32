@@ -27,7 +27,7 @@ public:
     void setup(RaftJsonIF& config);
 
     // Service
-    void service();
+    void loop();
 
     // Motor move speed
     void setMotorSpeedFromDegreesAndSecs(float angleDegs, float timeSecs)
@@ -43,19 +43,19 @@ public:
     void stop();
 
     // Is motor active
-    bool isMotorActive();
+    bool isMotorActive() const;
 
     // Get measured angle
-    float getMeasuredAngleDegs();
+    float getMeasuredAngleDegs() const;
 
     // Get measured angular speed
-    float getMeasuredAngularSpeedDegsPerSec();
+    float getMeasuredAngularSpeedDegsPerSec() const;
 
     // Check if angle is within tolerance of target
-    bool isNearTargetAngle(float targetAngleDegs, float posToleranceDegs, float negToleranceDegs);
+    bool isNearTargetAngle(float targetAngleDegs, float posToleranceDegs, float negToleranceDegs) const;
 
     // Check if motor has stopped for more than a given time (ms)
-    bool isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec = 0);
+    bool isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec = 0) const;
 
 private:
     // Stepper motor
@@ -76,13 +76,13 @@ private:
     MovingRate<20, float, float> _measuredDoorSpeedDegsPerSec;
 
     // I2C bus element status callback
-    void busElemStatusCB(BusBase& bus, const std::vector<BusElemAddrAndStatus>& statusChanges);
+    void busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges);
 
     // I2C bus operation status callback
-    void busOperationStatusCB(BusBase& bus, BusOperationStatus busOperationStatus);
+    void busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus);
 
     // Calculate move speed degs per sec
-    float calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs);
+    float calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const;
 
     // Debug
     uint32_t _debugLastPrintTimeMs = 0;

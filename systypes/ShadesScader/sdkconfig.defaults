@@ -4,7 +4,7 @@
 # Default log level
 CONFIG_LOG_DEFAULT_LEVEL_DEBUG=n
 
-# Serial Baud-Rate
+# Serial
 CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
 
 # Flash size
@@ -12,7 +12,7 @@ CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # Partition Table
 CONFIG_PARTITION_TABLE_CUSTOM=y
-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="build_raft_artifacts/partitions.csv"
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="systypes/ShadesScader/partitions.csv"
 
 # Common ESP-related
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=20000

@@ -8,6 +8,6 @@ idf_component_register(
                   "MT6701Sensor"
                   "Helpers"
                 REQUIRES
-                  raftcore-src
-                  rafti2c-src
+                  RaftCore
+                  RaftI2C
                 )

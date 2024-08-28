@@ -35,7 +35,7 @@ protected:
     virtual void setup() override final;
 
     // Loop (called frequently)
-    virtual void service() override final;
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;
@@ -83,7 +83,7 @@ private:
         // Helpers
         void set(bool turnOn, int durationMs);
         void cmd(const String &ctrlStr, const String &durationStr);
-        void service();
+        void loop();
         void deinit();
         String getStatusStrJSON();
         uint8_t getStateHashByte();

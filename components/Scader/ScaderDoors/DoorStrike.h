@@ -38,7 +38,7 @@ public:
                 uint32_t delayRelockSecs);
 
     // Service to handle timeouts, etc
-    void service();
+    void loop();
 
     // Unlock
     bool unlockWithTimeout(const char* unlockCause, int timeoutInSecs = -1);

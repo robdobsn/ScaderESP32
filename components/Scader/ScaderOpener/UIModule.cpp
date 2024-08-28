@@ -123,7 +123,7 @@ void UIModule::setup(RaftJsonIF &config, OpenerStatus* pOpenerParams)
 // Service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void UIModule::service()
+void UIModule::loop()
 {
     // Check initialised
     if (!_isInitialised)
@@ -236,8 +236,7 @@ void UIModule::frameRxCB(const uint8_t *framebuffer, unsigned framelength)
         return;
 
     // Decode
-    String frameStr;
-    Raft::strFromBuffer(framebuffer, framelength, frameStr);
+    String frameStr(framebuffer, framelength);
 #ifdef DEBUG_UI_MODULE_RX
     LOG_I(MODULE_PREFIX, "frameRxCB %s", frameStr.c_str());
 #endif

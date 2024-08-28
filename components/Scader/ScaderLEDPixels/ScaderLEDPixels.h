@@ -48,7 +48,7 @@ protected:
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;
 
     // Status
-    virtual String getStatusJSON() override final;
+    virtual String getStatusJSON() const override final;
     
 private:
 
@@ -104,8 +104,8 @@ private:
     static const uint32_t PATTERN_LOCATE_STEP_MS = 200;
     static const uint32_t PATTERN_LOCATE_LEDS_BETWEEN_SYNCS = 10;
     void patternLocate_start();
-    void patternLocate_service();
+    void patternLocate_loop();
     void patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed);
-    void patternSnake_service();
+    void patternSnake_loop();
 #endif
 };

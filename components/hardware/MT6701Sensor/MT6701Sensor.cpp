@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "MT6701Sensor.h"
-#include "BusBase.h"
+#include "RaftBus.h"
 #include "RaftUtils.h"
 #include "BusRequestInfo.h"
 #include "BusRequestResult.h"
@@ -33,7 +33,7 @@ MT6701Sensor::~MT6701Sensor()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MT6701Sensor::setup(RaftJsonIF& config, BusBase* pBus)
+void MT6701Sensor::setup(RaftJsonIF& config, RaftBus* pBus)
 {
     // Store bus
     _pBus = pBus;
@@ -67,7 +67,7 @@ void MT6701Sensor::setup(RaftJsonIF& config, BusBase* pBus)
 // Service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MT6701Sensor::service()
+void MT6701Sensor::loop()
 {
 }
 

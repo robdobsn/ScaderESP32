@@ -25,7 +25,7 @@ public:
     {
         return _moduleIsPresent;
     }
-    virtual void service() override final;
+    virtual void loop() override final;
 
 private:
     // Device handle
@@ -171,7 +171,7 @@ private:
     void pollingStart();
     void pollingStop();
     void pollingSetState(int newState);
-    void pollingService();
+    void pollingloop();
 
     // Helpers
     bool resetDefaultsCmd();

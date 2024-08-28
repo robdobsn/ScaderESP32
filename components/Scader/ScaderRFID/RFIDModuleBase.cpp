@@ -70,7 +70,7 @@ void RFIDModuleBase::injectTag(String& tag)
     tagNowPresent(tag);
 }
 
-void RFIDModuleBase::service()
+void RFIDModuleBase::loop()
 {
 }
 

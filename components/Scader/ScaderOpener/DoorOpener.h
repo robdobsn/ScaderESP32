@@ -30,7 +30,7 @@ public:
     void setup(RaftJsonIF& config);
 
     // Service
-    void service();
+    void loop();
 
     // Open/Close door
     void startDoorOpening(String debugStr);
@@ -43,7 +43,7 @@ public:
     void debugMoveToAngle(int32_t angleDegs);
 
     // Status
-    String getStatusJSON(bool includeBraces);
+    String getStatusJSON(bool includeBraces) const;
     void getStatusHash(std::vector<uint8_t>& stateHash);
 
 private:
@@ -86,7 +86,7 @@ private:
     void onConservatoryPIRChanged(bool isActive, uint32_t timeSinceLastChange);
     void onKitchenPIRChanged(bool isActive);
     void onOpenCloseToggleChanged(bool isActive);
-    float calcDoorMoveSpeedDegsPerSec(float angleDegs, float timeSecs);
-    float calcDegreesFromClosed(float measuredAngleDegrees);
-    uint32_t calcTimeBeforeCloseSecs();
+    float calcDoorMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const;
+    float calcDegreesFromClosed(float measuredAngleDegrees) const;
+    uint32_t calcTimeBeforeCloseSecs() const;
 };

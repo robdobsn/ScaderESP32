@@ -90,11 +90,11 @@ void PumpControl::setup(RaftJsonIF& config)
 // service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PumpControl::service()
+void PumpControl::loop()
 {
     // Update PWM outputs
     for (auto& pwmOutput : _pwmOutputs)
-        pwmOutput.service();
+        pwmOutput.loop();
 
     // Debug
     if (Raft::isTimeout(millis(), _debugLastDisplayMs, 1000))
@@ -205,7 +205,7 @@ void PumpControl::PWMOutput::set(float pwmRatio, uint32_t durationMs)
 // Timed output service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PumpControl::PWMOutput::service()
+void PumpControl::PWMOutput::loop()
 {
     // Check if timer is active
     if (_timerActive)

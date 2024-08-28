@@ -24,7 +24,7 @@ public:
     virtual void postSetup() override final;
 
     // Service
-    virtual void service() override final;
+    virtual void loop() override final;
     
     // Get values binary = format specific to hardware
     virtual uint32_t getValsBinary(uint32_t formatCode, uint8_t* pBuf, uint32_t bufMaxLen) override final;

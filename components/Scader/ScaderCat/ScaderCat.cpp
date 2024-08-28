@@ -118,7 +118,7 @@ void ScaderCat::deinit()
 // service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderCat::service()
+void ScaderCat::loop()
 {
     // Check initialised
     if (!_isInitialised)
@@ -126,7 +126,7 @@ void ScaderCat::service()
 
     // Check for timed outputs
     for (TimedOutput& timedOutput : _timedOutputs)
-        timedOutput.service();
+        timedOutput.loop();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -267,7 +267,7 @@ void ScaderCat::TimedOutput::cmd(const String &ctrlStr, const String &durationSt
 // Timed output service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderCat::TimedOutput::service()
+void ScaderCat::TimedOutput::loop()
 {
     // Check if timer is active
     if (_timerActive)

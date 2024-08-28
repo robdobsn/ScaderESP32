@@ -56,7 +56,7 @@ void MoistureSensors::setup(const RaftJsonIF& config)
     LOG_I(MODULE_PREFIX, "setup ADC I2CAddress 0x%02x", _adcI2CAddr);
 }
 
-void MoistureSensors::service()
+void MoistureSensors::loop()
 {
     // Check valid
     if (!_pI2CBus)
@@ -110,7 +110,7 @@ void MoistureSensors::service()
 
     // // Service the stepper
     // if (_pI2CBus)
-    //     _pI2CBus->service();
+    //     _pI2CBus->loop();
 
     // // Calculate window average of vissen analogRead
     // if (Raft::isTimeout(millis(), _currentLastSampleMs, CURRENT_SAMPLE_TIME_MS))

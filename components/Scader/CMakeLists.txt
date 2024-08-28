@@ -48,9 +48,9 @@ idf_component_register(
                   # "FastLED"
                   # "ScaderWaterer"
                 REQUIRES
-                  raftcore-src
+                  RaftCore
                   # FastLED-idf
-                  rafti2c-src
-                  raftmotorcontrol-src
+                  RaftI2C
+                  RaftMotorControl
                   hardware
                 )

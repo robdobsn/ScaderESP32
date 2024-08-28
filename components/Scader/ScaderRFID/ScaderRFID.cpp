@@ -103,7 +103,7 @@ void ScaderRFID::setup()
     if (pSysManager)
     {
         // Register publish message generator
-        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
             [this](const char* messageName, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
@@ -182,11 +182,11 @@ void ScaderRFID::loop()
 
     // Service RFID
     if (_pRFIDModule)
-        _pRFIDModule->service();
+        _pRFIDModule->loop();
 
     // Service indicators
-    _buzzer.service();
-    _actLed.service();
+    _buzzer.loop();
+    _actLed.loop();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -247,7 +247,7 @@ RaftRetCode ScaderRFID::apiDoorStatusChange(const String &reqStr, String &respSt
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderRFID::getStatusJSON()
+String ScaderRFID::getStatusJSON() const
 {
     // Add base JSON
     return "{" + _scaderCommon.getStatusJSON() + "}";

@@ -242,7 +242,7 @@ void ScaderRelays::setup()
     if (pSysManager)
     {
         // Register publish message generator
-        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
             [this](const char* messageName, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
@@ -360,7 +360,17 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
         
         // Debug
 #ifdef DEBUG_RELAYS_API
-        LOG_I(MODULE_PREFIX, "apiControl %d relays (of %d) turned %s", numElemsSet, _elemNames.size(), newState ? "on" : "off");
+        String relaysStr;
+        for (int i = 0; i < elemNums.size(); i++)
+        {
+            if (i > 0)
+                relaysStr += ",";
+            relaysStr += String(elemNums[i]);
+        }
+        LOG_I(MODULE_PREFIX, "apiControl relay%s %s turned %s (operation ok for %d of %d)", 
+                numElemsSet > 1 ? "s" : "",
+                relaysStr.c_str(), newState ? "on" : "off", 
+                numElemsSet, _elemNames.size());
 #endif
     }
     else
@@ -379,7 +389,7 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderRelays::getStatusJSON()
+String ScaderRelays::getStatusJSON() const
 {
     // Get status
     String elemStatus;

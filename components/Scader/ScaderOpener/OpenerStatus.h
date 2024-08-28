@@ -127,7 +127,7 @@ public:
         DOOR_STATE_CLOSING,
     };
 
-    String getOpenerStateStr(DoorOpenerState doorState)
+    String getOpenerStateStr(DoorOpenerState doorState) const
     {
         switch (doorState)
         {
@@ -146,9 +146,9 @@ public:
     }
 
     // Get/Set opener state
-    DoorOpenerState getOpenerState() { return _doorOpenerState; }
+    DoorOpenerState getOpenerState() const { return _doorOpenerState; }
     void setOpenerState(DoorOpenerState newState, const String& debugMsg);
-    uint32_t getOpenerStateLastMs() { return _doorOpenerStateLastMs; }
+    uint32_t getOpenerStateLastMs() const { return _doorOpenerStateLastMs; }
 
 protected:
 

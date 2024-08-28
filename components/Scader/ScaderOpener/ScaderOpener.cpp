@@ -63,7 +63,7 @@ void ScaderOpener::setup()
     if (pSysManager)
     {
         // Register publish message generator
-        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
             [this](const char* messageName, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
@@ -87,10 +87,10 @@ void ScaderOpener::loop()
         return;
 
     // Service door opener
-    _doorOpener.service();
+    _doorOpener.loop();
 
     // Service UI module
-    _uiModule.service();
+    _uiModule.loop();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,7 +236,7 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderOpener::getStatusJSON()
+String ScaderOpener::getStatusJSON() const
 {
     // Add base JSON
     return "{" + _scaderCommon.getStatusJSON() + ",\"status\":{" + _doorOpener.getStatusJSON(false) + "}}";

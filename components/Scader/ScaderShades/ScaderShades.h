@@ -98,7 +98,7 @@ public:
     bool doCommand(int shadeIdx, String &cmdStr, String &durationStr);
 
     // Check if the shade is moving
-    bool isBusy(int shadeIdx);
+    bool isBusy(int shadeIdx) const;
 
 protected:
 
@@ -112,7 +112,7 @@ protected:
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;
 
     // Status
-    virtual String getStatusJSON() override final;
+    virtual String getStatusJSON() const override final;
     
 private:
 
@@ -154,7 +154,7 @@ private:
     WindowShadesSeq _sequence;
 
     // get light levels
-    void getLightLevels(int lightLevels[], int numLevels);
+    void getLightLevels(int lightLevels[], int numLevels) const;
 
     // Helper functions
     bool clearShadeBits(int shadeIdx);

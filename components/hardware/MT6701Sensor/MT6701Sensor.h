@@ -12,7 +12,7 @@
 #include "AngleMovingAverage.h"
 #include "SampleCollector.h"
 
-class BusBase;
+class RaftBus;
 class BusRequestResult;
 
 class MT6701Sensor
@@ -22,10 +22,10 @@ public:
     virtual ~MT6701Sensor();
 
     // Setup
-    void setup(RaftJsonIF& config, BusBase* pBus);
+    void setup(RaftJsonIF& config, RaftBus* pBus);
 
     // Service
-    void service();
+    void loop();
 
     // Get angle data
     float getAngleRadians(bool withHysteresis, bool clamped)
@@ -59,7 +59,7 @@ private:
     bool _rotationDirectionReversed = false;
 
     // I2C Bus
-    BusBase* _pBus = nullptr;
+    RaftBus* _pBus = nullptr;
 
     // Numerical filter
     AngleMovingAverage<1, MT6701_RAW_RANGE> _angleFilter;

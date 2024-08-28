@@ -9,7 +9,6 @@
 #include "DoorOpener.h"
 #include "ConfigPinMap.h"
 #include "MotorControl.h"
-#include "HWElemConsts.h"
 
 #define DEBUG_DOOR_OPENER_STATUS_RATE_MS 5000
 
@@ -80,13 +79,13 @@ void DoorOpener::setup(RaftJsonIF& config)
 // service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::service()
+void DoorOpener::loop()
 {
     // Service motor and angle sensor
-    _motorAndAngleSensor.service();
+    _motorAndAngleSensor.loop();
 
     // Service the conservatory button
-    _conservatoryButton.service();
+    _conservatoryButton.loop();
 
     // Service the conservatory PIR change detector
     _consvPIRChangeDetector.service(digitalRead(_consvPirSensePin) != 0);
@@ -371,7 +370,7 @@ void DoorOpener::serviceDoorState()
 // Calculate angle from closed (degrees)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float DoorOpener::calcDegreesFromClosed(float measuredAngleDegrees)
+float DoorOpener::calcDegreesFromClosed(float measuredAngleDegrees) const
 {
     // Calculate angle (in degrees)
     return std::abs(measuredAngleDegrees - _doorClosedAngleDegs);
@@ -382,7 +381,7 @@ float DoorOpener::calcDegreesFromClosed(float measuredAngleDegrees)
 // Will return 0 if the door is not in OPEN state
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint32_t DoorOpener::calcTimeBeforeCloseSecs()
+uint32_t DoorOpener::calcTimeBeforeCloseSecs() const
 {
     // Check if door is open
     if (getOpenerState() != DOOR_STATE_OPEN)
@@ -401,7 +400,7 @@ uint32_t DoorOpener::calcTimeBeforeCloseSecs()
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String DoorOpener::getStatusJSON(bool includeBraces)
+String DoorOpener::getStatusJSON(bool includeBraces) const
 {
     // bool isValid = false;
     String json = "";

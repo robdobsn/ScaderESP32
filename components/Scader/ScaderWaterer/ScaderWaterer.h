@@ -36,7 +36,7 @@ protected:
     virtual void setup() override final;
 
     // Loop (called frequently)
-    virtual void service() override final;
+    virtual void loop() override final;
 
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;

@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "AS5600Sensor.h"
-#include "BusBase.h"
+#include "RaftBus.h"
 #include "RaftUtils.h"
 #include "RaftJsonIF.h"
 #include "BusRequestInfo.h"
@@ -34,7 +34,7 @@ AS5600Sensor::~AS5600Sensor()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void AS5600Sensor::setup(RaftJsonIF& config, BusBase* pBus)
+void AS5600Sensor::setup(RaftJsonIF& config, RaftBus* pBus)
 {
     // Store bus
     _pBus = pBus;
@@ -63,7 +63,7 @@ void AS5600Sensor::setup(RaftJsonIF& config, BusBase* pBus)
 // Service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void AS5600Sensor::service()
+void AS5600Sensor::loop()
 {
     // Check if initialisation is done
     if (_isInitialised)

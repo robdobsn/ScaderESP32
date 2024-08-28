@@ -161,7 +161,7 @@ void ScaderDoors::setup()
     if (pSysManager)
     {
         // Register publish message generator
-        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
             [this](const char* messageName, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
@@ -208,7 +208,7 @@ void ScaderDoors::loop()
         bool changeDetected = false;
         for (int i = 0; i < _doorStrikes.size(); i++)
         {
-            _doorStrikes[i].service();
+            _doorStrikes[i].loop();
             if (_reportMasterDoorOnly && (i != _masterDoorIndex))
                 continue;
             if (_lockedStateChangeLastLocked != _doorStrikes[i].isLocked())
@@ -377,7 +377,7 @@ uint32_t ScaderDoors::executeUnlockLock(std::vector<int> elemNums, bool unlock)
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderDoors::getStatusJSON()
+String ScaderDoors::getStatusJSON() const
 {
     // Get status
     String elemStatus;
@@ -392,7 +392,9 @@ String ScaderDoors::getStatusJSON()
 
     // Get RFID tag read
     String rfidTagRead;
-    if (_tagReadQueue.get(rfidTagRead))
+    // Const cast to remove const-ness of _tagReadQueue
+    ThreadSafeQueue<String>& tagReadQueue = const_cast<ThreadSafeQueue<String>&>(_tagReadQueue);
+    if (tagReadQueue.get(rfidTagRead))
     {
         rfidTagRead = ",\"RFIDTag\":\"" + rfidTagRead + "\"";
     }

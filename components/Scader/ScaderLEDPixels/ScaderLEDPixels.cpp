@@ -187,8 +187,8 @@ void ScaderLEDPixels::loop()
     if (!_isInitialised)
         return;
 
-    _ledPixels.service();
-    _ledPixels2.service();
+    _ledPixels.loop();
+    _ledPixels2.loop();
 
 #ifdef RUN_PATTERNS_IN_SYSMOD
     // Handle patterns
@@ -197,10 +197,10 @@ void ScaderLEDPixels::loop()
         case PATTERN_NONE:
             break;
         case PATTERN_LOCATE:
-            patternLocate_service();
+            patternLocate_loop();
             break;
         case PATTERN_SNAKE:
-            patternSnake_service();
+            patternSnake_loop();
             break;
     }
 #endif
@@ -313,7 +313,7 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
     return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt, reasonStr.c_str());
 }
 
-String ScaderLEDPixels::getStatusJSON()
+String ScaderLEDPixels::getStatusJSON() const
 {
     return "{" + _scaderCommon.getStatusJSON() + "}"; 
 }
@@ -425,7 +425,7 @@ void ScaderLEDPixels::patternLocate_start()
     _patternLastTime = millis();
 }
 
-void ScaderLEDPixels::patternLocate_service()
+void ScaderLEDPixels::patternLocate_loop()
 {
     // Check time
     if (Raft::isTimeout(millis(), _patternLastTime, PATTERN_LOCATE_STEP_MS))
@@ -516,7 +516,7 @@ void ScaderLEDPixels::patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed)
     _patternLastTime = millis();
 }
 
-void ScaderLEDPixels::patternSnake_service()
+void ScaderLEDPixels::patternSnake_loop()
 {
     // Check time
     if (Raft::isTimeout(millis(), _patternLastTime, _patternSnakeSpeed))

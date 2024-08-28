@@ -23,7 +23,7 @@ public:
     void setup(RaftJsonIF& config, OpenerStatus* pOpenerStatus);
 
     // Service - called frequently
-    void service();
+    void loop();
 
 private:
     // Serial details

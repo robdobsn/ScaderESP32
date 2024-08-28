@@ -53,9 +53,6 @@ extern "C" void app_main(void)
     // Loop forever
     while (1)
     {
-        // Yield for 1 tick
-        vTaskDelay(1);
-
         // Loop the RaftCoreApp
         raftCoreApp.loop();
     }

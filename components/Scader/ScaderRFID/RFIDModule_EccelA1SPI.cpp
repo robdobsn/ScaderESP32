@@ -205,13 +205,13 @@ bool RFIDModule_EccelA1SPI::checkModulePresent()
 // Service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void RFIDModule_EccelA1SPI::service()
+void RFIDModule_EccelA1SPI::loop()
 {
     // Service base class
-    RFIDModuleBase::service();
+    RFIDModuleBase::loop();
 
     // Handle polling state machine
-    pollingService();
+    pollingloop();
 
     // Check errors
     if (_errorCount > MAX_ERROR_COUNT_BEFORE_RESET)
@@ -358,7 +358,7 @@ void RFIDModule_EccelA1SPI::pollingSetState(int newState)
 // Service polling
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void RFIDModule_EccelA1SPI::pollingService()
+void RFIDModule_EccelA1SPI::pollingloop()
 {
     // Check CS pin valid
     if (_rfidSPICS0Pin == -1)

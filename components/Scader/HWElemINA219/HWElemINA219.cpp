@@ -62,7 +62,7 @@ void HWElemINA219::postSetup()
 // Service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void HWElemINA219::service()
+void HWElemINA219::loop()
 {
     if (isElemResponding() && !_pollReqSent)
     {

@@ -20,7 +20,7 @@ public:
     PumpControl();
     virtual ~PumpControl();
     void setup(RaftJsonIF& config);
-    void service();
+    void loop();
     bool isBusy();
     void deinit();
     void setFlow(uint32_t pumpIdx, float flowRate, float durationSecs);
@@ -54,7 +54,7 @@ private:
 
         // Helpers
         void set(float pwmRatio, uint32_t durationMs);
-        void service();
+        void loop();
         void deinit();
         String getStatusStrJSON();
         uint8_t getStateHashByte();

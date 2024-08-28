@@ -81,7 +81,7 @@ void ScaderPulseCounter::setup()
     if (pSysManager)
     {
         // Register publish message generator
-        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
             [this](const char* messageName, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
@@ -108,7 +108,7 @@ void ScaderPulseCounter::loop()
         return;
 
     // Service pulse counter
-    _pulseCounterButton.service();
+    _pulseCounterButton.loop();
 
     // Check if mutable data changed
     if (_mutableDataDirty)
@@ -169,7 +169,7 @@ RaftRetCode ScaderPulseCounter::apiControl(const String &reqStr, String &respStr
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderPulseCounter::getStatusJSON()
+String ScaderPulseCounter::getStatusJSON() const
 {
     // Pulse count JSON if enabled
     String pulseCountStr = R"(,"pulseCount":)" + String(_pulseCount);

@@ -20,7 +20,7 @@ public:
     virtual void requestReset();
     virtual bool isModulePresent();
     virtual void injectTag(String& tag);
-    virtual void service();
+    virtual void loop();
 
 protected:
     // Tag read

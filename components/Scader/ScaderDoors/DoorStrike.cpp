@@ -57,7 +57,7 @@ bool DoorStrike::setup(int doorStrikePin, bool doorStrikeOn, int doorOpenSensePi
 // Service to handle timeouts, etc
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorStrike::service()
+void DoorStrike::loop()
 {
     // Handle re-locking door if unlocked
     if (!_garageMode)

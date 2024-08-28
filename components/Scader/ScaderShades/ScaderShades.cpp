@@ -109,7 +109,7 @@ void ScaderShades::setup()
     if (pSysManager)
     {
         // Register publish message generator
-        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
             [this](const char* messageName, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
@@ -224,7 +224,7 @@ bool ScaderShades::sendBitsToShiftRegister()
 // isBusy
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ScaderShades::isBusy(int shadeIdx)
+bool ScaderShades::isBusy(int shadeIdx) const
 {
     // Check validity
     if (shadeIdx < 0 || shadeIdx >= DEFAULT_MAX_ELEMS)
@@ -384,7 +384,7 @@ bool ScaderShades::doCommand(int shadeIdx, String &cmdStr, String &durationStr)
 // getLightLevels
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderShades::getLightLevels(int lightLevels[], int numLevels)
+void ScaderShades::getLightLevels(int lightLevels[], int numLevels) const
 {
     // Read light levels
     for (int i = 0; i < numLevels; i++)
@@ -400,7 +400,7 @@ void ScaderShades::getLightLevels(int lightLevels[], int numLevels)
 // getStatusJSON
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderShades::getStatusJSON()
+String ScaderShades::getStatusJSON() const
 {
     String lightLevelsStr;
     if (_lightLevelsEnabled)

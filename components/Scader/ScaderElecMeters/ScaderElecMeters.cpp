@@ -179,7 +179,7 @@ void ScaderElecMeters::setup()
     if (pSysManager)
     {
         // Register publish message generator
-        pSysManager->sendMsgGenCB("Publish", _scaderCommon.getModuleName().c_str(), 
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
             [this](const char* messageName, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
@@ -347,7 +347,7 @@ RaftRetCode ScaderElecMeters::apiControl(const String &reqStr, String &respStr, 
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderElecMeters::getStatusJSON()
+String ScaderElecMeters::getStatusJSON() const
 {
     // Get status
     String elemStatus;

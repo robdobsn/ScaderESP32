@@ -52,7 +52,7 @@ public:
                     _scaderUIName.c_str(), _scaderHostname.c_str());
     }
 
-    String getStatusJSON()
+    String getStatusJSON() const
     {
         // Get network information
         RaftJson networkJson = _base.sysModGetStatusJSON("NetMan");

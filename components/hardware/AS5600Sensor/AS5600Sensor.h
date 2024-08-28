@@ -12,7 +12,7 @@
 #include "AngleMovingAverage.h"
 #include "SampleCollector.h"
 
-class BusBase;
+class RaftBus;
 class BusRequestResult;
 class RaftJsonIF;
 
@@ -23,10 +23,10 @@ public:
     virtual ~AS5600Sensor();
 
     // Setup
-    void setup(RaftJsonIF& config, BusBase* pBus);
+    void setup(RaftJsonIF& config, RaftBus* pBus);
 
     // Service
-    void service();
+    void loop();
 
     // Set hysteresis for angle measurement
     void setHysteresis(float hysteresis)
@@ -35,7 +35,7 @@ public:
     }
     
     // Get angle radians
-    float getAngleRadians(bool withHysteresis, bool clamped)
+    float getAngleRadians(bool withHysteresis, bool clamped) const
     {
         // Get data
         int32_t filteredData = _angleFilter.getAverage(withHysteresis, clamped);
@@ -43,7 +43,7 @@ public:
     }
 
     // Get angle degrees
-    float getAngleDegrees(bool withHysteresis, bool clamped)
+    float getAngleDegrees(bool withHysteresis, bool clamped) const
     {
         // Get data
         int32_t filteredData = _angleFilter.getAverage(withHysteresis, clamped);
@@ -57,7 +57,7 @@ public:
     }
 
     // Get address
-    uint32_t getI2CAddr()
+    uint32_t getI2CAddr() const
     {
         return _i2cAddr;
     }
@@ -95,7 +95,7 @@ private:
     uint32_t _configSendTimeMs = 0;
 
     // I2C Bus
-    BusBase* _pBus = nullptr;
+    RaftBus* _pBus = nullptr;
 
     // Numerical filter
     AngleMovingAverage<1, AS5600_RAW_RANGE> _angleFilter;

@@ -322,8 +322,11 @@ String ScaderRelays::getStatusJSON() const
         elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(_elemStates[i]) + "}";
     }
 
+    // Get mains sync status
+    String mainsSyncJson = ",\"mainsHz\":" + String(_spiDimmer.getMainsHz(), 1);
+
     // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elemStatus + "]}";
+    return "{" + _scaderCommon.getStatusJSON() + mainsSyncJson + ",\"elems\":[" + elemStatus + "]}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

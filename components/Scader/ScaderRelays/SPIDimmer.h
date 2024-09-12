@@ -31,7 +31,13 @@ public:
     void setTiming(uint32_t zeroCrossOffsetFromSyncUs, uint32_t valOffsetUs);
 
     // Get zero crossing period in us
-    uint32_t getZeroCrossPeriodUs() { return _zeroCrossPeriodUsAvg.getAverage(); }
+    uint32_t getZeroCrossPeriodUs() const { return _zeroCrossPeriodUsAvg.getAverage(); }
+
+    // Get mains frequency in Hz
+    float getMainsHz() const { return _mainsCyclePeriodValid ? (1000000.0 / _zeroCrossPeriodUsAvg.getAverage()) : 0; }
+
+    // Check if mains sync is valid
+    bool isMainsSyncValid() const { return _mainsCyclePeriodValid; }
 
 private:
     // Constants

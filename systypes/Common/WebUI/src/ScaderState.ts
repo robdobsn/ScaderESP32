@@ -6,6 +6,7 @@ export class ScaderRelayState {
 
 export class ScaderRelayStates {
     module: string = "";
+    mainsHz?: number = 0;
     elems: Array<ScaderRelayState> = [];
     pulseCount?: number = 0;
     constructor(obj: any) {

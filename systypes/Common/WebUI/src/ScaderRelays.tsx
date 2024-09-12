@@ -176,6 +176,13 @@ export default function ScaderRelays(props: ScaderScreenProps) {
               );
             })}
           </div>
+          {
+            state.mainsHz ?
+              <div className="ScaderElem-footer">
+                Mains freq: {state.mainsHz} Hz
+              </div>
+              : null
+          }
         </div>
         : null
     )

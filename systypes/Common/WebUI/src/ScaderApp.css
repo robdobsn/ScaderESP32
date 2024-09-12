@@ -94,7 +94,7 @@ code {
 
 .ScaderElem-button {
   align-items: center;
-  background-color: #909090;
+  background-color: #808080;
   border: 1px solid #505050;
   border-radius: 20px;
   color: #fff;
@@ -111,6 +111,12 @@ code {
   text-decoration: none;
   width: 10rem;
   font-size: 1.4rem;
+}
+
+.ScaderElem-button-state {
+  font-size: 0.9em;
+  margin-top: 35px;
+  color: #ffffff;
 }
 
 .button-medium {

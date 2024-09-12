@@ -7,7 +7,7 @@ import { ScaderRelayStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
-export default function ScaderRelays(props:ScaderScreenProps) {
+export default function ScaderRelays(props: ScaderScreenProps) {
 
   const scaderName = "ScaderRelays";
   const configElemsName = "elems";
@@ -42,7 +42,7 @@ export default function ScaderRelays(props:ScaderScreenProps) {
   const handleEnableChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log(`${scaderName}.handleEnableChange`);
     // Update config
-    const newConfig = {...config, enable: event.target.checked};
+    const newConfig = { ...config, enable: event.target.checked };
     setConfig(newConfig);
     updateMutableConfig(newConfig);
   };
@@ -50,13 +50,13 @@ export default function ScaderRelays(props:ScaderScreenProps) {
   const handleNumElemsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log(`${scaderName}.handleNumElemsChange ${event.target.value}`);
     // Update config
-    const newConfig = {...config};
+    const newConfig = { ...config };
     if (config[configElemsName].length < Number(event.target.value)) {
       // Add elements
       console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
-      let newElems:Array<RelayConfig> = [];
+      let newElems: Array<RelayConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
-        newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`});
+        newElems.push({ name: `${subElemsFriendlyCaps} ${i + 1}`, isDimmable: false });
       }
       newConfig[configElemsName].push(...newElems);
     } else {
@@ -70,7 +70,7 @@ export default function ScaderRelays(props:ScaderScreenProps) {
   const handleElemNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log(`${scaderName}.handleElemNameChange ${event.target.id} = ${event.target.value}`);
     // Update config
-    const newConfig = {...config};
+    const newConfig = { ...config };
     let elemIndex = Number(event.target.id.split("-")[1]);
     newConfig[configElemsName][elemIndex].name = event.target.value;
     setConfig(newConfig);
@@ -78,14 +78,28 @@ export default function ScaderRelays(props:ScaderScreenProps) {
     console.log(`${scaderName}.handleElemNameChange ${JSON.stringify(newConfig)}`);
   };
 
+  const handleElemDimmableChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(`${scaderName}.handleElemDimmableChange ${event.target.id} = ${event.target.checked}`);
+    // Update config
+    const newConfig = { ...config };
+    let elemIndex = Number(event.target.id.split("-")[1]);
+    newConfig[configElemsName][elemIndex].isDimmable = event.target.checked;
+    setConfig(newConfig);
+    updateMutableConfig(newConfig);
+    console.log(`${scaderName}.handleElemDimmableChange ${JSON.stringify(newConfig)}`);
+  };
+
   const handleElemClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     // Send command to change elem state
     let elemIndex = Number(event.currentTarget.id.split("-")[1]);
-    let curState = false;
-    if (state[stateElemsName] && state[stateElemsName][elemIndex] && state[stateElemsName][elemIndex].state) {
-      curState = state[stateElemsName][elemIndex].state !== 0;
+    let curState = state[stateElemsName]?.[elemIndex]?.state || 0;
+    let newState = curState < 0 ? 0 : (curState < 100 ? curState : 100);
+    if (config[configElemsName][elemIndex].isDimmable) {
+      newState = curState + 10 > 100 ? 0 : curState + 10;
+    } else {
+      newState = curState === 0 ? 100 : 0;
     }
-    const apiCmd = `/${restCommandName}/${elemIndex+1}/${curState ? "off" : "on"}`;
+    const apiCmd = `/${restCommandName}/${elemIndex + 1}/${newState}`;
     scaderManager.sendCommand(apiCmd);
     console.log(`${scaderName}.handleElemClick ${event.currentTarget.id} cmd ${apiCmd}`);
   };
@@ -96,30 +110,37 @@ export default function ScaderRelays(props:ScaderScreenProps) {
         <div className="ScaderElem-editmode">
           {/* Checkbox for enable with label */}
           <label>
-            <input className="ScaderElem-checkbox" type="checkbox" 
-                  checked={config.enable} 
-                  onChange={handleEnableChange} />
+            <input className="ScaderElem-checkbox" type="checkbox"
+              checked={config.enable}
+              onChange={handleEnableChange} />
             Enable {scaderName}
           </label>
         </div>
-        {config.enable && 
+        {config.enable &&
           <div className="ScaderElem-body">
             {/* Input spinner with number of elems */}
             <label>
               Number of {subElemsFriendly}:
-              <input className="ScaderElem-input" type="number" 
-                  value={config[configElemsName].length} min="1" max={config.maxElems ? config.maxElems : 24}
-                  onChange={handleNumElemsChange} />
+              <input className="ScaderElem-input" type="number"
+                value={config[configElemsName].length} min="1" max={config.maxElems ? config.maxElems : 24}
+                onChange={handleNumElemsChange} />
             </label>
             {/* Input text for each elem name */}
             {Array.from(Array(config[configElemsName].length).keys()).map((index) => (
               <div className="ScaderElem-row" key={index}>
                 <label key={index}>
-                  {subElemsFriendlyCaps} {index+1} name:
-                  <input className="ScaderElem-input" type="text" 
-                      id={`${configElemsName}-${index}`}
-                      value={config[configElemsName][index].name} 
-                      onChange={handleElemNameChange} />
+                  {subElemsFriendlyCaps} {index + 1} name:
+                  <input className="ScaderElem-input" type="text"
+                    id={`${configElemsName}-${index}`}
+                    value={config[configElemsName][index].name}
+                    onChange={handleElemNameChange} />
+                </label>
+                <label key={`${index}-dimmable`} style={{ marginLeft: '10px' }}>
+                  <input type="checkbox"
+                    id={`dimmable-${index}`}
+                    checked={config[configElemsName][index].isDimmable || false}
+                    onChange={handleElemDimmableChange} />
+                  Dimmable
                 </label>
               </div>
             ))}
@@ -135,25 +156,28 @@ export default function ScaderRelays(props:ScaderScreenProps) {
       config.enable ?
         <div className="ScaderElem">
           <div className="ScaderElem-header">
-            {/* Grid of elements */}
-            {config[configElemsName].map((elem, index) => (
-              <button key={index} className="ScaderElem-button" 
-                      onClick={handleElemClick}
-                      id={`${configElemsName}-${index}`}>
+            {config[configElemsName].map((elem, index) => {
+              const relayState = state[stateElemsName]?.[index]?.state || 0;
+              const greyScaleValue = relayState == 0 ? 0 : 155 + Math.round((relayState / 100) * 100);
+              const greyScaleColor = `rgb(${greyScaleValue}, ${greyScaleValue}, ${greyScaleValue})`;
+
+              return (
+                <button key={index} className="ScaderElem-button"
+                  onClick={handleElemClick}
+                  id={`${configElemsName}-${index}`}>
                   <div className="ScaderElem-button-text">{elem.name}</div>
-                  {/* Display on icon if the state is on, else off icon */}
                   <div className="ScaderElem-button-icon">
-                  {state[stateElemsName] && 
-                        state[stateElemsName][index] &&
-                        state[stateElemsName][index].state ? 
-                          <OnIcon fill="#ffffff" /> : 
-                          <OffIcon fill="#000000"/>}
+                    <OnIcon fill={greyScaleColor} />
                   </div>
-              </button>
-            ))}
+                  <div className="ScaderElem-button-state">
+                    {relayState}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
-      : null
+        : null
     )
   }
 

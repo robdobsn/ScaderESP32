@@ -1,6 +1,7 @@
 
 export class RelayConfig {
     name: string = "";
+    isDimmable?: boolean = false;
 }
 
 export class ElecMeterConfig {

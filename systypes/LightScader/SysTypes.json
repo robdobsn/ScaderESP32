@@ -221,7 +221,7 @@
         "SPI_CS3": 13,
         "ONOFF_KEY": 34,
         "MAINS_SYNC": 35,
-        "mainsSync": false
+        "enableMainsSync": false
     },
     "ScaderElecMeters": {
         "maxElems": 16,

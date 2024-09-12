@@ -26,7 +26,6 @@ static const char *MODULE_PREFIX = "ScaderRelays";
 // #define CHECK_RUNNING_ON_APPROPRIATE_HW
 // #define DEBUG_RELAYS_MUTABLE_DATA
 #define DEBUG_RELAYS_API
-// #define DEBUG_MAINS_SYNC
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -85,115 +84,40 @@ void ScaderRelays::setup()
     }
 #endif
 
-    // Configure GPIOs
-    // The MOSI, MISO, CLK pins are configured as INPUT as they are driven by the SPI master
-    ConfigPinMap::PinDef gpioPins[] = {
-        ConfigPinMap::PinDef("SPI_MOSI", ConfigPinMap::GPIO_INPUT, &_spiMosi),
-        ConfigPinMap::PinDef("SPI_MISO", ConfigPinMap::GPIO_INPUT, &_spiMiso),
-        ConfigPinMap::PinDef("SPI_CLK", ConfigPinMap::GPIO_INPUT, &_spiClk),
-        ConfigPinMap::PinDef("SPI_CS1", ConfigPinMap::GPIO_OUTPUT, &_spiChipSelects[0], 1),
-        ConfigPinMap::PinDef("SPI_CS2", ConfigPinMap::GPIO_OUTPUT, &_spiChipSelects[1], 1),
-        ConfigPinMap::PinDef("SPI_CS3", ConfigPinMap::GPIO_OUTPUT, &_spiChipSelects[2], 1),
-        ConfigPinMap::PinDef("ONOFF_KEY", ConfigPinMap::GPIO_INPUT, &_onOffKey),
-        ConfigPinMap::PinDef("MAINS_SYNC", ConfigPinMap::GPIO_INPUT, &_mainsSyncPin),
-    };
-    ConfigPinMap::configMultiple(configGetConfig(), gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
+    // Get settings
+    int spiMosi = configGetLong("SPI_MOSI", -1);
+    int spiMiso = configGetLong("SPI_MISO", -1);
+    int spiClk = configGetLong("SPI_CLK", -1);
+    std::vector<int> spiChipSelects = { -1, -1, -1 };
+    spiChipSelects[0] = configGetLong("SPI_CS1", -1);
+    spiChipSelects[1] = configGetLong("SPI_CS2", -1);
+    spiChipSelects[2] = configGetLong("SPI_CS3", -1);
+    int mainsSyncPin = configGetLong("mainsSyncPin", -1);
+    bool enableMainsSync = configGetBool("enableMainsSync", false);
+    
+    // On/Off key pin
+    _onOffKey = configGetLong("onOffKey", -1);
 
-    // Check SPI config valid
-    if ((_spiMosi < 0) || (_spiMiso < 0) || (_spiClk < 0) || (_spiChipSelects[0] < 0))
+    // Check pins for SPI are valid
+    if (spiMosi < 0 || spiMiso < 0 || spiClk < 0 || 
+        spiChipSelects[0] < 0 || spiChipSelects[1] < 0 || spiChipSelects[2] < 0)
     {
-        LOG_E(MODULE_PREFIX, "setup INVALID MOSI %d, MISO %d, CLK %d, CS1 %d, CS2 %d, CS3 %d, onOffKey %d",
-                _spiMosi, _spiMiso, _spiClk, _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], _onOffKey);
+        LOG_E(MODULE_PREFIX, "setup FAILED invalid pins MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d mainsSyncPin %d%s onOffKey %d",
+                spiMosi, spiMiso, spiClk, spiChipSelects[0], spiChipSelects[1], spiChipSelects[2], mainsSyncPin, 
+                enableMainsSync ? "(ENABLED)" : "(DISABLED)", _onOffKey);
         return;
     }
 
-    // Configure SPI
-    const spi_bus_config_t buscfg = {
-        .mosi_io_num = _spiMosi,
-        .miso_io_num = _spiMiso,
-        .sclk_io_num = _spiClk,
-        .quadwp_io_num = GPIO_NUM_NC,
-        .quadhd_io_num = GPIO_NUM_NC,
-        .data4_io_num = -1,
-        .data5_io_num = -1,
-        .data6_io_num = -1,
-        .data7_io_num = -1,
-        .max_transfer_sz = 0,
-        .flags = 0,
-        .isr_cpu_id = ESP_INTR_CPU_AFFINITY_AUTO,
-        .intr_flags = 0,
-    };
-
-    //Initialize the SPI bus
-    esp_err_t espErr = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
-    if (espErr != ESP_OK)
+    // Setup SPIDimmer
+    if (!_spiDimmer.setup(spiMosi, spiClk, spiChipSelects, enableMainsSync ? mainsSyncPin : -1))
     {
-        LOG_E(MODULE_PREFIX, "setup SPI failed MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d retc %d",
-                _spiMosi, _spiMiso, _spiClk, _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], espErr);
+        LOG_E(MODULE_PREFIX, "setup FAILED SPIDimmer");
         return;
-    }
-
-    // Initialise the SPI devices
-    for (int i = 0; i < SPI_MAX_CHIPS; i++)
-    {
-        // Check if configured
-        if (_spiChipSelects[i] < 0)
-            continue;
-
-        // From datasheet https://www.onsemi.com/pub/Collateral/NCV7240-D.PDF
-        // And Wikipedia https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
-        // CPOL = 0, CPHA = 1
-        spi_device_interface_config_t devCfg =
-        {
-            .command_bits = 0,
-            .address_bits = 0,
-            .dummy_bits = 0,
-            .mode = 1,
-            .clock_source = SPI_CLK_SRC_DEFAULT,
-            .duty_cycle_pos = 128,
-            .cs_ena_pretrans = 1,
-            .cs_ena_posttrans = 0,
-            .clock_speed_hz = 1000000,
-            .input_delay_ns = 0,
-            .spics_io_num=_spiChipSelects[i],
-            .flags = 0,
-            .queue_size=3,
-            .pre_cb = nullptr,
-            .post_cb = nullptr
-        };
-        esp_err_t ret = spi_bus_add_device(HSPI_HOST, &devCfg, &_spiDeviceHandles[i]);
-        if (ret != ESP_OK)
-        {
-            LOG_E(MODULE_PREFIX, "setup add SPI device failed MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d retc %d",
-                    _spiMosi, _spiMiso, _spiClk, _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], ret);
-            return;
-        }
-    }
-
-    // Get enable mains sync flag
-    _enableMainsSync = configGetBool("mainsSync", false);
-
-    // Initialise mains sync input
-    if (_enableMainsSync && (_mainsSyncPin >= 0))
-    {
-        // Setup GPIO
-        gpio_config_t io_conf = {};
-        io_conf.intr_type = GPIO_INTR_POSEDGE;
-        io_conf.pin_bit_mask = (1ULL<<_mainsSyncPin);
-        io_conf.mode = GPIO_MODE_INPUT;
-        io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-        gpio_config(&io_conf);
-
-        // Install GPIO ISR service
-        gpio_install_isr_service(0);
-
-        // Install specific interrupt handler
-        gpio_isr_handler_add((gpio_num_t)_mainsSyncPin, mainsSyncISRStatic, this);
     }
 
     // Clear states
     _elemStates.resize(_maxElems);
-    std::fill(_elemStates.begin(), _elemStates.end(), false);
+    std::fill(_elemStates.begin(), _elemStates.end(), 0);
 
     // Set states from scader state
     std::vector<String> elemStateStrs;
@@ -203,9 +127,11 @@ void ScaderRelays::setup()
         for (int i = 0; i < elemStateStrs.size(); i++)
         {
             // Check if valid
-            bool isOn = elemStateStrs[i] == "1";
             if (i < _elemStates.size())
-                _elemStates[i] = isOn;
+                _elemStates[i] = getElemStateFromString(elemStateStrs[i]);
+
+            // Set channel value
+            _spiDimmer.setChannelValue(i, _elemStates[i]);
         }
     }
 
@@ -230,8 +156,8 @@ void ScaderRelays::setup()
     LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s maxRelays %d MOSI %d MISO %d CLK %d CS1 %d CS2 %d CS3 %d onOffKey %d",
                 _scaderCommon.getUIName().c_str(),
                 _maxElems, 
-                _spiMosi, _spiMiso, _spiClk, 
-                _spiChipSelects[0], _spiChipSelects[1], _spiChipSelects[2], 
+                spiMosi, spiMiso, spiClk, 
+                spiChipSelects[0], spiChipSelects[1], spiChipSelects[2], 
                 _onOffKey);
 
     // Debug show states
@@ -256,7 +182,6 @@ void ScaderRelays::setup()
 
     // HW Now initialised
     _isInitialised = true;
-    applyCurrentState();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,6 +194,9 @@ void ScaderRelays::loop()
     if (!_isInitialised)
         return;
 
+    // Call the SPI dimmer loop function
+    _spiDimmer.loop();
+
     // Check if mutable data changed
     if (_mutableDataDirty)
     {
@@ -280,14 +208,6 @@ void ScaderRelays::loop()
             _mutableDataDirty = false;
         }
     }
-
-#ifdef DEBUG_MAINS_SYNC
-    if (Raft::isTimeout(millis(), _debugServiceLastMs, 1000))
-    {
-        _debugServiceLastMs = millis();
-        LOG_I(MODULE_PREFIX, "service mainsSyncPin %d count %d", _mainsSyncPin, _isrCount);
-    }
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -299,7 +219,7 @@ void ScaderRelays::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
     // Control shade
     endpointManager.addEndpoint("relay", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderRelays::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "control relays, relay/<relay>/<state> where relay is 1-based and state is 0 or 1 for off or on");
+                            "control relays, relay/<relay>/<state> where relay is 1-based and state is 0 to 100 as a percentage on/off (except that 1 is full on)");
     LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader relays");
 }
 
@@ -334,7 +254,7 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
 
     // Get newState
     String relayCmdStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
-    bool newState = (relayCmdStr == "1") || (relayCmdStr.equalsIgnoreCase("on"));
+    uint32_t newDimValue = getElemStateFromString(relayCmdStr);
 
     // Execute command
     uint32_t numElemsSet = 0;
@@ -344,9 +264,12 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
         if (elemIdx >= 0 && elemIdx < _elemNames.size())
         {
             // Set state
-            _elemStates[elemIdx] = newState;
+            _elemStates[elemIdx] = newDimValue;
             _mutableDataChangeLastMs = millis();
             numElemsSet++;
+
+            // Set channel value
+            _spiDimmer.setChannelValue(elemIdx, newDimValue);
         }
     }
 
@@ -355,7 +278,6 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
     {
         // Set relays
         _mutableDataDirty = true;
-        applyCurrentState();
         rslt = true;
         
         // Debug
@@ -367,9 +289,9 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
                 relaysStr += ",";
             relaysStr += String(elemNums[i]);
         }
-        LOG_I(MODULE_PREFIX, "apiControl relay%s %s turned %s (operation ok for %d of %d)", 
+        LOG_I(MODULE_PREFIX, "apiControl relay%s %s set to %d%% (operation ok for %d of %d)", 
                 numElemsSet > 1 ? "s" : "",
-                relaysStr.c_str(), newState ? "on" : "off", 
+                relaysStr.c_str(), newDimValue, 
                 numElemsSet, _elemNames.size());
 #endif
     }
@@ -397,7 +319,7 @@ String ScaderRelays::getStatusJSON() const
     {
         if (i > 0)
             elemStatus += ",";
-        elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + (_elemStates[i] ? "1" : "0") + "}";
+        elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(_elemStates[i]) + "}";
     }
 
     // Add base JSON
@@ -411,8 +333,8 @@ String ScaderRelays::getStatusJSON() const
 void ScaderRelays::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     stateHash.clear();
-    for (bool state : _elemStates)
-        stateHash.push_back(state ? 1 : 0);
+    for (uint32_t state : _elemStates)
+        stateHash.push_back(state & 0xff);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -427,7 +349,7 @@ void ScaderRelays::saveMutableData()
     {
         if (i > 0)
             jsonConfig += ",";
-        jsonConfig += String(i < _elemStates.size() ? _elemStates[i] : false);
+        jsonConfig += String(i < _elemStates.size() ? _elemStates[i] : 0);
     }
     jsonConfig += "]";
 
@@ -437,54 +359,6 @@ void ScaderRelays::saveMutableData()
     LOG_I(MODULE_PREFIX, "saveMutableData %s", jsonConfig.c_str());
 #endif
     _scaderModuleState.setJsonDoc(jsonConfig.c_str());
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// applyCurrentState
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool ScaderRelays::applyCurrentState()
-{
-    if (!_isInitialised)
-        return false;
-
-    // Perform in three steps as each block of 8 relays is controlled by a different chip
-    for (int chipIdx = 0; chipIdx < _maxElems/ELEMS_PER_CHIP; chipIdx++)
-    {
-        // Setup bits to transfer - 2 bits per relay, 0b10 for relay on, 0b11 for relay off
-        uint16_t txVal = 0;
-        for (int bitIdx = 0; bitIdx < ELEMS_PER_CHIP; bitIdx++)
-        {
-            uint32_t elemIdx = chipIdx*ELEMS_PER_CHIP + ELEMS_PER_CHIP - 1 - bitIdx;
-            txVal = txVal << 2;
-            bool isOn = elemIdx < _elemStates.size() ? _elemStates[elemIdx] : false;
-            txVal |= (isOn ? 0b10 : 0b11);
-            // LOG_I(MODULE_PREFIX, "applyCurrentState chipIdx %d bitIdx %d txVal %04x relayState[%d] %d", 
-            //             chipIdx, bitIdx, txVal, elemIdx, isOn);
-        }
-        // Need to swap the two bytes
-        uint16_t txValSwapped = (txVal >> 8) | (txVal << 8);
-        // LOG_I(MODULE_PREFIX, "applyCurrentState chipIdx %d txVal %04x", chipIdx, txValSwapped);
-
-        // SPI transaction
-        uint16_t rxVal = 0;
-        spi_transaction_t spiTransaction = {
-            .flags = 0,
-            .cmd = 0,
-            .addr = 0,
-            .length = 16 /* bits */,
-            .rxlength = 16 /* bits */,
-            .user = NULL,
-            .tx_buffer = &txValSwapped,
-            .rx_buffer = &rxVal,
-        };
-
-        // Send the data
-        spi_device_acquire_bus(_spiDeviceHandles[chipIdx], portMAX_DELAY);
-        spi_device_transmit(_spiDeviceHandles[chipIdx], &spiTransaction);
-        spi_device_release_bus(_spiDeviceHandles[chipIdx]);
-    }
-    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -502,14 +376,4 @@ void ScaderRelays::debugShowCurrentState()
     }
     LOG_I(MODULE_PREFIX, "debugShowCurrentState %s", elemStr.c_str());
 }
-
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// // mainsSyncISR
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// void IRAM_ATTR ScaderRelays::mainsSyncISR()
-// {
-//     // TODO
-//     _isrCount = _isrCount + 1;
-// }
 

@@ -13,7 +13,7 @@
 #include "RaftJsonIF.h"
 #include "RaftSysMod.h"
 #include "ScaderCommon.h"
-#include "driver/spi_master.h"
+#include "SPIDimmer.h"
 
 class APISourceInfo;
 
@@ -21,8 +21,8 @@ class ScaderRelays : public RaftSysMod
 {
 public:
     static const int DEFAULT_MAX_ELEMS = 24;
-    static const int ELEMS_PER_CHIP = 8;
-    static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
+    // static const int ELEMS_PER_CHIP = 8;
+    // static const int SPI_MAX_CHIPS = DEFAULT_MAX_ELEMS/ELEMS_PER_CHIP;
     ScaderRelays(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
@@ -53,38 +53,25 @@ private:
     // Initialised flag
     bool _isInitialised = false;
 
+    // Dimmer
+    SPIDimmer _spiDimmer;
+
     // Settings
     uint32_t _maxElems = DEFAULT_MAX_ELEMS;
 
-    // SPI control
-    int _spiMosi = -1;
-    int _spiMiso = -1;
-    int _spiClk = -1;
-    int _spiChipSelects[SPI_MAX_CHIPS] = {};
-
-    // SPI device handles
-    spi_device_handle_t _spiDeviceHandles[SPI_MAX_CHIPS] = {};
-
     // On/Off Key
     int _onOffKey = -1;
-
-    // Mains sync detection
-    int _mainsSyncPin = -1;
-    bool _enableMainsSync = false;
 
     // Names of control elements
     std::vector<String> _elemNames;
 
     // Current state of elements
-    std::vector<bool> _elemStates;
+    std::vector<uint8_t> _elemStates;
 
     // Mutable data saving
     static const uint32_t MUTABLE_DATA_SAVE_MIN_MS = 5000;
     uint32_t _mutableDataChangeLastMs = 0;
     bool _mutableDataDirty = false;
-
-    // Helpers
-    bool applyCurrentState();
 
     // Helper functions
     void deinit();
@@ -93,19 +80,16 @@ private:
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
 
-    // Mains sync ISR
-    static void IRAM_ATTR mainsSyncISRStatic(void *pArg)
-    {
-        // if (pArg)
-        //     ((ScaderRelays *)pArg)->mainsSyncISR();
-    }
-    // void IRAM_ATTR mainsSyncISR();
-
     // Relay states, etc
     RaftJsonNVS _scaderModuleState;
 
-    // TODO
-    // Debug count of ISR
-    volatile uint32_t _isrCount = 0;
-    uint32_t _debugServiceLastMs = 0;
+    // Helper
+    uint32_t getElemStateFromString(const String &elemStateStr)
+    {
+        if (elemStateStr.equalsIgnoreCase("on") || elemStateStr.equalsIgnoreCase("1"))
+            return 100;
+        if (elemStateStr.equalsIgnoreCase("off") || elemStateStr.equalsIgnoreCase("0"))
+            return 0;
+        return elemStateStr.toInt();
+    }
 };

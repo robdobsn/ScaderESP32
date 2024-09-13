@@ -34,7 +34,7 @@ public:
     uint32_t getZeroCrossPeriodUs() const { return _zeroCrossPeriodUsAvg.getAverage(); }
 
     // Get mains frequency in Hz
-    float getMainsHz() const { return _mainsCyclePeriodValid ? (1000000.0 / _zeroCrossPeriodUsAvg.getAverage()) : 0; }
+    float getMainsHz() const { return _mainsCyclePeriodValid ? (500000.0 / _zeroCrossPeriodUsAvg.getAverage()) : 0; }
 
     // Check if mains sync is valid
     bool isMainsSyncValid() const { return _mainsCyclePeriodValid; }

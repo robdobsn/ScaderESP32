@@ -220,8 +220,8 @@
         "SPI_CS2": 5,
         "SPI_CS3": 13,
         "ONOFF_KEY": 34,
-        "MAINS_SYNC": 35,
-        "enableMainsSync": false
+        "mainsSyncPin": 35,
+        "enableMainsSync": true
     },
     "ScaderElecMeters": {
         "maxElems": 16,

@@ -7,6 +7,8 @@
 #include "SPIDimmer.h"
 #include "driver/gpio.h"
 
+// #define DEBUG_MAINS_FREQ
+
 // TODO - investigate ESP_TIMER_ISR flag
 // #define USE_ISR_FOR_TIMER_SEQUENCE
 
@@ -162,6 +164,15 @@ void SPIDimmer::loop()
         // Set values (if no mains sync) or recalculate timer sequence
         setValuesOrRecalculateTimerSequence();
     }
+
+#ifdef DEBUG_MAINS_FREQ
+    if (Raft::isTimeout(millis(), _debugLastLoopMs, 1000))
+    {
+        LOG_I(MODULE_PREFIX, "Mains freq: %f Hz _mainsCyclePeriodValid %d _mainsCyclePeriodSet %d _useMainsSync %d", 
+                getMainsHz(), _mainsCyclePeriodValid, _mainsCyclePeriodSet, _useMainsSync);
+        _debugLastLoopMs = millis();
+    }
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

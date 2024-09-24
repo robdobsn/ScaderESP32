@@ -98,7 +98,7 @@ void ScaderElecMeters::setup()
     };
 
     //Initialize the SPI bus
-    esp_err_t espErr = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    esp_err_t espErr = spi_bus_initialize(SPI2_HOST, &buscfg, 1);
     if (espErr != ESP_OK)
     {
         LOG_E(MODULE_PREFIX, "setup SPI failed MOSI %d MISO %d CLK %d CS1 %d CS2 %d retc %d",
@@ -134,7 +134,7 @@ void ScaderElecMeters::setup()
             .pre_cb = nullptr,
             .post_cb = nullptr
         };
-        esp_err_t ret = spi_bus_add_device(HSPI_HOST, &devCfg, &_spiDeviceHandles[i]);
+        esp_err_t ret = spi_bus_add_device(SPI2_HOST, &devCfg, &_spiDeviceHandles[i]);
         if (ret != ESP_OK)
         {
             LOG_E(MODULE_PREFIX, "setup add SPI device failed MOSI %d MISO %d CLK %d CS1 %d CS2 %d retc %d",

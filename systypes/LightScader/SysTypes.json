@@ -239,7 +239,7 @@
         "brightnessPC": 20,
         "strips": [
             {
-                "pin": "32",
+                "pin": 2,
                 "num": 16
             }
         ],
@@ -248,7 +248,7 @@
             "brightnessPC": 20,
             "strips": [
                 {
-                    "pin": "33",
+                    "pin": 3,
                     "num": 16
                 }
             ]                

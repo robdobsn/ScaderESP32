@@ -151,7 +151,7 @@ void DoorOpener::loop()
     if (Raft::isTimeout(millis(), _debugLastDisplayMs, DEBUG_DOOR_OPENER_STATUS_RATE_MS))
     {
         _debugLastDisplayMs = millis();
-        LOG_I(MODULE_PREFIX, "service angle %.2f speed %.2fdegs/sec state %s timeInState %ds", 
+        LOG_I(MODULE_PREFIX, "service angle %.1f speed %.2fdegs/sec state %s timeInState %ds", 
                 _motorMechanism.getMeasuredAngleDegs(),
                 _motorMechanism.getMeasuredAngularSpeedDegsPerSec(),
                 getOpenerStateStr(getOpenerState()),

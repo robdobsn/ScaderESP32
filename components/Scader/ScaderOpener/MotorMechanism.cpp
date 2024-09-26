@@ -109,7 +109,7 @@ void MotorMechanism::loop()
 #ifdef DEBUG_SENSOR_ANGLE
     if (Raft::isTimeout(millis(), _debugLastPrintTimeMs, 1000))
     {
-        LOG_I(MODULE_PREFIX, "service angle %.2fdegs avgSpeed %.2fdegs/sec", 
+        LOG_I(MODULE_PREFIX, "service angle %.1fdegs avgSpeed %.2fdegs/sec", 
                     getMeasuredAngleDegs(), getMeasuredAngularSpeedDegsPerSec());
         _debugLastPrintTimeMs = millis();
     }

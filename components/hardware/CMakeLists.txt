@@ -6,6 +6,7 @@ idf_component_register(
                 INCLUDE_DIRS
                   "AS5600Sensor"
                   "MT6701Sensor"
+                  "HX711"
                   "Helpers"
                 REQUIRES
                   RaftCore

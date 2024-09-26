@@ -22,7 +22,7 @@
 #include "ScaderElecMeters.h"
 // #include "ScaderCat.h"
 // #include "ScaderWaterer.h"
-
+#include "MotorControl.h"
 
 // Entry point
 extern "C" void app_main(void)
@@ -37,6 +37,15 @@ extern "C" void app_main(void)
 
     // Register WebServer
     RegisterSysMods::registerWebServer(raftCoreApp.getSysManager(), true);
+
+    // Register BusI2C
+    raftBusSystem.registerBus("I2C", BusI2C::createFn);
+    
+    // Register BusSerial
+    raftBusSystem.registerBus("Serial", BusSerial::createFn);
+    
+    // Register MotorControl
+    deviceFactory.registerDevice("MotorControl", MotorControl::create);   
 
     // Scader components
     raftCoreApp.registerSysMod("ScaderRelays", ScaderRelays::create, true);

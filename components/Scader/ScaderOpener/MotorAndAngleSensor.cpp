@@ -7,6 +7,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "MotorAndAngleSensor.h"
+#include "DeviceManager.h"
+// TODO REMOVE
+#include "DevicePollRecords_generated.h"
+#include "DeviceTypeRecords.h"
+RaftBusDeviceDecodeState decodeState;
 
 static const char *MODULE_PREFIX = "MotorAndAngleSensor";
 
@@ -16,88 +21,109 @@ static const char *MODULE_PREFIX = "MotorAndAngleSensor";
 // Constructor and destructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-MotorAndAngleSensor::MotorAndAngleSensor() :
-        _busI2C(std::bind(&MotorAndAngleSensor::busElemStatusCB, this, std::placeholders::_1, std::placeholders::_2),
-                std::bind(&MotorAndAngleSensor::busOperationStatusCB, this, std::placeholders::_1, std::placeholders::_2))
+MotorAndAngleSensor::MotorAndAngleSensor() 
+    // TODO - remove
+// :
+//         _busI2C(std::bind(&MotorAndAngleSensor::busElemStatusCB, this, std::placeholders::_1, std::placeholders::_2),
+//                 std::bind(&MotorAndAngleSensor::busOperationStatusCB, this, std::placeholders::_1, std::placeholders::_2))
 {
 }
 
 MotorAndAngleSensor::~MotorAndAngleSensor()
 {
-    // Remove stepper and bus serial
-    if (_pStepper)
-        delete _pStepper;
-    _pStepper = nullptr;
-    if (_pBusSerial)
-        delete _pBusSerial;
-    _pBusSerial = nullptr;
+    // TODO - remove
+    // // Remove stepper and bus serial
+    // if (_pStepper)
+    //     delete _pStepper;
+    // _pStepper = nullptr;
+    // if (_pBusSerial)
+    //     delete _pBusSerial;
+    // _pBusSerial = nullptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::setup(RaftJsonIF& config)
+void MotorAndAngleSensor::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 {
-    // Check if already setup
-    if (_pBusSerial)
-    {
-        LOG_W(MODULE_PREFIX, "setup already done");
-        return;
-    }
+    // Register for device data notifications from the angle sensor
+    if (pDevMan)
+        pDevMan->registerForDeviceData("I2CA_0x36@0", 
+                [](uint32_t deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
 
-    // Configure serial bus for stepper
-    _pBusSerial = new BusSerial(nullptr, nullptr);
-    if (_pBusSerial)
-    {
-        RaftJsonPrefixed motorSerialConfig(config, "MotorSerial");
-        _pBusSerial->setup(motorSerialConfig);
-    }
-    else
-    {
-        LOG_E(MODULE_PREFIX, "setup FAILED to create BusSerial");
-    }
+                    // Decode device data
+                    poll_AS5600 deviceData;
+                    DeviceTypeRecordDecodeFn pDecodeFn = deviceTypeRecords.getPollDecodeFn(deviceTypeIdx);
+                    if (pDecodeFn)
+                        pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, decodeState);
 
-    // Configure stepper
-    // TODO - change to use Raft Device Factory
-    _pStepper = new MotorControl("DoorMotor", config.getString("", "{}").c_str());
-    if (_pStepper)
-    {
-        _pStepper->setup();
-        // _pStepper->setBusNameIfValid(_pBusSerial ? _pBusSerial->getBusName().c_str() : nullptr);
-        // _pStepper->connectToBus(_pBusSerial);
-        // _pStepper->postSetup();
-    }
-    else
-    {
-        LOG_E(MODULE_PREFIX, "setup FAILED to create HWElemSteppers");
-    }
+                    LOG_I(MODULE_PREFIX, "setup deviceDataChangeCB devTypeIdx %d data bytes %d callbackInfo %p tims %d angle %.2f",
+                            deviceTypeIdx, data.size(), pCallbackInfo, deviceData.timeMs, deviceData.angle);
+                });
 
-    // Get motor on time after move (secs)
-    float motorOnTimeAfterMoveSecs = config.getDouble("MotorOnTimeAfterMoveSecs", 0.0);
-    if (_pStepper)
-        _pStepper->setMotorOnTimeAfterMoveSecs(motorOnTimeAfterMoveSecs);
 
-    // Get motor current threshold
-    float maxMotorCurrentAmps = config.getDouble("MaxMotorCurrentAmps", 0.1);
-    if (_pStepper)
-        _pStepper->setMaxMotorCurrentAmps(0, maxMotorCurrentAmps);
 
-    // Setup I2C
-    RaftJsonPrefixed i2cConfig(config, "BusI2C");
-    _busI2C.setup(i2cConfig);
 
-    // Rotation sensor address
-    RaftJsonPrefixed angleSensorConfig(config, "AngleSensor");
-    _rotationSensor.setup(angleSensorConfig, &_busI2C);
+    // // Check if already setup
+    // if (_pBusSerial)
+    // {
+    //     LOG_W(MODULE_PREFIX, "setup already done");
+    //     return;
+    // }
 
-    // Set hysteresis for angle filter
-    _rotationSensor.setHysteresis(1);
+    // // Configure serial bus for stepper
+    // _pBusSerial = new BusSerial(nullptr, nullptr);
+    // if (_pBusSerial)
+    // {
+    //     RaftJsonPrefixed motorSerialConfig(config, "MotorSerial");
+    //     _pBusSerial->setup(motorSerialConfig);
+    // }
+    // else
+    // {
+    //     LOG_E(MODULE_PREFIX, "setup FAILED to create BusSerial");
+    // }
 
-    // Debug
-    LOG_I(MODULE_PREFIX, "setup MaxMotorCurrent %.2fA MotorOnTimeAfterMoveSecs %.2fs", 
-                maxMotorCurrentAmps, motorOnTimeAfterMoveSecs);
-    // LOG_I(MODULE_PREFIX, "setup rotSensorI2CAddr 0x%02x", _rotationSensor.getI2CAddr());
+    // // Configure stepper
+    // // TODO - change to use Raft Device Factory
+    // _pStepper = new MotorControl("DoorMotor", config.getString("", "{}").c_str());
+    // if (_pStepper)
+    // {
+    //     _pStepper->setup();
+    //     // _pStepper->setBusNameIfValid(_pBusSerial ? _pBusSerial->getBusName().c_str() : nullptr);
+    //     // _pStepper->connectToBus(_pBusSerial);
+    //     // _pStepper->postSetup();
+    // }
+    // else
+    // {
+    //     LOG_E(MODULE_PREFIX, "setup FAILED to create HWElemSteppers");
+    // }
+
+    // // Get motor on time after move (secs)
+    // float motorOnTimeAfterMoveSecs = config.getDouble("MotorOnTimeAfterMoveSecs", 0.0);
+    // if (_pStepper)
+    //     _pStepper->setMotorOnTimeAfterMoveSecs(motorOnTimeAfterMoveSecs);
+
+    // // Get motor current threshold
+    // float maxMotorCurrentAmps = config.getDouble("MaxMotorCurrentAmps", 0.1);
+    // if (_pStepper)
+    //     _pStepper->setMaxMotorCurrentAmps(0, maxMotorCurrentAmps);
+
+    // // Setup I2C
+    // RaftJsonPrefixed i2cConfig(config, "BusI2C");
+    // _busI2C.setup(i2cConfig);
+
+    // // Rotation sensor address
+    // RaftJsonPrefixed angleSensorConfig(config, "AngleSensor");
+    // _rotationSensor.setup(angleSensorConfig, &_busI2C);
+
+    // // Set hysteresis for angle filter
+    // _rotationSensor.setHysteresis(1);
+
+    // // Debug
+    // LOG_I(MODULE_PREFIX, "setup MaxMotorCurrent %.2fA MotorOnTimeAfterMoveSecs %.2fs", 
+    //             maxMotorCurrentAmps, motorOnTimeAfterMoveSecs);
+    // // LOG_I(MODULE_PREFIX, "setup rotSensorI2CAddr 0x%02x", _rotationSensor.getI2CAddr());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,29 +132,29 @@ void MotorAndAngleSensor::setup(RaftJsonIF& config)
 
 void MotorAndAngleSensor::loop()
 {
-    // Service the stepper
-    if (_pStepper)
-        _pStepper->loop();
+//     // Service the stepper
+//     if (_pStepper)
+//         _pStepper->loop();
 
-    // Service I2C bus
-    _busI2C.loop();
+//     // Service I2C bus
+//     _busI2C.loop();
 
-    // Service the sensor
-    _rotationSensor.loop();
+//     // Service the sensor
+//     _rotationSensor.loop();
 
-    // Feed the speed averaging
-    float curAngleDegs = _rotationSensor.getAngleDegrees(true, false);
-    _measuredDoorSpeedDegsPerSec.sample(curAngleDegs);
+//     // Feed the speed averaging
+//     float curAngleDegs = _rotationSensor.getAngleDegrees(true, false);
+//     _measuredDoorSpeedDegsPerSec.sample(curAngleDegs);
 
-    // Debug
-#ifdef DEBUG_SENSOR_ANGLE
-    if (Raft::isTimeout(millis(), _debugLastPrintTimeMs, 1000))
-    {
-        LOG_I(MODULE_PREFIX, "service angle %.2fdegs avgSpeed %.2fdegs/sec", 
-                    curAngleDegs, _measuredDoorSpeedDegsPerSec.getRatePerSec());
-        _debugLastPrintTimeMs = millis();
-    }
-#endif
+//     // Debug
+// #ifdef DEBUG_SENSOR_ANGLE
+//     if (Raft::isTimeout(millis(), _debugLastPrintTimeMs, 1000))
+//     {
+//         LOG_I(MODULE_PREFIX, "service angle %.2fdegs avgSpeed %.2fdegs/sec", 
+//                     curAngleDegs, _measuredDoorSpeedDegsPerSec.getRatePerSec());
+//         _debugLastPrintTimeMs = millis();
+//     }
+// #endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,7 +163,10 @@ void MotorAndAngleSensor::loop()
 
 float MotorAndAngleSensor::getMeasuredAngleDegs() const
 {
-    return _rotationSensor.getAngleDegrees(false, false);
+    // TODO - remove
+    return 0;
+
+    // return _rotationSensor.getAngleDegrees(false, false);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -146,7 +175,11 @@ float MotorAndAngleSensor::getMeasuredAngleDegs() const
 
 float MotorAndAngleSensor::getMeasuredAngularSpeedDegsPerSec() const
 {
-    return _measuredDoorSpeedDegsPerSec.getRatePerSec();
+    // TODO - remove
+    return 0;
+
+
+    // return _measuredDoorSpeedDegsPerSec.getRatePerSec();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -155,26 +188,29 @@ float MotorAndAngleSensor::getMeasuredAngularSpeedDegsPerSec() const
 
 void MotorAndAngleSensor::moveToAngleDegs(float angleDegrees, float movementSpeedDegreesPerSec)
 {
-    if (!_pStepper)
-        return;
+    // TODO - remove
+    return;
 
-    // Get the current angle
-    float currentAngleDegrees = _rotationSensor.getAngleDegrees(false, false);
+    // if (!_pStepper)
+    //     return;
 
-    // Calculate the difference to required angle
-    float angleDiffDegrees = angleDegrees - currentAngleDegrees;
+    // // Get the current angle
+    // float currentAngleDegrees = _rotationSensor.getAngleDegrees(false, false);
 
-    // Form command
-    // ,"clearQ":1
-    String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
-    moveCmd.replace("__POS__", String(angleDiffDegrees));
-    moveCmd.replace("__SPEED__", String(movementSpeedDegreesPerSec == 0 ? _reqMotorSpeedDegsPerSec : movementSpeedDegreesPerSec));
+    // // Calculate the difference to required angle
+    // float angleDiffDegrees = angleDegrees - currentAngleDegrees;
 
-    // Send command
-    _pStepper->sendCmdJSON(moveCmd.c_str());
+    // // Form command
+    // // ,"clearQ":1
+    // String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
+    // moveCmd.replace("__POS__", String(angleDiffDegrees));
+    // moveCmd.replace("__SPEED__", String(movementSpeedDegreesPerSec == 0 ? _reqMotorSpeedDegsPerSec : movementSpeedDegreesPerSec));
 
-    // Reset check on motor stopped
-    _lastMotorStoppedCheckTimeMs = millis();
+    // // Send command
+    // _pStepper->sendCmdJSON(moveCmd.c_str());
+
+    // // Reset check on motor stopped
+    // _lastMotorStoppedCheckTimeMs = millis();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -183,9 +219,12 @@ void MotorAndAngleSensor::moveToAngleDegs(float angleDegrees, float movementSpee
 
 void MotorAndAngleSensor::stop()
 {
-    if (!_pStepper)
-        return;
-    _pStepper->sendCmdJSON(R"({"cmd":"motion","stop":1,"clearQ":1})");
+    // TODO - remove
+    return;
+
+    // if (!_pStepper)
+    //     return;
+    // _pStepper->sendCmdJSON(R"({"cmd":"motion","stop":1,"clearQ":1})");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,8 +233,11 @@ void MotorAndAngleSensor::stop()
 
 bool MotorAndAngleSensor::isMotorActive() const
 {
-    bool isValid = false;
-    return _pStepper && _pStepper->getNamedValue("b", isValid) != 0;
+    // TODO - remove
+    return false;
+
+    // bool isValid = false;
+    // return _pStepper && _pStepper->getNamedValue("b", isValid) != 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,17 +246,20 @@ bool MotorAndAngleSensor::isMotorActive() const
 
 bool MotorAndAngleSensor::isNearTargetAngle(float targetAngleDegs, float posToleranceDegs, float negToleranceDegs) const
 {
-    // Get the current angle
-    float currentAngleDegrees = _rotationSensor.getAngleDegrees(false, false);
+    // TODO - remove
+    return false;
 
-    // Calculate the difference to required angle
-    float angleDiffDegrees = targetAngleDegs - currentAngleDegrees;
+    // // Get the current angle
+    // float currentAngleDegrees = _rotationSensor.getAngleDegrees(false, false);
 
-    // Check if within tolerance
-    if (angleDiffDegrees > 0)
-        return angleDiffDegrees < posToleranceDegs;
-    else
-        return angleDiffDegrees > negToleranceDegs;
+    // // Calculate the difference to required angle
+    // float angleDiffDegrees = targetAngleDegs - currentAngleDegrees;
+
+    // // Check if within tolerance
+    // if (angleDiffDegrees > 0)
+    //     return angleDiffDegrees < posToleranceDegs;
+    // else
+    //     return angleDiffDegrees > negToleranceDegs;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,71 +268,74 @@ bool MotorAndAngleSensor::isNearTargetAngle(float targetAngleDegs, float posTole
 
 bool MotorAndAngleSensor::isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec) const
 {
-    // Check motor speed < expected motor speed
-    double motorSpeedDegsPerSec = _measuredDoorSpeedDegsPerSec.getRatePerSec();
-    if (std::abs(motorSpeedDegsPerSec) < 
-            (expectedMotorSpeedDegsPerSec == 0 ? _reqMotorSpeedDegsPerSec / 2 : expectedMotorSpeedDegsPerSec / 2))
-    {
-        // Check if stopped for more than a given time
-        if (Raft::isTimeout(millis(), _lastMotorStoppedCheckTimeMs, timeMs))
-        {
-            LOG_I(MODULE_PREFIX, "isStoppedForTimeMs motor IS stopped for %dms (peedDegs/s meas %.2f expected %.2f reqd %.2f) lastMovingTime %d", 
-                        timeMs, motorSpeedDegsPerSec, expectedMotorSpeedDegsPerSec, _reqMotorSpeedDegsPerSec, _lastMotorStoppedCheckTimeMs);
-            return true;
-        }
-    }
-    else
-    {
-        // Reset stopped time - casting away const as this is just debugging info
-        const_cast<uint32_t&>(_lastMotorStoppedCheckTimeMs) = millis();
-    }
+    // TODO - remove
     return false;
+    
+    // // Check motor speed < expected motor speed
+    // double motorSpeedDegsPerSec = _measuredDoorSpeedDegsPerSec.getRatePerSec();
+    // if (std::abs(motorSpeedDegsPerSec) < 
+    //         (expectedMotorSpeedDegsPerSec == 0 ? _reqMotorSpeedDegsPerSec / 2 : expectedMotorSpeedDegsPerSec / 2))
+    // {
+    //     // Check if stopped for more than a given time
+    //     if (Raft::isTimeout(millis(), _lastMotorStoppedCheckTimeMs, timeMs))
+    //     {
+    //         LOG_I(MODULE_PREFIX, "isStoppedForTimeMs motor IS stopped for %dms (peedDegs/s meas %.2f expected %.2f reqd %.2f) lastMovingTime %d", 
+    //                     timeMs, motorSpeedDegsPerSec, expectedMotorSpeedDegsPerSec, _reqMotorSpeedDegsPerSec, _lastMotorStoppedCheckTimeMs);
+    //         return true;
+    //     }
+    // }
+    // else
+    // {
+    //     // Reset stopped time - casting away const as this is just debugging info
+    //     const_cast<uint32_t&>(_lastMotorStoppedCheckTimeMs) = millis();
+    // }
+    // return false;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// I2CBus element status callback
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// // I2CBus element status callback
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges)
-{
-    String statusStr;
-    int seqStartAddr = -1;
-    bool lastWasOnline = false;
-    int lastAddr = 0;
-    for (auto& statusChange : statusChanges)
-    {
-        if (seqStartAddr == -1)
-        {
-            seqStartAddr = statusChange.address;
-            lastWasOnline = statusChange.isChangeToOnline;
-        }
-        else if (lastWasOnline != statusChange.isChangeToOnline)
-        {
-            if (!statusStr.isEmpty())
-                statusStr += ", ";
-            statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(statusChange.address - 1, 16) + (lastWasOnline ? ":online" : ":offline");
-            seqStartAddr = statusChange.address;
-            lastWasOnline = statusChange.isChangeToOnline;
-        }
-        lastAddr = statusChange.address;
-    }
-    if (seqStartAddr != -1)
-    {
-        if (!statusStr.isEmpty())
-            statusStr += ", ";
-        statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(lastAddr, 16) + (lastWasOnline ? ":online" : ":offline");
-    }
-    LOG_I(MODULE_PREFIX, "busElemStatusCB I2C addr %s", statusStr.c_str());
-}
+// void MotorAndAngleSensor::busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges)
+// {
+//     String statusStr;
+//     int seqStartAddr = -1;
+//     bool lastWasOnline = false;
+//     int lastAddr = 0;
+//     for (auto& statusChange : statusChanges)
+//     {
+//         if (seqStartAddr == -1)
+//         {
+//             seqStartAddr = statusChange.address;
+//             lastWasOnline = statusChange.isChangeToOnline;
+//         }
+//         else if (lastWasOnline != statusChange.isChangeToOnline)
+//         {
+//             if (!statusStr.isEmpty())
+//                 statusStr += ", ";
+//             statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(statusChange.address - 1, 16) + (lastWasOnline ? ":online" : ":offline");
+//             seqStartAddr = statusChange.address;
+//             lastWasOnline = statusChange.isChangeToOnline;
+//         }
+//         lastAddr = statusChange.address;
+//     }
+//     if (seqStartAddr != -1)
+//     {
+//         if (!statusStr.isEmpty())
+//             statusStr += ", ";
+//         statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(lastAddr, 16) + (lastWasOnline ? ":online" : ":offline");
+//     }
+//     LOG_I(MODULE_PREFIX, "busElemStatusCB I2C addr %s", statusStr.c_str());
+// }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// I2CBus operation status callback
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// // I2CBus operation status callback
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus)
-{
-    LOG_I(MODULE_PREFIX, "busOperationStatusCB I2C bus %s", RaftBus::busOperationStatusToString(busOperationStatus));
-}
+// void MotorAndAngleSensor::busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus)
+// {
+//     LOG_I(MODULE_PREFIX, "busOperationStatusCB I2C bus %s", RaftBus::busOperationStatusToString(busOperationStatus));
+// }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Calculate move speed degs per sec

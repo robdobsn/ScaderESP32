@@ -163,49 +163,35 @@
             }
         ]
     },
-    "ScaderOpener": {
-        "DoorRemainOpenTimeSecs": 45,
-        "DoorTimeToOpenSecs": 20,
-        "MotorOnTimeAfterMoveSecs": 5,
-        "MaxMotorCurrentAmps": 0.4,
-        "DoorOpenAngleDegs": 0,
-        "DoorClosedAngleDegs": 0,
-        "consvPirPin": 17,
-        "consvButtonPin": 6,
-        "i2cBusFreqHz": 100000,
-        "MotorAndAngleSensor": {
-            "BusI2C": {
-                "name": "I2CA",
-                "type": "I2C",
-                "reqFIFOLen": 10,
-                "i2cPort": 0,
-                "sdaPin": 41,
-                "sclPin": 42,
-                "i2cFreq": 100000,
-                "taskCore": 0,
-                "taskStack": 10000,
-                "taskPriority": 24                
-            },
-            "AngleSensor": {
-                "i2cAddr": 54,
-                "pollsPerSec": 1000,
-                "reverse": false,
-                "hysteresis": 0
-            },            
-            "MotorSerial":
+    "DevMan": {
+        "Buses": {
+            "buslist":
+            [
+                {
+                    "name": "I2CA",
+                    "type": "I2C",
+                    "sdaPin": 41,
+                    "sclPin": 42,
+                    "i2cFreq": 100000,
+                    "loopYieldMs": 20
+                },
+                {
+                    "name": "SERA",
+                    "type": "serial",
+                    "uartNum": 2,
+                    "rxPin": 5,
+                    "txPin": 47,
+                    "baudRate": 115200,
+                    "minAfterSendMs": 5
+                }
+            ]
+        },        
+        "Devices":
+        [
             {
-                "name": "SERA",
-                "type": "serial",
-                "uartNum": 2,
-                "rxPin": 5,
-                "txPin": 47,
-                "baudRate": 115200,
-                "minAfterSendMs": 5
-            },
-            "DoorMotor":
-            {
-                "name": "DoorMotor",
-                "type": "Steppers",
+                "enable": 1,
+                "class": "MotorControl",
+                "name": "Motor",
                 "bus": "SERA",
                 "motion": {
                     "geom": "XYZ",
@@ -254,32 +240,50 @@
                     }
                 ]
             },
-            "AmbientLightSensor":
             {
-                "pin": 7
+                "enable": 1,
+                "class": "Buzzer",
+                "name": "Buzzer",
+                "pin": 21,
+                "ledcTimer": 1,
+                "ledcChan": 0,
+                "volume": 20
             },
-            "StrainGauge":
             {
+                "enable": 1,
+                "class": "LightSensors",
+                "name": "Light",
+                "type": "LightV1",
+                "Ambient":
+                [
+                    {
+                       "chan": 7
+                    }
+                ]
+            },
+            { 
+                "enable": 1,
+                "class": "StrainGauge",
                 "clkPin": 38,
-                "dataPin": 48
+                "dataPin": 48    
             },
-            "Buzzer":
             {
-                "pin": 21
-            },
-            "RS422":
-            {
-                "rxPin": 18,
-                "txPin": 12,
-                "uartNum": 1,
-                "baudRate": 115200	
-            },
-            "FETS":
-            {
+                "enable": 1,
+                "class": "OutputFETS",
                 "pins": [10, 11]
             }
-
-        },
+        ]
+    },    
+    "ScaderOpener": {
+        "DoorRemainOpenTimeSecs": 45,
+        "DoorTimeToOpenSecs": 20,
+        "MotorOnTimeAfterMoveSecs": 5,
+        "MaxMotorCurrentAmps": 0.4,
+        "DoorOpenAngleDegs": 0,
+        "DoorClosedAngleDegs": 0,
+        "consvPirPin": 17,
+        "consvButtonPin": 6,
+        "i2cBusFreqHz": 100000,
         "uiModule":
         {
             "rxPin": 39,

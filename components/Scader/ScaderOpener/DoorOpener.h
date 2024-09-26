@@ -19,6 +19,8 @@
 #include "MotorAndAngleSensor.h"
 #include "StateChangeDetector.h"
 
+class DeviceManager;
+
 class DoorOpener : public OpenerStatus
 {
 public:
@@ -27,7 +29,7 @@ public:
     virtual ~DoorOpener();
 
     // Setup
-    void setup(RaftJsonIF& config);
+    void setup(DeviceManager* pDevMan, RaftJsonIF& config);
 
     // Service
     void loop();

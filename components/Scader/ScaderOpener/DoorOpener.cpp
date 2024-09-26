@@ -9,6 +9,7 @@
 #include "DoorOpener.h"
 #include "ConfigPinMap.h"
 #include "MotorControl.h"
+#include "DeviceManager.h"
 
 #define DEBUG_DOOR_OPENER_STATUS_RATE_MS 5000
 
@@ -27,52 +28,52 @@ DoorOpener::~DoorOpener()
 /// Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DoorOpener::setup(RaftJsonIF& config)
+void DoorOpener::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 {
     // Setup motor and angle sensor
     RaftJsonPrefixed motorAndAngleSensorConfig(config, "MotorAndAngleSensor");
-    _motorAndAngleSensor.setup(motorAndAngleSensorConfig);
+    _motorAndAngleSensor.setup(pDevMan, motorAndAngleSensorConfig);
 
-    // Record config
-    recordConfig(config);
+    // // Record config
+    // recordConfig(config);
 
-    // Configure conservatory button and PIR GPIO pins
-    ConfigPinMap::PinDef gpioPins[] = {
-        ConfigPinMap::PinDef("consvButtonPin", ConfigPinMap::GPIO_INPUT_PULLUP, &_conservatoryButtonPin),
-        ConfigPinMap::PinDef("consvPirPin", ConfigPinMap::GPIO_INPUT_PULLDOWN, &_consvPirSensePin)
-    };
-    ConfigPinMap::configMultiple(config, gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
+    // // Configure conservatory button and PIR GPIO pins
+    // ConfigPinMap::PinDef gpioPins[] = {
+    //     ConfigPinMap::PinDef("consvButtonPin", ConfigPinMap::GPIO_INPUT_PULLUP, &_conservatoryButtonPin),
+    //     ConfigPinMap::PinDef("consvPirPin", ConfigPinMap::GPIO_INPUT_PULLDOWN, &_consvPirSensePin)
+    // };
+    // ConfigPinMap::configMultiple(config, gpioPins, sizeof(gpioPins) / sizeof(gpioPins[0]));
 
-    // Setup conservatory button
-    _conservatoryButton.setup(_conservatoryButtonPin, true, 0, 
-                std::bind(&DoorOpener::onConservatoryButtonPressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                DebounceButton::DEFAULT_PIN_DEBOUNCE_MS,
-                5000);
+    // // Setup conservatory button
+    // _conservatoryButton.setup(_conservatoryButtonPin, true, 0, 
+    //             std::bind(&DoorOpener::onConservatoryButtonPressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+    //             DebounceButton::DEFAULT_PIN_DEBOUNCE_MS,
+    //             5000);
 
-    // Setup conservatory PIR change detector
-    _consvPIRChangeDetector.setup(true);
+    // // Setup conservatory PIR change detector
+    // _consvPIRChangeDetector.setup(true);
 
-    // Move and open times
-    _doorTimeToOpenSecs = config.getLong("DoorTimeToOpenSecs", DEFAULT_DOOR_TIME_TO_OPEN_SECS);
-    _doorRemainOpenTimeSecs = config.getLong("DoorRemainOpenTimeSecs", DEFAULT_DOOR_REMAIN_OPEN_TIME_SECS);
+    // // Move and open times
+    // _doorTimeToOpenSecs = config.getLong("DoorTimeToOpenSecs", DEFAULT_DOOR_TIME_TO_OPEN_SECS);
+    // _doorRemainOpenTimeSecs = config.getLong("DoorRemainOpenTimeSecs", DEFAULT_DOOR_REMAIN_OPEN_TIME_SECS);
     
-    // Get open and closed door angles
-    _doorClosedAngleDegs = config.getLong("DoorClosedAngleDegs", 0);
-    _doorOpenAngleDegs = config.getLong("DoorOpenAngleDegs", 0);
+    // // Get open and closed door angles
+    // _doorClosedAngleDegs = config.getLong("DoorClosedAngleDegs", 0);
+    // _doorOpenAngleDegs = config.getLong("DoorOpenAngleDegs", 0);
 
-    // Read from non-volatile storage
-    readFromNVS();
+    // // Read from non-volatile storage
+    // readFromNVS();
 
-    // Set motor speed
-    _motorAndAngleSensor.setMotorSpeedFromDegreesAndSecs(std::abs(_doorOpenAngleDegs - _doorClosedAngleDegs), _doorTimeToOpenSecs);
+    // // Set motor speed
+    // _motorAndAngleSensor.setMotorSpeedFromDegreesAndSecs(std::abs(_doorOpenAngleDegs - _doorClosedAngleDegs), _doorTimeToOpenSecs);
 
-    // Debug
-    // // LOG_I(MODULE_PREFIX, "setup HBridgeEn=%d HBridgePhase=%d HBridgeVissen=%d", _hBridgeEn, _hBridgePhase, _hBridgeVissen);
-    LOG_I(MODULE_PREFIX, "setup Conservatory: buttonPin %d pirPin %d",
-                _conservatoryButtonPin, _consvPirSensePin);
-    LOG_I(MODULE_PREFIX, "setup DoorClosedAngle %ddegs DoorOpenAngle %ddegs DoorTimeToOpen %ds DoorRemainOpenTime %ds DoorMoveSpeed %.2fdegs/s", 
-                _doorClosedAngleDegs, _doorOpenAngleDegs, _doorTimeToOpenSecs, _doorRemainOpenTimeSecs, 
-                _motorAndAngleSensor.getMotorSpeedDegsPerSec());
+    // // Debug
+    // // // LOG_I(MODULE_PREFIX, "setup HBridgeEn=%d HBridgePhase=%d HBridgeVissen=%d", _hBridgeEn, _hBridgePhase, _hBridgeVissen);
+    // LOG_I(MODULE_PREFIX, "setup Conservatory: buttonPin %d pirPin %d",
+    //             _conservatoryButtonPin, _consvPirSensePin);
+    // LOG_I(MODULE_PREFIX, "setup DoorClosedAngle %ddegs DoorOpenAngle %ddegs DoorTimeToOpen %ds DoorRemainOpenTime %ds DoorMoveSpeed %.2fdegs/s", 
+    //             _doorClosedAngleDegs, _doorOpenAngleDegs, _doorTimeToOpenSecs, _doorRemainOpenTimeSecs, 
+    //             _motorAndAngleSensor.getMotorSpeedDegsPerSec());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

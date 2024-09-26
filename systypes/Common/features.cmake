@@ -4,7 +4,7 @@ add_compile_definitions(SYSTEM_VERSION="6.4.0")
 # Raft components
 set(RAFT_COMPONENTS
     RaftSysMods@main
-    RaftI2C@main
+    RaftI2C@features-cascade-mux-and-pwr
     RaftMotorControl@main
     RaftWebServer@main
 )

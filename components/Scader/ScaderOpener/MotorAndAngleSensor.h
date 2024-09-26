@@ -16,6 +16,8 @@
 #include "AS5600Sensor.h"
 #include "MovingRate.h"
 
+class DeviceManager;
+
 class MotorAndAngleSensor
 {
 public:
@@ -24,7 +26,7 @@ public:
     virtual ~MotorAndAngleSensor();
 
     // Setup
-    void setup(RaftJsonIF& config);
+    void setup(DeviceManager* pDevMan, RaftJsonIF& config);
 
     // Service
     void loop();
@@ -58,13 +60,13 @@ public:
     bool isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec = 0) const;
 
 private:
-    // Stepper motor
-    MotorControl* _pStepper = nullptr;
-    BusSerial* _pBusSerial = nullptr;
+    // // Stepper motor
+    // MotorControl* _pStepper = nullptr;
+    // BusSerial* _pBusSerial = nullptr;
 
-    // Magnetic rotation sensor
-    AS5600Sensor _rotationSensor;
-    BusI2C _busI2C;
+    // // Magnetic rotation sensor
+    // AS5600Sensor _rotationSensor;
+    // BusI2C _busI2C;
 
     // Requested motor speed degrees per second
     float _reqMotorSpeedDegsPerSec = 5;
@@ -75,11 +77,13 @@ private:
     // Measured door speed degrees per second
     MovingRate<20, float, float> _measuredDoorSpeedDegsPerSec;
 
-    // I2C bus element status callback
-    void busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges);
+    // TODO - remove
 
-    // I2C bus operation status callback
-    void busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus);
+    // // I2C bus element status callback
+    // void busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges);
+
+    // // I2C bus operation status callback
+    // void busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus);
 
     // Calculate move speed degs per sec
     float calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const;

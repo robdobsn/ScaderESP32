@@ -60,13 +60,11 @@ public:
     bool isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec = 0) const;
 
 private:
-    // // Stepper motor
-    // MotorControl* _pStepper = nullptr;
-    // BusSerial* _pBusSerial = nullptr;
+    // Device manager
+    DeviceManager* _pDevMan = nullptr;
 
-    // // Magnetic rotation sensor
-    // AS5600Sensor _rotationSensor;
-    // BusI2C _busI2C;
+    // Semaphore for angle updates
+    SemaphoreHandle_t _angleUpdateSemaphore = nullptr;
 
     // Requested motor speed degrees per second
     float _reqMotorSpeedDegsPerSec = 5;
@@ -74,7 +72,8 @@ private:
     // Time of last motor stopped check
     uint32_t _lastMotorStoppedCheckTimeMs = 0;
 
-    // Measured door speed degrees per second
+    // Measured door angle and speed degrees per second
+    float _measuredDoorAngleDegs = 0;
     MovingRate<20, float, float> _measuredDoorSpeedDegsPerSec;
 
     // TODO - remove

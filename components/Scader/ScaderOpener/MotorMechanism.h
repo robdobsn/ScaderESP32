@@ -18,12 +18,12 @@
 
 class DeviceManager;
 
-class MotorAndAngleSensor
+class MotorMechanism
 {
 public:
     // Constructor and destructor
-    MotorAndAngleSensor();
-    virtual ~MotorAndAngleSensor();
+    MotorMechanism();
+    virtual ~MotorMechanism();
 
     // Setup
     void setup(DeviceManager* pDevMan, RaftJsonIF& config);
@@ -72,17 +72,12 @@ private:
     // Time of last motor stopped check
     uint32_t _lastMotorStoppedCheckTimeMs = 0;
 
-    // Measured door angle and speed degrees per second
+    // Measured door angle and speed degrees per second (protected by semaphore)
     float _measuredDoorAngleDegs = 0;
-    MovingRate<20, float, float> _measuredDoorSpeedDegsPerSec;
+    MovingRate<5, float, float> _measuredDoorSpeedDegsPerSec;
 
-    // TODO - remove
-
-    // // I2C bus element status callback
-    // void busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges);
-
-    // // I2C bus operation status callback
-    // void busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus);
+    // Decode state
+    RaftBusDeviceDecodeState _decodeState;
 
     // Calculate move speed degs per sec
     float calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const;

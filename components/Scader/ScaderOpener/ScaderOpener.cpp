@@ -51,8 +51,8 @@ void ScaderOpener::setup()
     // Configure UI module
     _uiModule.setup(configGetConfig(), &_doorOpener);
 
-    // // HW Now initialised
-    // _isInitialised = true;
+    // HW Now initialised
+    _isInitialised = true;
 
     // // Debug
     // LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s", 

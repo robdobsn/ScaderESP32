@@ -1,33 +1,32 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Motor and Angle Sensor
+// Motor Mechanism
 //
 // Rob Dobson 2013-2023
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "MotorAndAngleSensor.h"
+#include "MotorMechanism.h"
 #include "DeviceManager.h"
-// TODO REMOVE
 #include "DevicePollRecords_generated.h"
 #include "DeviceTypeRecords.h"
-RaftBusDeviceDecodeState decodeState;
 
-static const char *MODULE_PREFIX = "MotorAndAngleSensor";
+static const char *MODULE_PREFIX = "MotorMechanism";
 
-// #define DEBUG_SENSOR_ANGLE
+#define DEBUG_SENSOR_ANGLE
+// #define DEBUG_ANGLE_DEVICE_CALLBACK
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor and destructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-MotorAndAngleSensor::MotorAndAngleSensor()
+MotorMechanism::MotorMechanism()
 {
     // Angle update semaphore
-    _angleUpdateSemaphore = xSemaphoreCreateBinary();
+    _angleUpdateSemaphore = xSemaphoreCreateMutex();
 }
 
-MotorAndAngleSensor::~MotorAndAngleSensor()
+MotorMechanism::~MotorMechanism()
 {
 }
 
@@ -35,7 +34,7 @@ MotorAndAngleSensor::~MotorAndAngleSensor()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::setup(DeviceManager* pDevMan, RaftJsonIF& config)
+void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 {
     // Store device manager
     _pDevMan = pDevMan;
@@ -49,29 +48,29 @@ void MotorAndAngleSensor::setup(DeviceManager* pDevMan, RaftJsonIF& config)
                     poll_AS5600 deviceData;
                     DeviceTypeRecordDecodeFn pDecodeFn = deviceTypeRecords.getPollDecodeFn(deviceTypeIdx);
                     if (pDecodeFn)
-                        pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, decodeState);
+                        pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, _decodeState);
 
                     // Debug
-                    LOG_I(MODULE_PREFIX, "setup deviceDataChangeCB devTypeIdx %d data bytes %d callbackInfo %p tims %d angle %.2f",
+#ifdef DEBUG_ANGLE_DEVICE_CALLBACK
+                    LOG_I(MODULE_PREFIX, "deviceDataChangeCB devTypeIdx %d data bytes %d callbackInfo %p tims %d angle %.2f",
                             deviceTypeIdx, data.size(), pCallbackInfo, deviceData.timeMs, deviceData.angle);
+#endif
 
                     // Take the angle semaphore and update the angle
-                    if (_angleUpdateSemaphore)
+                    if (_angleUpdateSemaphore && (xSemaphoreTake(_angleUpdateSemaphore, 10) == pdTRUE))
                     {
-                        if (xSemaphoreTake(_angleUpdateSemaphore, 10) == pdTRUE)
-                        {
-                            // Update the angle
-                            _measuredDoorAngleDegs = deviceData.angle;
 
-                            // Feed the speed averaging
-                            _measuredDoorSpeedDegsPerSec.sample(deviceData.angle);
+                        // Update the angle
+                        _measuredDoorAngleDegs = deviceData.angle;
 
-                            // Give back the semaphore
-                            xSemaphoreGive(_angleUpdateSemaphore);
-                        }
+                        // Feed the speed averaging
+                        _measuredDoorSpeedDegsPerSec.sample(deviceData.angle);
+
+                        // Give back the semaphore
+                        xSemaphoreGive(_angleUpdateSemaphore);
                     }
                 },
-                100
+                50
             );
 
 
@@ -95,7 +94,8 @@ void MotorAndAngleSensor::setup(DeviceManager* pDevMan, RaftJsonIF& config)
     // _rotationSensor.setHysteresis(1);
 
     // Debug
-    LOG_I(MODULE_PREFIX, "setup MaxMotorCurrent %.2fA MotorOnTimeAfterMoveSecs %.2fs", 
+    // TODO implement
+    LOG_I(MODULE_PREFIX, "setup NOT IMPLEMENTED MaxMotorCurrent %.2fA MotorOnTimeAfterMoveSecs %.2fs", 
                 maxMotorCurrentAmps, motorOnTimeAfterMoveSecs);
 }
 
@@ -103,14 +103,14 @@ void MotorAndAngleSensor::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 // Service
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::loop()
+void MotorMechanism::loop()
 {
     // Debug
 #ifdef DEBUG_SENSOR_ANGLE
     if (Raft::isTimeout(millis(), _debugLastPrintTimeMs, 1000))
     {
         LOG_I(MODULE_PREFIX, "service angle %.2fdegs avgSpeed %.2fdegs/sec", 
-                    _measuredDoorAngleDegs, _measuredDoorSpeedDegsPerSec.getRatePerSec());
+                    getMeasuredAngleDegs(), getMeasuredAngularSpeedDegsPerSec());
         _debugLastPrintTimeMs = millis();
     }
 #endif
@@ -120,25 +120,39 @@ void MotorAndAngleSensor::loop()
 // Get measured angle
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float MotorAndAngleSensor::getMeasuredAngleDegs() const
+float MotorMechanism::getMeasuredAngleDegs() const
 {
-    return _measuredDoorAngleDegs;
+    // Take the angle semaphore and get the angle
+    if (_angleUpdateSemaphore && (xSemaphoreTake(_angleUpdateSemaphore, 10) == pdTRUE))
+    {
+        float measuredAngleDegs = _measuredDoorAngleDegs;
+        xSemaphoreGive(_angleUpdateSemaphore);
+        return measuredAngleDegs;
+    }
+    return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Get measured angular speed
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float MotorAndAngleSensor::getMeasuredAngularSpeedDegsPerSec() const
+float MotorMechanism::getMeasuredAngularSpeedDegsPerSec() const
 {
-    return _measuredDoorSpeedDegsPerSec.getRatePerSec();
+    // Take the angle semaphore and get the rate
+    if (_angleUpdateSemaphore && (xSemaphoreTake(_angleUpdateSemaphore, 10) == pdTRUE))
+    {
+        float rate = _measuredDoorSpeedDegsPerSec.getRatePerSec();
+        xSemaphoreGive(_angleUpdateSemaphore);
+        return rate;
+    }
+    return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Move motor to angle
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::moveToAngleDegs(float angleDegrees, float movementSpeedDegreesPerSec)
+void MotorMechanism::moveToAngleDegs(float angleDegrees, float movementSpeedDegreesPerSec)
 {
     // TODO - remove
     return;
@@ -169,7 +183,7 @@ void MotorAndAngleSensor::moveToAngleDegs(float angleDegrees, float movementSpee
 // Stop
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MotorAndAngleSensor::stop()
+void MotorMechanism::stop()
 {
     // TODO - remove
     return;
@@ -183,7 +197,7 @@ void MotorAndAngleSensor::stop()
 // Check if motor active
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool MotorAndAngleSensor::isMotorActive() const
+bool MotorMechanism::isMotorActive() const
 {
     // TODO - remove
     return false;
@@ -196,10 +210,10 @@ bool MotorAndAngleSensor::isMotorActive() const
 // Check if angle is within tolerance of target
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool MotorAndAngleSensor::isNearTargetAngle(float targetAngleDegs, float posToleranceDegs, float negToleranceDegs) const
+bool MotorMechanism::isNearTargetAngle(float targetAngleDegs, float posToleranceDegs, float negToleranceDegs) const
 {
     // Calculate the difference to required angle
-    float angleDiffDegrees = targetAngleDegs - _measuredDoorAngleDegs;
+    float angleDiffDegrees = targetAngleDegs - getMeasuredAngleDegs();
 
     // Check if within tolerance
     if (angleDiffDegrees > 0)
@@ -212,10 +226,10 @@ bool MotorAndAngleSensor::isNearTargetAngle(float targetAngleDegs, float posTole
 // Check if motor has stopped for more than a given time (ms)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool MotorAndAngleSensor::isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec) const
+bool MotorMechanism::isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec) const
 {
     // Check motor speed < expected motor speed
-    double motorSpeedDegsPerSec = _measuredDoorSpeedDegsPerSec.getRatePerSec();
+    double motorSpeedDegsPerSec = getMeasuredAngularSpeedDegsPerSec();
     if (std::abs(motorSpeedDegsPerSec) < 
             (expectedMotorSpeedDegsPerSec == 0 ? _reqMotorSpeedDegsPerSec / 2 : expectedMotorSpeedDegsPerSec / 2))
     {
@@ -239,7 +253,7 @@ bool MotorAndAngleSensor::isStoppedForTimeMs(uint32_t timeMs, float expectedMoto
 // // I2CBus element status callback
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// void MotorAndAngleSensor::busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges)
+// void MotorMechanism::busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges)
 // {
 //     String statusStr;
 //     int seqStartAddr = -1;
@@ -275,7 +289,7 @@ bool MotorAndAngleSensor::isStoppedForTimeMs(uint32_t timeMs, float expectedMoto
 // // I2CBus operation status callback
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// void MotorAndAngleSensor::busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus)
+// void MotorMechanism::busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus)
 // {
 //     LOG_I(MODULE_PREFIX, "busOperationStatusCB I2C bus %s", RaftBus::busOperationStatusToString(busOperationStatus));
 // }
@@ -284,7 +298,7 @@ bool MotorAndAngleSensor::isStoppedForTimeMs(uint32_t timeMs, float expectedMoto
 // Calculate move speed degs per sec
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float MotorAndAngleSensor::calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const
+float MotorMechanism::calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const
 {
     if (timeSecs == 0)
         timeSecs = 1;

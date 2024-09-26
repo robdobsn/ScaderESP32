@@ -23,6 +23,7 @@
 // #include "ScaderCat.h"
 // #include "ScaderWaterer.h"
 #include "MotorControl.h"
+#include "DeviceHX711.h"
 
 // Entry point
 extern "C" void app_main(void)
@@ -45,7 +46,10 @@ extern "C" void app_main(void)
     raftBusSystem.registerBus("Serial", BusSerial::createFn);
     
     // Register MotorControl
-    deviceFactory.registerDevice("MotorControl", MotorControl::create);   
+    deviceFactory.registerDevice("MotorControl", MotorControl::create);
+
+    // Register HX711
+    deviceFactory.registerDevice("HX711", DeviceHX711::create);
 
     // Scader components
     raftCoreApp.registerSysMod("ScaderRelays", ScaderRelays::create, true);

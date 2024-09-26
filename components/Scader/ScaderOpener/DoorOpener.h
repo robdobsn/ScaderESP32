@@ -16,7 +16,7 @@
 #include "RaftJsonIF.h"
 #include "SimpleMovingAverage.h"
 #include "OpenerStatus.h"
-#include "MotorAndAngleSensor.h"
+#include "MotorMechanism.h"
 #include "StateChangeDetector.h"
 
 class DeviceManager;
@@ -49,8 +49,8 @@ public:
     void getStatusHash(std::vector<uint8_t>& stateHash);
 
 private:
-    // Motor and angle sensor
-    MotorAndAngleSensor _motorAndAngleSensor;
+    // Motor mechanism
+    MotorMechanism _motorMechanism;
 
     // State change detector for conservatory PIR
     StateChangeDetector _consvPIRChangeDetector;

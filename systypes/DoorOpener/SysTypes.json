@@ -263,7 +263,7 @@
             },
             { 
                 "enable": 1,
-                "class": "StrainGauge",
+                "class": "HX711",
                 "clkPin": 38,
                 "dataPin": 48    
             },
@@ -277,13 +277,15 @@
     "ScaderOpener": {
         "DoorRemainOpenTimeSecs": 45,
         "DoorTimeToOpenSecs": 20,
-        "MotorOnTimeAfterMoveSecs": 5,
-        "MaxMotorCurrentAmps": 0.4,
         "DoorOpenAngleDegs": 0,
         "DoorClosedAngleDegs": 0,
         "consvPirPin": 17,
         "consvButtonPin": 6,
-        "i2cBusFreqHz": 100000,
+        "MotorMechanism":
+        {
+            "MotorOnTimeAfterMoveSecs": 5,
+            "MaxMotorCurrentAmps": 0.4    
+        },
         "uiModule":
         {
             "rxPin": 39,

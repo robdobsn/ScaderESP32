@@ -31,8 +31,8 @@ DoorOpener::~DoorOpener()
 void DoorOpener::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 {
     // Setup motor and angle sensor
-    RaftJsonPrefixed motorAndAngleSensorConfig(config, "MotorAndAngleSensor");
-    _motorAndAngleSensor.setup(pDevMan, motorAndAngleSensorConfig);
+    RaftJsonPrefixed motorMechanismConfig(config, "MotorMechanism");
+    _motorMechanism.setup(pDevMan, motorMechanismConfig);
 
     // // Record config
     // recordConfig(config);
@@ -65,7 +65,7 @@ void DoorOpener::setup(DeviceManager* pDevMan, RaftJsonIF& config)
     // readFromNVS();
 
     // // Set motor speed
-    // _motorAndAngleSensor.setMotorSpeedFromDegreesAndSecs(std::abs(_doorOpenAngleDegs - _doorClosedAngleDegs), _doorTimeToOpenSecs);
+    // _motorMechanism.setMotorSpeedFromDegreesAndSecs(std::abs(_doorOpenAngleDegs - _doorClosedAngleDegs), _doorTimeToOpenSecs);
 
     // // Debug
     // // // LOG_I(MODULE_PREFIX, "setup HBridgeEn=%d HBridgePhase=%d HBridgeVissen=%d", _hBridgeEn, _hBridgePhase, _hBridgeVissen);
@@ -73,7 +73,7 @@ void DoorOpener::setup(DeviceManager* pDevMan, RaftJsonIF& config)
     //             _conservatoryButtonPin, _consvPirSensePin);
     // LOG_I(MODULE_PREFIX, "setup DoorClosedAngle %ddegs DoorOpenAngle %ddegs DoorTimeToOpen %ds DoorRemainOpenTime %ds DoorMoveSpeed %.2fdegs/s", 
     //             _doorClosedAngleDegs, _doorOpenAngleDegs, _doorTimeToOpenSecs, _doorRemainOpenTimeSecs, 
-    //             _motorAndAngleSensor.getMotorSpeedDegsPerSec());
+    //             _motorMechanism.getMotorSpeedDegsPerSec());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +83,7 @@ void DoorOpener::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 void DoorOpener::loop()
 {
     // Service motor and angle sensor
-    _motorAndAngleSensor.loop();
+    _motorMechanism.loop();
 
     // Service the conservatory button
     _conservatoryButton.loop();
@@ -130,7 +130,7 @@ void DoorOpener::loop()
 
     // Update UI module with angle, etc
     String uiStatusLineA = getOpenerStateStr(getOpenerState());
-    uiStatusLineA += " " + String(calcDegreesFromClosed(_motorAndAngleSensor.getMeasuredAngleDegs()), 0) + "d";
+    uiStatusLineA += " " + String(calcDegreesFromClosed(_motorMechanism.getMeasuredAngleDegs()), 0) + "d";
     uiModuleSetStatusStr(1, uiStatusLineA);
     if (calcTimeBeforeCloseSecs() > 0)
     {
@@ -152,8 +152,8 @@ void DoorOpener::loop()
     {
         _debugLastDisplayMs = millis();
         LOG_I(MODULE_PREFIX, "service angle %.2f speed %.2fdegs/sec state %s timeInState %ds", 
-                _motorAndAngleSensor.getMeasuredAngleDegs(),
-                _motorAndAngleSensor.getMeasuredAngularSpeedDegsPerSec(),
+                _motorMechanism.getMeasuredAngleDegs(),
+                _motorMechanism.getMeasuredAngularSpeedDegsPerSec(),
                 getOpenerStateStr(getOpenerState()),
                 (int)Raft::timeElapsed(millis(), getOpenerStateLastMs()) / 1000);
     }
@@ -168,7 +168,7 @@ void DoorOpener::loop()
 void DoorOpener::startDoorOpening(String debugMsg)
 {
     // Initiate door opening
-    _motorAndAngleSensor.moveToAngleDegs(_doorOpenAngleDegs);
+    _motorMechanism.moveToAngleDegs(_doorOpenAngleDegs);
     setOpenerState(DOOR_STATE_OPENING, debugMsg + " (go-to-angle " + String(_doorOpenAngleDegs) + ")");
 }
 
@@ -180,7 +180,7 @@ void DoorOpener::startDoorClosing(String debugMsg)
                     _doorClosedAngleDegs + DOOR_CLOSED_ANGLE_ADDITIONAL_DEGS;
         
     // Initiate door closing
-    _motorAndAngleSensor.moveToAngleDegs(requiredDoorAngleDegs);
+    _motorMechanism.moveToAngleDegs(requiredDoorAngleDegs);
     setOpenerState(DOOR_STATE_CLOSING, debugMsg + " (go-to-angle " + String(requiredDoorAngleDegs) + ")");
 }
 
@@ -191,7 +191,7 @@ void DoorOpener::startDoorClosing(String debugMsg)
 void DoorOpener::doorStopAndDisable(String debugMsg)
 {
     // WebUI command
-    _motorAndAngleSensor.stop();
+    _motorMechanism.stop();
     setOpenerState(DOOR_STATE_AJAR, debugMsg);
 }
 
@@ -206,7 +206,7 @@ void DoorOpener::debugMoveToAngle(int32_t angleDegs)
         angleDegs = 30;
     if (angleDegs > 300)
         angleDegs = 300;
-    _motorAndAngleSensor.moveToAngleDegs(angleDegs);
+    _motorMechanism.moveToAngleDegs(angleDegs);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -317,9 +317,9 @@ void DoorOpener::serviceDoorState()
     {
         case DOOR_STATE_AJAR:
             // Check if moved (manually) to open or closed positions
-            if (_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
+            if (_motorMechanism.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
                 setOpenerState(DOOR_STATE_OPEN, "serviceDoorState door opened manually");
-            else if (_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
+            else if (_motorMechanism.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
                 setOpenerState(DOOR_STATE_CLOSED, "serviceDoorState door closed manually");
             // Check if maximum time in AJAR state exceeded
             else if (Raft::isTimeout(millis(), getOpenerStateLastMs(), _doorRemainOpenTimeSecs*1000))
@@ -333,30 +333,30 @@ void DoorOpener::serviceDoorState()
             break;
         case DOOR_STATE_CLOSED:
             // Check if the door is opening (manually)
-            if (!_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
+            if (!_motorMechanism.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
                 setOpenerState(DOOR_STATE_AJAR, "serviceDoorState door opening manually - set to AJAR curAngle " + 
-                            String(_motorAndAngleSensor.getMeasuredAngleDegs()) + " closedAngle " + String(_doorClosedAngleDegs) +
+                            String(_motorMechanism.getMeasuredAngleDegs()) + " closedAngle " + String(_doorClosedAngleDegs) +
                             " tolerance pos +100 neg -1");
             break;
         case DOOR_STATE_OPENING:
             // Check if reached open position
-            if (_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
+            if (_motorMechanism.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
                 setOpenerState(DOOR_STATE_OPEN, "serviceDoorState door at open pos");
             // Check if motor has stopped moving for some time
-            else if (_motorAndAngleSensor.isStoppedForTimeMs(1000))
+            else if (_motorMechanism.isStoppedForTimeMs(1000))
                 setOpenerState(DOOR_STATE_AJAR, "serviceDoorState door stopped opening");
             break;
         case DOOR_STATE_CLOSING:
             // Check if reached closed position
-            if (_motorAndAngleSensor.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
+            if (_motorMechanism.isNearTargetAngle(_doorClosedAngleDegs, 100, -DOOR_CLOSED_ANGLE_TOLERANCE_DEGS))
                 setOpenerState(DOOR_STATE_CLOSED, "serviceDoorState door at closed pos");
             // Check if motor has stopped moving for some time
-            else if (_motorAndAngleSensor.isStoppedForTimeMs(1000))
+            else if (_motorMechanism.isStoppedForTimeMs(1000))
                 setOpenerState(DOOR_STATE_AJAR, "serviceDoorState door stopped closing");
             break;
         case DOOR_STATE_OPEN:
             // Check if the door is closing (manually)
-            if (!_motorAndAngleSensor.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
+            if (!_motorMechanism.isNearTargetAngle(_doorOpenAngleDegs, DOOR_OPEN_ANGLE_TOLERANCE_DEGS, -100))
                 setOpenerState(DOOR_STATE_AJAR, "serviceDoorState door closing manually");
             // Check for maximum time in this state and either in or out enabled
             else if (Raft::isTimeout(millis(), getOpenerStateLastMs(), _doorRemainOpenTimeSecs*1000) && (_inEnabled || _outEnabled))
@@ -405,13 +405,13 @@ String DoorOpener::getStatusJSON(bool includeBraces) const
 {
     // bool isValid = false;
     String json = "";
-    json += "\"motorActive\":" + String(_motorAndAngleSensor.isMotorActive() ? 1 : 0);
+    json += "\"motorActive\":" + String(_motorMechanism.isMotorActive() ? 1 : 0);
     json += ",\"inEnabled\":" + String(_inEnabled ? 1 : 0);
     json += ",\"outEnabled\":" + String(_outEnabled ? 1 : 0);
     json += ",\"consButtonPressed\":" + String(_conservatoryButton.isButtonPressed() ? 1 : 0);
     json += ",\"pirSenseInActive\":" + String(_consvPIRChangeDetector.getState() ? 1 : 0);
     json += ",\"pirSenseOutActive\":" + String(_isKitchenPIRActive ? 1 : 0);
-    json += ",\"doorCurAngle\":" + String(_motorAndAngleSensor.getMeasuredAngleDegs());
+    json += ",\"doorCurAngle\":" + String(_motorMechanism.getMeasuredAngleDegs());
     json += ",\"doorOpenAngleDegs\":" + String(_doorOpenAngleDegs);
     json += ",\"doorClosedAngleDegs\":" + String(_doorClosedAngleDegs);
     json += ",\"timeBeforeCloseSecs\":" + String(calcTimeBeforeCloseSecs());
@@ -429,14 +429,14 @@ String DoorOpener::getStatusJSON(bool includeBraces) const
 void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     // Add state
-    stateHash.push_back(_motorAndAngleSensor.isMotorActive() ? 1 : 0);
+    stateHash.push_back(_motorMechanism.isMotorActive() ? 1 : 0);
     stateHash.push_back(_inEnabled ? 1 : 0);
     stateHash.push_back(_outEnabled ? 1 : 0);
     stateHash.push_back(_conservatoryButton.isButtonPressed() ? 1 : 0);
     stateHash.push_back(_consvPIRChangeDetector.getState() ? 1 : 0);
     stateHash.push_back(_isKitchenPIRActive ? 1 : 0);
     stateHash.push_back(calcTimeBeforeCloseSecs() & 0xFF);
-    stateHash.push_back(int(_motorAndAngleSensor.getMeasuredAngleDegs()) & 0xff);
+    stateHash.push_back(int(_motorMechanism.getMeasuredAngleDegs()) & 0xff);
     stateHash.push_back(_doorOpenAngleDegs & 0xff);
     stateHash.push_back(_doorClosedAngleDegs & 0xff);
     stateHash.push_back(getOpenerState());

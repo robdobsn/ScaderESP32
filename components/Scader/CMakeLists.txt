@@ -23,7 +23,7 @@ idf_component_register(
                   "ScaderLEDPixels/ScaderLEDPixels.cpp"
                   "ScaderOpener/DoorOpener.cpp"
                   "ScaderOpener/UIModule.cpp"
-                  "ScaderOpener/MotorAndAngleSensor.cpp"
+                  "ScaderOpener/MotorMechanism.cpp"
                   "ScaderPulseCounter/ScaderPulseCounter.cpp"
                   # "ScaderCat/ScaderCat.cpp"
                   # "TinyPICO/TinyPICO.cpp"

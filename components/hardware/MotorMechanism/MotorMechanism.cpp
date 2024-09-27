@@ -154,29 +154,28 @@ float MotorMechanism::getMeasuredAngularSpeedDegsPerSec() const
 
 void MotorMechanism::moveToAngleDegs(float angleDegrees, float movementSpeedDegreesPerSec)
 {
-    // TODO - remove
-    return;
+    // Get motor device
+    RaftDevice* pMotor = getMotorDevice();
+    if (!pMotor)
+        return;
 
-    // if (!_pStepper)
-    //     return;
+    // Get the current angle
+    float currentAngleDegrees = getMeasuredAngleDegs();
 
-    // // Get the current angle
-    // float currentAngleDegrees = _rotationSensor.getAngleDegrees(false, false);
+    // Calculate the difference to required angle
+    float angleDiffDegrees = angleDegrees - currentAngleDegrees;
 
-    // // Calculate the difference to required angle
-    // float angleDiffDegrees = angleDegrees - currentAngleDegrees;
+    // Form command
+    // ,"clearQ":1
+    String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
+    moveCmd.replace("__POS__", String(angleDiffDegrees));
+    moveCmd.replace("__SPEED__", String(movementSpeedDegreesPerSec == 0 ? _reqMotorSpeedDegsPerSec : movementSpeedDegreesPerSec));
 
-    // // Form command
-    // // ,"clearQ":1
-    // String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
-    // moveCmd.replace("__POS__", String(angleDiffDegrees));
-    // moveCmd.replace("__SPEED__", String(movementSpeedDegreesPerSec == 0 ? _reqMotorSpeedDegsPerSec : movementSpeedDegreesPerSec));
+    // Send command
+    pMotor->sendCmdJSON(moveCmd.c_str());
 
-    // // Send command
-    // _pStepper->sendCmdJSON(moveCmd.c_str());
-
-    // // Reset check on motor stopped
-    // _lastMotorStoppedCheckTimeMs = millis();
+    // Reset check on motor stopped
+    _lastMotorStoppedCheckTimeMs = millis();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,12 +184,11 @@ void MotorMechanism::moveToAngleDegs(float angleDegrees, float movementSpeedDegr
 
 void MotorMechanism::stop()
 {
-    // TODO - remove
-    return;
-
-    // if (!_pStepper)
-    //     return;
-    // _pStepper->sendCmdJSON(R"({"cmd":"motion","stop":1,"clearQ":1})");
+    // Get motor device
+    RaftDevice* pMotor = getMotorDevice();
+    if (!pMotor)
+        return;
+    pMotor->sendCmdJSON(R"({"cmd":"motion","stop":1,"clearQ":1})");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,11 +197,12 @@ void MotorMechanism::stop()
 
 bool MotorMechanism::isMotorActive() const
 {
-    // TODO - remove
-    return false;
-
-    // bool isValid = false;
-    // return _pStepper && _pStepper->getNamedValue("b", isValid) != 0;
+    // Get motor device
+    RaftDevice* pMotor = getMotorDevice();
+    if (!pMotor)
+        return false;
+    bool isValid = false;
+    return pMotor && pMotor->getNamedValue("b", isValid) != 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,51 +247,6 @@ bool MotorMechanism::isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpee
     }
     return false;
 }
-
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// // I2CBus element status callback
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// void MotorMechanism::busElemStatusCB(RaftBus& bus, const std::vector<BusElemAddrAndStatus>& statusChanges)
-// {
-//     String statusStr;
-//     int seqStartAddr = -1;
-//     bool lastWasOnline = false;
-//     int lastAddr = 0;
-//     for (auto& statusChange : statusChanges)
-//     {
-//         if (seqStartAddr == -1)
-//         {
-//             seqStartAddr = statusChange.address;
-//             lastWasOnline = statusChange.isChangeToOnline;
-//         }
-//         else if (lastWasOnline != statusChange.isChangeToOnline)
-//         {
-//             if (!statusStr.isEmpty())
-//                 statusStr += ", ";
-//             statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(statusChange.address - 1, 16) + (lastWasOnline ? ":online" : ":offline");
-//             seqStartAddr = statusChange.address;
-//             lastWasOnline = statusChange.isChangeToOnline;
-//         }
-//         lastAddr = statusChange.address;
-//     }
-//     if (seqStartAddr != -1)
-//     {
-//         if (!statusStr.isEmpty())
-//             statusStr += ", ";
-//         statusStr += "0x" + String(seqStartAddr, 16) + "..0x" + String(lastAddr, 16) + (lastWasOnline ? ":online" : ":offline");
-//     }
-//     LOG_I(MODULE_PREFIX, "busElemStatusCB I2C addr %s", statusStr.c_str());
-// }
-
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// // I2CBus operation status callback
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// void MotorMechanism::busOperationStatusCB(RaftBus& bus, BusOperationStatus busOperationStatus)
-// {
-//     LOG_I(MODULE_PREFIX, "busOperationStatusCB I2C bus %s", RaftBus::busOperationStatusToString(busOperationStatus));
-// }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Calculate move speed degs per sec

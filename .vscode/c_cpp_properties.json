@@ -6,11 +6,11 @@
                 "${workspaceFolder}/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang-11",
+            "compilerPath": "/usr/bin/clang-14",
             "cStandard": "c17",
             "cppStandard": "c++14",
             "intelliSenseMode": "linux-clang-x64",
-            "compileCommands": "${workspaceFolder}/builds/Scader/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/build/DoorOpener/compile_commands.json"
         }
     ],
     "version": 4

@@ -15,8 +15,7 @@
 #include "BusI2C.h"
 #include "AS5600Sensor.h"
 #include "MovingRate.h"
-
-class DeviceManager;
+#include "DeviceManager.h"
 
 class MotorMechanism
 {
@@ -81,6 +80,18 @@ private:
 
     // Calculate move speed degs per sec
     float calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const;
+
+    // Get motor device
+    RaftDevice* getMotorDevice() const
+    {
+        // Get motor device
+        if (!_pDevMan)
+            return nullptr;
+        RaftDevice* pMotor = _pDevMan->getDevice("Motor");
+        if (!pMotor)
+            return nullptr;
+        return pMotor;
+    }
 
     // Debug
     uint32_t _debugLastPrintTimeMs = 0;

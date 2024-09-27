@@ -50,7 +50,5 @@ idf_component_register(
                 REQUIRES
                   RaftCore
                   # FastLED-idf
-                  RaftI2C
-                  RaftMotorControl
                   hardware
                 )

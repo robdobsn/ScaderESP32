@@ -54,26 +54,26 @@ void ScaderOpener::setup()
     // HW Now initialised
     _isInitialised = true;
 
-    // // Debug
-    // LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s", 
-    //             _scaderCommon.getUIName().c_str());
+    // Debug
+    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s", 
+                _scaderCommon.getUIName().c_str());
 
-    // // Setup publisher with callback functions
-    // SysManager* pSysManager = getSysManager();
-    // if (pSysManager)
-    // {
-    //     // Register publish message generator
-    //     pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
-    //         [this](const char* messageName, CommsChannelMsg& msg) {
-    //             String statusStr = getStatusJSON();
-    //             msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
-    //             return true;
-    //         },
-    //         [this](const char* messageName, std::vector<uint8_t>& stateHash) {
-    //             return getStatusHash(stateHash);
-    //         }
-    //     );
-    // }
+    // Setup publisher with callback functions
+    SysManager* pSysManager = getSysManager();
+    if (pSysManager)
+    {
+        // Register publish message generator
+        pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
+            [this](const char* messageName, CommsChannelMsg& msg) {
+                String statusStr = getStatusJSON();
+                msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
+                return true;
+            },
+            [this](const char* messageName, std::vector<uint8_t>& stateHash) {
+                return getStatusHash(stateHash);
+            }
+        );
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

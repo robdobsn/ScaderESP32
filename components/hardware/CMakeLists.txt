@@ -3,7 +3,7 @@ idf_component_register(
                   "AS5600Sensor/AS5600Sensor.cpp"
                   "MT6701Sensor/MT6701Sensor.cpp"
                   "Helpers/SampleCollector.cpp"
-                  "ScaderOpener/MotorMechanism.cpp"
+                  "MotorMechanism/MotorMechanism.cpp"
                 INCLUDE_DIRS
                   "AS5600Sensor"
                   "MT6701Sensor"
@@ -13,4 +13,5 @@ idf_component_register(
                 REQUIRES
                   RaftCore
                   RaftI2C
+                  RaftMotorControl
                 )

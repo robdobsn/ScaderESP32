@@ -59,7 +59,7 @@ public:
     void getStatusHash(std::vector<uint8_t>& stateHash) const;
 
     // Get JSON status
-    String getStatusJson(bool incBraces) const;
+    String getStatusJSON(bool incBraces) const;
 
     // Door open state string
     static const char* getDoorOpenSenseStr(DoorOpenSense& openSense);
@@ -68,9 +68,9 @@ public:
     static const char* getDoorLockedStr(DoorStrike::DoorLockedEnum& lockedEnum);
 
     // Get debug string
-    String getDebugStr() const
+    String getDebugJSON() const
     {
-        return getStatusJson(false);
+        return getStatusJSON(false);
     }
 
 private:

@@ -199,7 +199,7 @@ void DoorStrike::getStatusHash(std::vector<uint8_t>& stateHash) const
     stateHash.push_back(lockedEnum + (openSense << 4));
 }
 
-String DoorStrike::getStatusJson(bool incBraces) const
+String DoorStrike::getStatusJSON(bool incBraces) const
 {
     DoorLockedEnum lockedEnum = DoorLockedEnum::LockStateUnknown;
     DoorOpenSense openEnum = DoorOpenSense::DoorSenseUnknown;

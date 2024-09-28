@@ -61,16 +61,29 @@ void DoorOpener::setup(DeviceManager* pDevMan, RaftJsonIF& config)
     _doorClosedAngleDegs = config.getLong("DoorClosedAngleDegs", 0);
     _doorOpenAngleDegs = config.getLong("DoorOpenAngleDegs", 0);
 
+    // Get motor on time after move (secs)
+    float motorOnTimeAfterMoveSecs = config.getDouble("MotorOnTimeAfterMoveSecs", 0.0);
+
+    // Get motor current threshold
+    float maxMotorCurrentAmps = config.getDouble("MaxMotorCurrentAmps", 0.1);
+
+    // Force offset
+    float forceOffsetN = config.getDouble("ForceOffsetN", 0.0);
+    float forceThresholdN = config.getDouble("ForceThresholdN", 0.0);
+
     // Read from non-volatile storage
     readFromNVS();
 
-    // Set motor speed
+    // Set motor speed and force offset/threshold
     _motorMechanism.setMotorSpeedFromDegreesAndSecs(std::abs(_doorOpenAngleDegs - _doorClosedAngleDegs), _doorTimeToOpenSecs);
+    _motorMechanism.setMaxMotorCurrentAmps(maxMotorCurrentAmps);
+    _motorMechanism.setMotorOnTimeAfterMoveSecs(motorOnTimeAfterMoveSecs);
+    _motorMechanism.setForceOffsetAndThreshold(forceOffsetN, forceThresholdN);
 
     // Debug
     // // LOG_I(MODULE_PREFIX, "setup HBridgeEn=%d HBridgePhase=%d HBridgeVissen=%d", _hBridgeEn, _hBridgePhase, _hBridgeVissen);
-    LOG_I(MODULE_PREFIX, "setup Conservatory: buttonPin %d pirPin %d",
-                _conservatoryButtonPin, _consvPirSensePin);
+    LOG_I(MODULE_PREFIX, "setup buttonPin %d consvPIRPin %d forceOffsetN %.2f forceThresholdN %.2f",
+                _conservatoryButtonPin, _consvPirSensePin, forceOffsetN, forceThresholdN);
     LOG_I(MODULE_PREFIX, "setup DoorClosedAngle %ddegs DoorOpenAngle %ddegs DoorTimeToOpen %ds DoorRemainOpenTime %ds DoorMoveSpeed %.2fdegs/s", 
                 _doorClosedAngleDegs, _doorOpenAngleDegs, _doorTimeToOpenSecs, _doorRemainOpenTimeSecs, 
                 _motorMechanism.getMotorSpeedDegsPerSec());
@@ -417,6 +430,10 @@ String DoorOpener::getStatusJSON(bool includeBraces) const
     json += ",\"timeBeforeCloseSecs\":" + String(calcTimeBeforeCloseSecs());
     json += ",\"doorStateCode\":" + String(getOpenerState());
     json += ",\"doorStateStr\":\"" + getOpenerStateStr(getOpenerState()) + "\"";
+    json += ",\"rawForceN\":\"" + String(_motorMechanism.getRawForceN()) + "\"";
+    json += ",\"measuredForceN\":\"" + String(_motorMechanism.getMeasuredForceN()) + "\"";
+    json += ",\"forceOffsetN\":\"" + String(_motorMechanism.getForceOffsetN()) + "\"";
+    json += ",\"forceThresholdN\":\"" + String(_motorMechanism.getForceThresholdN()) + "\"";
     if (includeBraces)
         json = "{" + json + "}";
     return json;
@@ -429,6 +446,8 @@ String DoorOpener::getStatusJSON(bool includeBraces) const
 void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     // Add state
+    float measuredForce = _motorMechanism.getMeasuredForceN();
+    uint32_t forceMod = (uint32_t)(measuredForce * 10);
     stateHash.push_back(_motorMechanism.isMotorActive() ? 1 : 0);
     stateHash.push_back(_inEnabled ? 1 : 0);
     stateHash.push_back(_outEnabled ? 1 : 0);
@@ -439,5 +458,6 @@ void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
     stateHash.push_back(int(_motorMechanism.getMeasuredAngleDegs()) & 0xff);
     stateHash.push_back(_doorOpenAngleDegs & 0xff);
     stateHash.push_back(_doorClosedAngleDegs & 0xff);
+    stateHash.push_back(forceMod & 0xff);
     stateHash.push_back(getOpenerState());
 }

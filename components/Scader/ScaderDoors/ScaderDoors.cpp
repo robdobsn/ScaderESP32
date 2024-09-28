@@ -387,7 +387,7 @@ String ScaderDoors::getStatusJSON() const
             break;
         if (i > 0)
             elemStatus += ",";
-        elemStatus += R"({"name":")" + _elemNames[i] + "\"," + _doorStrikes[i].getStatusJson(false) + "}";
+        elemStatus += R"({"name":")" + _elemNames[i] + "\"," + _doorStrikes[i].getStatusJSON(false) + "}";
     }
 
     // Get RFID tag read
@@ -445,7 +445,7 @@ void ScaderDoors::debugShowCurrentState()
     {
         if (elemsStr.length() > 0)
             elemsStr += ",";
-        elemsStr += String(doorStrike.getDebugStr());
+        elemsStr += String(doorStrike.getDebugJSON());
     }
     LOG_I(MODULE_PREFIX, "debugShowCurrentState %s", elemsStr.c_str());
 }

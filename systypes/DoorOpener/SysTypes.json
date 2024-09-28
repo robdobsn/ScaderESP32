@@ -150,9 +150,9 @@
         "pubList": [
             {
                 "type": "HW",
-                "name": "ScaderDoors",
+                "name": "ScaderOpener",
                 "trigger": "Time",
-                "msgID": "ScaderDoors",
+                "msgID": "ScaderOpener",
                 "rates": [
                     {
                         "if": "scaderOut",
@@ -196,7 +196,7 @@
                 "motion": {
                     "geom": "XYZ",
                     "blockDist": 10,
-                    "allowOutOfBounds": 0,
+                    "allowOutOfBounds": 1,
                     "homeBeforeMove": 0,
                     "junctionDeviation": 0.05
                 },
@@ -215,7 +215,7 @@
                         "name": "X",
                         "params": {
                             "unitsPerRot": 360,
-                            "stepsPerRot": 28000,
+                            "stepsPerRot": 3600,
                             "maxSpeed": 10,
                             "maxAcc": 10
                         },
@@ -227,12 +227,12 @@
                             "dirnPin": 16,
                             "invDirn": 0,
                             "writeOnly": 0,
-                            "extSenseOhms": 0.15,
+                            "extSenseOhms": 0.5,
                             "extVRef": 0,
                             "extMStep": 0,
                             "intpol": 1,
                             "microsteps": 1,
-                            "rmsAmps": 0.01,
+                            "rmsAmps": 0.5,
                             "holdModeOrFactor": 0.5,
                             "holdDelay": 1,
                             "pwmFreqKHz": 35
@@ -264,8 +264,9 @@
             { 
                 "enable": 1,
                 "class": "HX711",
+                "name": "HX711",
                 "clkPin": 38,
-                "dataPin": 48    
+                "dataPin": 48
             },
             {
                 "enable": 1,
@@ -281,11 +282,9 @@
         "DoorClosedAngleDegs": 0,
         "consvPirPin": 17,
         "consvButtonPin": 6,
-        "MotorMechanism":
-        {
-            "MotorOnTimeAfterMoveSecs": 5,
-            "MaxMotorCurrentAmps": 0.4    
-        },
+        "MotorOnTimeAfterMoveSecs": 5,
+        "MaxMotorCurrentAmps": 0.4,
+        "ForceThresholdN": 5,
         "uiModule":
         {
             "rxPin": 39,

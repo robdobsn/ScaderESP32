@@ -78,6 +78,10 @@ export class ScaderOpenStatus {
     doorOpenAngleDegs: number = 0;
     doorClosedAngleDegs: number = 0;
     doorCurAngle: number = 0;
+    rawForceN: number = 0;
+    measuredForceN: number = 0;
+    forceOffsetN: number = 0;
+    forceThresholdN: number = 0;
     timeBeforeCloseSecs: number = 0;
     doorStateCode: number = 0;
     doorStateStr: string = "";

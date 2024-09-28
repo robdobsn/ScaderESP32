@@ -12,8 +12,8 @@
 #include "DevicePollRecords_generated.h"
 #include "DeviceTypeRecords.h"
 
-#define DEBUG_WEIGHT_DEVICE_READING
-// #define DEBUG_WEIGHT_RAW_VALUE`
+// #define DEBUG_DEVICE_FORCE_READING
+// #define DEBUG_DEVICE_FORCE_RAW`
 
 class RestAPIEndpointManager;
 class CommsCoreIF;
@@ -116,7 +116,7 @@ public:
 
         // Get the decode function
         DeviceTypeRecord deviceTypeRecord;
-        deviceTypeRecords.getDeviceInfo(getPublishDeviceType(), deviceTypeRecord);
+        deviceTypeRecords.getDeviceInfo(getPublishDeviceType(), deviceTypeRecord, _deviceTypeIdx);
         _pDecodeFn = deviceTypeRecord.pollResultDecodeFn;
 
         // Set initialised
@@ -140,15 +140,29 @@ public:
         // Read
         read();
 
+        // Check if ready for callback
+        if (_deviceDataChangeCB && Raft::isTimeout(millis(), _deviceDataChangeCBLastTime, _deviceDataChangeCBMinTime))
+        {
+            // Buffer
+            std::vector<uint8_t> data;
+            formDeviceDataResponse(data);
+
+            // Callback
+            _deviceDataChangeCB(_deviceTypeIdx, data, _deviceDataChangeCBInfo);
+
+            // Update last callback time
+            _deviceDataChangeCBLastTime = millis();
+        }
+
         // Debug
-#ifdef DEBUG_WEIGHT_DEVICE_READING
+#ifdef DEBUG_DEVICE_FORCE_READING
         if (Raft::isTimeout(millis(), _debugLastMs, 1000))
         {
-            // Convert value to grams
-            float grams = getWeightInGrams();
+            // Convert value to newtons
+            float newtons = getForceInNewtons();
 
             // Debug
-            LOG_I(MODULE_PREFIX, "loop weight %.2f", grams);
+            LOG_I(MODULE_PREFIX, "loop force %.2fN", newtons);
 
             // Update last debug time
             _debugLastMs = millis();
@@ -171,45 +185,48 @@ public:
     // @return JSON string
     virtual String getStatusJSON() const override final
     {
-        // JSON strings
-        String hexDataStr;
-        char tmpTimeStr[10];
-        uint16_t timeVal = (uint16_t)(_readLastMs & 0xFFFF);
-        sprintf(tmpTimeStr, "%04X", timeVal);
-        hexDataStr += tmpTimeStr;
-
-        // Add sensor reading
-        char tmpStr[10];
-        sprintf(tmpStr, "%04lX%02X", (int32_t)_filter.getAverage(), _valueValid ? 1 : 0);
-        hexDataStr += tmpStr;
+        // Buffer
+        std::vector<uint8_t> data;
+        formDeviceDataResponse(data);
 
         // Return JSON
-        return "{\"00\":{\"x\":\"" + hexDataStr + "\",\"_t\":\"" + getPublishDeviceType() + "\"}}";
+        return "{\"0\":{\"x\":\"" + Raft::getHexStr(data.data(), data.size()) + "\",\"_t\":\"" + getPublishDeviceType() + "\"}}";
     }
 
-    // @brief Get the weight in grams
-    // @return Weight in grams
-    float getWeightInGrams()
+    /// @brief Get device debug info JSON
+    /// @param includeBraces Include braces in the JSON
+    /// @return JSON string
+    virtual String getDebugJSON(bool includeBraces) const override final
+    {
+        // Return JSON
+        String json = "\"force\":" + String(getForceInNewtons());
+        return includeBraces ? "{" + json + "}" : json;
+    }
+
+    // @brief Get the force in newtons
+    // @return Force in newtons
+    float getForceInNewtons() const
     {
         // Buffer
         std::vector<uint8_t> data;
-
-        // Get average and store in format expected by conversion function
-        uint16_t timeVal = (uint16_t)(_readLastMs & 0xFFFF);
-        data.push_back((timeVal >> 8) & 0xFF);
-        data.push_back(timeVal & 0xFF);
-        uint32_t value = _filter.getAverage();
-        data.push_back(value >> 24);
-        data.push_back((value >> 16) & 0xFF);
-        data.push_back((value >> 8) & 0xFF);
-        data.push_back(value & 0xFF);
-        data.push_back(_valueValid ? 1 : 0);
+        formDeviceDataResponse(data);
 
         // Decode device data
         poll_HX711 deviceData;
         if (_pDecodeFn)
-            _pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, _decodeState);
-        return deviceData.weight;
+            _pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, const_cast<RaftBusDeviceDecodeState&>(_decodeState));
+        return deviceData.force;
+    }
+
+    /// @brief Register for device data notifications
+    /// @param dataChangeCB Callback for data change
+    /// @param minTimeBetweenReportsMs Minimum time between reports (ms)
+    /// @param pCallbackInfo Callback info (passed to the callback)
+    virtual void registerForDeviceData(RaftDeviceDataChangeCB dataChangeCB, uint32_t minTimeBetweenReportsMs, const void* pCallbackInfo) override final
+    {
+        _deviceDataChangeCB = dataChangeCB;
+        _deviceDataChangeCBMinTime = minTimeBetweenReportsMs;
+        _deviceDataChangeCBInfo = pCallbackInfo;
     }
 
 private:
@@ -242,6 +259,13 @@ private:
 
     // Read rate
     uint32_t _readLastMs = 0;
+
+    // Device data change callback
+    RaftDeviceDataChangeCB _deviceDataChangeCB = nullptr;
+    uint32_t _deviceDataChangeCBMinTime = 0;
+    const void* _deviceDataChangeCBInfo = nullptr;
+    uint32_t _deviceDataChangeCBLastTime = 0;
+    uint32_t _deviceTypeIdx = 0;
 
     // Debug
     uint32_t _debugLastMs = 0;
@@ -303,9 +327,24 @@ private:
         _readLastMs = millis();
 
         // Debug
-#ifdef DEBUG_WEIGHT_RAW_VALUE
+#ifdef DEBUG_DEVICE_FORCE_RAW
         LOG_I(MODULE_PREFIX, "read: adc %d raw value %08x", adcReading, rxVal);
 #endif
+    }
+
+    // Form device data response
+    void formDeviceDataResponse(std::vector<uint8_t>& data) const
+    {
+        // Get average and store in format expected by conversion function
+        uint16_t timeVal = (uint16_t)(_readLastMs & 0xFFFF);
+        data.push_back((timeVal >> 8) & 0xFF);
+        data.push_back(timeVal & 0xFF);
+        uint32_t value = _filter.getAverage();
+        data.push_back(value >> 24);
+        data.push_back((value >> 16) & 0xFF);
+        data.push_back((value >> 8) & 0xFF);
+        data.push_back(value & 0xFF);
+        data.push_back(_valueValid ? 1 : 0);
     }
 
     // Debug

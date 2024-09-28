@@ -50,10 +50,12 @@ export class ScaderConfig {
         enable: boolean,
         DoorOpenAngleDegs: number,
         DoorClosedAngleDegs: number,
+        ForceOffsetN: number,
+        ForceThresholdN: number,
         DoorRemainOpenTimeSecs: number,
         DoorTimeToOpenSecs: number,
         MotorOnTimeAfterMoveSecs: number,
-        MaxMotorCurrentAmps: number,
+        MaxMotorCurrentAmps: number
         // Old properties - here to allow removal with delete
         doorClosedAngleOffsetDegrees?: number,
         doorSwingAngleDegrees?: number,
@@ -63,10 +65,12 @@ export class ScaderConfig {
         enable: false,
         DoorOpenAngleDegs: 150,
         DoorClosedAngleDegs: 250,
+        ForceOffsetN: 0,
+        ForceThresholdN: 5,
         DoorRemainOpenTimeSecs: 30,
         DoorTimeToOpenSecs: 30,
         MotorOnTimeAfterMoveSecs: 30,
-        MaxMotorCurrentAmps: 0.1,
+        MaxMotorCurrentAmps: 0.1
     }
     ScaderLEDPix: {
         enable: boolean

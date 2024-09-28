@@ -11,29 +11,29 @@
 #include "DevicePollRecords_generated.h"
 #include "DeviceTypeRecords.h"
 
-static const char *MODULE_PREFIX = "MotorMechanism";
-
+#define WARN_FORCE_THRESHOLD_EXCEEDED
 #define DEBUG_SENSOR_ANGLE
 // #define DEBUG_ANGLE_DEVICE_CALLBACK
+// #define DEBUG_FORCE_DEVICE_CALLBACK
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Constructor and destructor
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Constructor
 MotorMechanism::MotorMechanism()
 {
     // Angle update semaphore
     _angleUpdateSemaphore = xSemaphoreCreateMutex();
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// @brief Destructor
 MotorMechanism::~MotorMechanism()
 {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Setup
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Setup
+// @param pDevMan Device manager
+// @param config Configuration
 void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 {
     // Store device manager
@@ -48,13 +48,7 @@ void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
                     poll_AS5600 deviceData;
                     DeviceTypeRecordDecodeFn pDecodeFn = deviceTypeRecords.getPollDecodeFn(deviceTypeIdx);
                     if (pDecodeFn)
-                        pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, _decodeState);
-
-                    // Debug
-#ifdef DEBUG_ANGLE_DEVICE_CALLBACK
-                    LOG_I(MODULE_PREFIX, "deviceDataChangeCB devTypeIdx %d data bytes %d callbackInfo %p tims %d angle %.2f",
-                            deviceTypeIdx, data.size(), pCallbackInfo, deviceData.timeMs, deviceData.angle);
-#endif
+                        pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, _decodeStateAs5600);
 
                     // Take the angle semaphore and update the angle
                     if (_angleUpdateSemaphore && (xSemaphoreTake(_angleUpdateSemaphore, 10) == pdTRUE))
@@ -69,57 +63,102 @@ void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
                         // Give back the semaphore
                         xSemaphoreGive(_angleUpdateSemaphore);
                     }
+
+                    // Debug
+#ifdef DEBUG_ANGLE_DEVICE_CALLBACK
+                    LOG_I(MODULE_PREFIX, "deviceDataChangeCB devTypeIdx %d data bytes %d callbackInfo %p tims %d angle %.2f",
+                            deviceTypeIdx, data.size(), pCallbackInfo, deviceData.timeMs, deviceData.angle);
+#endif
+
+                },
+                50
+            );
+
+    // Register for device data notifications from the force sensor
+    if (pDevMan)
+        pDevMan->registerForDeviceData("HX711", 
+                [this](uint32_t deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
+
+                    // Decode device data
+                    poll_HX711 deviceData;
+                    DeviceTypeRecordDecodeFn pDecodeFn = deviceTypeRecords.getPollDecodeFn(deviceTypeIdx);
+                    if (pDecodeFn)
+                        pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, _decodeStateHX711);
+
+                    // Store raw force value
+                    _rawForceN = deviceData.force;
+
+                    // Check if the abs value of the measured force is greater than the threshold, if so stop the motor
+                    if ((std::abs(deviceData.force) > _forceThresholdN) && isMotorActive())
+                    {
+                        stop();
+
+#ifdef WARN_FORCE_THRESHOLD_EXCEEDED
+                        LOG_W(MODULE_PREFIX, "STOPPING Force threshold exceeded %.2fN", deviceData.force);
+#endif
+                    }
+
+                    // Debug
+#ifdef DEBUG_FORCE_DEVICE_CALLBACK
+                    LOG_I(MODULE_PREFIX, "deviceDataChangeCB devTypeIdx %d data bytes %d callbackInfo %p tims %d measured force %.2f raw force %.2f",
+                            deviceTypeIdx, data.size(), pCallbackInfo, deviceData.timeMs, getMeasuredForceN(), _rawForceN);
+#endif
                 },
                 50
             );
 
 
 
-    // Get motor on time after move (secs)
-    float motorOnTimeAfterMoveSecs = config.getDouble("MotorOnTimeAfterMoveSecs", 0.0);
-
-    // TODO implement
-    // if (_pStepper)
-    //     _pStepper->setMotorOnTimeAfterMoveSecs(motorOnTimeAfterMoveSecs);
-
-    // Get motor current threshold
-    float maxMotorCurrentAmps = config.getDouble("MaxMotorCurrentAmps", 0.1);
-
-    // TODO implement
-    // if (_pStepper)
-    //     _pStepper->setMaxMotorCurrentAmps(0, maxMotorCurrentAmps);
-
     // TODO implement
     // // Set hysteresis for angle filter
     // _rotationSensor.setHysteresis(1);
-
-    // Debug
-    // TODO implement
-    LOG_I(MODULE_PREFIX, "setup NOT IMPLEMENTED MaxMotorCurrent %.2fA MotorOnTimeAfterMoveSecs %.2fs", 
-                maxMotorCurrentAmps, motorOnTimeAfterMoveSecs);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Service
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Loop
 void MotorMechanism::loop()
 {
     // Debug
 #ifdef DEBUG_SENSOR_ANGLE
     if (Raft::isTimeout(millis(), _debugLastPrintTimeMs, 1000))
     {
-        LOG_I(MODULE_PREFIX, "service angle %.1fdegs avgSpeed %.2fdegs/sec", 
-                    getMeasuredAngleDegs(), getMeasuredAngularSpeedDegsPerSec());
+        LOG_I(MODULE_PREFIX, "loop angle %.1fdegs avgSpeed %.2fdegs/sec %s", 
+                    getMeasuredAngleDegs(), getMeasuredAngularSpeedDegsPerSec(),
+                    _pDevMan ? _pDevMan->getDebugJSON().c_str() : "");
         _debugLastPrintTimeMs = millis();
     }
 #endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Get measured angle
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// @brief Set motor max current
+// @param maxMotorCurrentAmps Max motor current in amps
+void MotorMechanism::setMaxMotorCurrentAmps(float maxMotorCurrentAmps)
+{
+    RaftDevice* pMotor = getMotorDevice();
+    if (pMotor)
+        pMotor->sendCmdJSON((R"({"cmd":"maxCurrent","maxCurrentA":)" + String(maxMotorCurrentAmps) + R"(,"axisIdx":0})").c_str());
+    
+    // Debug
+    LOG_I(MODULE_PREFIX, "setMaxMotorCurrentAmps %.2fA", maxMotorCurrentAmps);
+}
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// @brief Set motor on time after move
+// @param motorOnTimeAfterMoveSecs Motor on time after move in seconds
+void MotorMechanism::setMotorOnTimeAfterMoveSecs(float motorOnTimeAfterMoveSecs)
+{
+    RaftDevice* pMotor = getMotorDevice();
+    if (pMotor)
+        pMotor->sendCmdJSON((R"({"cmd":"offAfter","offAfterS":)" + String(motorOnTimeAfterMoveSecs) + "}").c_str());
+    
+    // Debug
+    LOG_I(MODULE_PREFIX, "setMotorOnTimeAfterMoveSecs %.2fs", motorOnTimeAfterMoveSecs);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// @brief Get measured angle in degrees
+// @return Measured angle in degrees
 float MotorMechanism::getMeasuredAngleDegs() const
 {
     // Take the angle semaphore and get the angle
@@ -133,9 +172,8 @@ float MotorMechanism::getMeasuredAngleDegs() const
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Get measured angular speed
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Get measured angular speed in degrees per second
+// @return Measured angular speed in degrees per second
 float MotorMechanism::getMeasuredAngularSpeedDegsPerSec() const
 {
     // Take the angle semaphore and get the rate
@@ -149,9 +187,9 @@ float MotorMechanism::getMeasuredAngularSpeedDegsPerSec() const
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Move motor to angle
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Move to angle in degrees
+// @param angleDegrees Angle in degrees
+// @param movementSpeedDegreesPerSec Movement speed in degrees per second
 void MotorMechanism::moveToAngleDegs(float angleDegrees, float movementSpeedDegreesPerSec)
 {
     // Get motor device
@@ -171,6 +209,10 @@ void MotorMechanism::moveToAngleDegs(float angleDegrees, float movementSpeedDegr
     moveCmd.replace("__POS__", String(angleDiffDegrees));
     moveCmd.replace("__SPEED__", String(movementSpeedDegreesPerSec == 0 ? _reqMotorSpeedDegsPerSec : movementSpeedDegreesPerSec));
 
+    // Debug
+    LOG_I(MODULE_PREFIX, "moveToAngleDegs %.2f current %.2f diff %.2f speed %.2f", 
+                angleDegrees, currentAngleDegrees, angleDiffDegrees, movementSpeedDegreesPerSec);
+
     // Send command
     pMotor->sendCmdJSON(moveCmd.c_str());
 
@@ -179,22 +221,19 @@ void MotorMechanism::moveToAngleDegs(float angleDegrees, float movementSpeedDegr
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Stop
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Stop
 void MotorMechanism::stop()
 {
     // Get motor device
     RaftDevice* pMotor = getMotorDevice();
     if (!pMotor)
         return;
-    pMotor->sendCmdJSON(R"({"cmd":"motion","stop":1,"clearQ":1})");
+    pMotor->sendCmdJSON(R"({"cmd":"motion","stop":1,"clearQ":1,"en":0})");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Check if motor active
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Check if motor is active
+// @return true if motor is active
 bool MotorMechanism::isMotorActive() const
 {
     // Get motor device
@@ -206,9 +245,11 @@ bool MotorMechanism::isMotorActive() const
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Check if angle is within tolerance of target
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Check if angle is within tolerance of target
+// @param targetAngleDegs Target angle in degrees
+// @param posToleranceDegs Positive tolerance in degrees
+// @param negToleranceDegs Negative tolerance in degrees
+// @return true if angle is within tolerance of target
 bool MotorMechanism::isNearTargetAngle(float targetAngleDegs, float posToleranceDegs, float negToleranceDegs) const
 {
     // Calculate the difference to required angle
@@ -222,9 +263,10 @@ bool MotorMechanism::isNearTargetAngle(float targetAngleDegs, float posTolerance
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Check if motor has stopped for more than a given time (ms)
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Check if motor has stopped for more than a given time (ms)
+// @param timeMs Time in milliseconds
+// @param expectedMotorSpeedDegsPerSec Expected motor speed in degrees per second
+// @return true if motor has stopped for more than a given time
 bool MotorMechanism::isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpeedDegsPerSec) const
 {
     // Check motor speed < expected motor speed
@@ -249,9 +291,10 @@ bool MotorMechanism::isStoppedForTimeMs(uint32_t timeMs, float expectedMotorSpee
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Calculate move speed degs per sec
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// @brief Calculate move speed degs per sec
+// @param angleDegs Angle in degrees
+// @param timeSecs Time in seconds
+// @return Speed in degrees per second
 float MotorMechanism::calcMoveSpeedDegsPerSec(float angleDegs, float timeSecs) const
 {
     if (timeSecs == 0)

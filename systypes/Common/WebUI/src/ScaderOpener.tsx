@@ -78,6 +78,8 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               <div>{"Angle: " + state.status.doorCurAngle.toString() + "°"}</div>
               <div>{"Closed: " + state.status.doorClosedAngleDegs.toString() + "°"}</div>
               <div>{"Open: " + state.status.doorOpenAngleDegs.toString() + "°"}</div>
+              <div>{"Raw Force: " + state.status.rawForceN.toString() + "N"}</div>
+              <div>{"Measured Force: " + state.status.measuredForceN.toString() + "N"}</div>
             </div>
           </div>
         }
@@ -111,6 +113,13 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                         updateConfigValue("DoorOpenAngleDegs", state.status.doorCurAngle);
                       }}>
                   Set Open Position
+                </button>
+                {/* Button to set force offset */}
+                <button className="ScaderElem-button-editmode" onClick={
+                      () => {
+                        updateConfigValue("ForceOffsetN", state.status.rawForceN);
+                      }}>
+                  Set Force Offset
                 </button>
               </div>
               <div className="ScaderElem-edit-line">
@@ -202,6 +211,24 @@ export default function ScaderOpener(props:ScaderScreenProps) {
                 </button>
               </div>
 
+              <div className="ScaderElem-edit-line">
+                {/* Numeric input box and label for force threshold */}
+                <label>
+                  Force threshold (N):
+                  <input id="scader-force-threshold" className="ScaderElem-input-small" type="number" defaultValue={config.ForceThresholdN} />
+                </label>
+                {/* Button to set force threshold */}
+                <button className="ScaderElem-button-editmode" onClick={
+                      () => {
+                        const inputElem = document.getElementById("scader-force-threshold") as HTMLInputElement | null;
+                        const newtons = inputElem ? inputElem.value : 0;
+                        updateConfigValue("ForceThresholdN", newtons);
+                      }
+                      }>
+                  Set
+                </button>
+              </div>
+
             </div>
           </div>
         }
@@ -247,6 +274,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.pirSenseInActive ? <div>PIR-OUT</div> : null}
               {state.status.pirSenseOutActive ? <div>PIR-IN</div> : null}
               <div>{state.status.doorCurAngle ? "Angle: " + state.status.doorCurAngle.toString() + "°" : ""}</div>
+              <div>{state.status.measuredForceN ? "Force: " + state.status.measuredForceN.toString() + "N" : ""}</div>
             </div>
           }
           </div>

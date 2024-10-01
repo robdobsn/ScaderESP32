@@ -75,11 +75,11 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.consButtonPressed ? <div>CONSBut</div> : null}
               {state.status.pirSenseInActive ? <div>PIR_IN</div> : null}
               {state.status.pirSenseOutActive ? <div>PIR_OUT</div> : null}
-              <div>{"Angle: " + state.status.doorCurAngle.toString() + "°"}</div>
-              <div>{"Closed: " + state.status.doorClosedAngleDegs.toString() + "°"}</div>
-              <div>{"Open: " + state.status.doorOpenAngleDegs.toString() + "°"}</div>
-              <div>{"Raw Force: " + state.status.rawForceN.toString() + "N"}</div>
-              <div>{"Measured Force: " + state.status.measuredForceN.toString() + "N"}</div>
+              <div>{"Angle: " + state.status.doorCurAngle.toFixed(1) + "°"}</div>
+              <div>{"Closed: " + state.status.doorClosedAngleDegs.toFixed(1) + "°"}</div>
+              <div>{"Open: " + state.status.doorOpenAngleDegs.toFixed(1) + "°"}</div>
+              <div>{"Raw Force: " + state.status.rawForceN.toFixed(1) + "N"}</div>
+              <div>{"Measured Force: " + state.status.measuredForceN.toFixed(1) + "N"}</div>
             </div>
           </div>
         }
@@ -273,8 +273,8 @@ export default function ScaderOpener(props:ScaderScreenProps) {
               {state.status.consButtonPressed ? <div>BUT-IN</div> : null}
               {state.status.pirSenseInActive ? <div>PIR-OUT</div> : null}
               {state.status.pirSenseOutActive ? <div>PIR-IN</div> : null}
-              <div>{state.status.doorCurAngle ? "Angle: " + state.status.doorCurAngle.toString() + "°" : ""}</div>
-              <div>{state.status.measuredForceN ? "Force: " + state.status.measuredForceN.toString() + "N" : ""}</div>
+              <div>{typeof state.status.doorCurAngle === "number" ? "Angle: " + state.status.doorCurAngle.toFixed(0) + "°" : ""}</div>
+              <div>{typeof state.status.measuredForceN === "number" ? "Force: " + state.status.measuredForceN.toFixed(1) + "N" : ""}</div>
             </div>
           }
           </div>

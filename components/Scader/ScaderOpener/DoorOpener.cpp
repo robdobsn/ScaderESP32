@@ -430,10 +430,10 @@ String DoorOpener::getStatusJSON(bool includeBraces) const
     json += ",\"timeBeforeCloseSecs\":" + String(calcTimeBeforeCloseSecs());
     json += ",\"doorStateCode\":" + String(getOpenerState());
     json += ",\"doorStateStr\":\"" + getOpenerStateStr(getOpenerState()) + "\"";
-    json += ",\"rawForceN\":\"" + String(_motorMechanism.getRawForceN()) + "\"";
-    json += ",\"measuredForceN\":\"" + String(_motorMechanism.getMeasuredForceN()) + "\"";
-    json += ",\"forceOffsetN\":\"" + String(_motorMechanism.getForceOffsetN()) + "\"";
-    json += ",\"forceThresholdN\":\"" + String(_motorMechanism.getForceThresholdN()) + "\"";
+    json += ",\"rawForceN\":" + String(_motorMechanism.getRawForceN());
+    json += ",\"measuredForceN\":" + String(_motorMechanism.getMeasuredForceN());
+    json += ",\"forceOffsetN\":" + String(_motorMechanism.getForceOffsetN());
+    json += ",\"forceThresholdN\":" + String(_motorMechanism.getForceThresholdN());
     if (includeBraces)
         json = "{" + json + "}";
     return json;

@@ -71,7 +71,7 @@ private:
     static const uint32_t DEFAULT_DOOR_TIME_TO_OPEN_SECS = 8;
     uint32_t _doorRemainOpenTimeSecs = DEFAULT_DOOR_REMAIN_OPEN_TIME_SECS;
     uint32_t _doorTimeToOpenSecs = DEFAULT_DOOR_TIME_TO_OPEN_SECS;
-    static const int32_t DOOR_CLOSED_ANGLE_ADDITIONAL_DEGS = 5;
+    static const int32_t DOOR_CLOSED_ANGLE_ADDITIONAL_DEGS = 0;
     static const int32_t DOOR_CLOSED_ANGLE_TOLERANCE_DEGS = 2;
     static const int32_t DOOR_OPEN_ANGLE_TOLERANCE_DEGS = 5;
 

@@ -12,9 +12,12 @@
 #include "DeviceTypeRecords.h"
 
 #define WARN_FORCE_THRESHOLD_EXCEEDED
-#define DEBUG_SENSOR_ANGLE
+// #define DEBUG_SENSOR_ANGLE
 // #define DEBUG_ANGLE_DEVICE_CALLBACK
 // #define DEBUG_FORCE_DEVICE_CALLBACK
+
+// Uncomment to use stepwise movement
+// #define USE_STEPWISE_MOVEMENT_STEPS_PER_DEGREE 12
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // @brief Constructor
@@ -85,11 +88,11 @@ void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
                     if (pDecodeFn)
                         pDecodeFn(data.data(), data.size(), &deviceData, sizeof(deviceData), 1, _decodeStateHX711);
 
-                    // Store raw force value
+                    // Store raw force value - this allows getMeasuredForceN to return the force relative to the offset
                     _rawForceN = deviceData.force;
 
                     // Check if the abs value of the measured force is greater than the threshold, if so stop the motor
-                    if ((std::abs(deviceData.force) > _forceThresholdN) && isMotorActive())
+                    if ((std::abs(getMeasuredForceN()) > _forceThresholdN) && isMotorActive())
                     {
                         stop();
 
@@ -97,7 +100,6 @@ void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
                         LOG_W(MODULE_PREFIX, "STOPPING Force threshold exceeded %.2fN", deviceData.force);
 #endif
                     }
-
                     // Debug
 #ifdef DEBUG_FORCE_DEVICE_CALLBACK
                     LOG_I(MODULE_PREFIX, "deviceDataChangeCB devTypeIdx %d data bytes %d callbackInfo %p tims %d measured force %.2f raw force %.2f",
@@ -204,14 +206,26 @@ void MotorMechanism::moveToAngleDegs(float angleDegrees, float movementSpeedDegr
     float angleDiffDegrees = angleDegrees - currentAngleDegrees;
 
     // Form command
-    // ,"clearQ":1
+    float reqDegsPerSec = movementSpeedDegreesPerSec == 0 ? _reqMotorSpeedDegsPerSec : movementSpeedDegreesPerSec;
+#ifdef USE_STEPWISE_MOVEMENT_STEPS_PER_DEGREE
+    String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"ramped":0,"steps":1,"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
+    moveCmd.replace("__POS__", String(angleDiffDegrees * USE_STEPWISE_MOVEMENT_STEPS_PER_DEGREE));
+    moveCmd.replace("__SPEED__", String(reqDegsPerSec * USE_STEPWISE_MOVEMENT_STEPS_PER_DEGREE));
+    // Debug
+    LOG_I(MODULE_PREFIX, "moveToAngleDegs %.2f current %.2fdegs diff %.2fdegs (steps %.2f) speed %.2fd/s (%.2f steps/s)", 
+                angleDegrees, currentAngleDegrees, 
+                angleDiffDegrees, angleDiffDegrees * STEPS_PER_DEGREE, 
+                reqDegsPerSec, reqDegsPerSec * STEPS_PER_DEGREE);
+#else
     String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
     moveCmd.replace("__POS__", String(angleDiffDegrees));
-    moveCmd.replace("__SPEED__", String(movementSpeedDegreesPerSec == 0 ? _reqMotorSpeedDegsPerSec : movementSpeedDegreesPerSec));
-
+    moveCmd.replace("__SPEED__", String(reqDegsPerSec));
     // Debug
-    LOG_I(MODULE_PREFIX, "moveToAngleDegs %.2f current %.2f diff %.2f speed %.2f", 
-                angleDegrees, currentAngleDegrees, angleDiffDegrees, movementSpeedDegreesPerSec);
+    LOG_I(MODULE_PREFIX, "moveToAngleDegs %.2f current %.2fdegs diff %.2fdegs speed %.2fd/s", 
+                angleDegrees, currentAngleDegrees, 
+                angleDiffDegrees, reqDegsPerSec);
+#endif
+
 
     // Send command
     pMotor->sendCmdJSON(moveCmd.c_str());

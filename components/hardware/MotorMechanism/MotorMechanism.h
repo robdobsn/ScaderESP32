@@ -13,9 +13,12 @@
 #include "MotorControl.h"
 #include "BusSerial.h"
 #include "BusI2C.h"
-#include "AS5600Sensor.h"
 #include "MovingRate.h"
 #include "DeviceManager.h"
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// @note The MotorMechanism class handles the motor, angle sensor and force sensor to provide absolute angle
+// selection and motor disablement when force threshold is exceeded. See README for more details.
 
 class MotorMechanism
 {

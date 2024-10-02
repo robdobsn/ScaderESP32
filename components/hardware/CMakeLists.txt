@@ -1,12 +1,8 @@
 idf_component_register(
-                SRCS 
-                  "AS5600Sensor/AS5600Sensor.cpp"
-                  "MT6701Sensor/MT6701Sensor.cpp"
+                SRCS
                   "Helpers/SampleCollector.cpp"
                   "MotorMechanism/MotorMechanism.cpp"
                 INCLUDE_DIRS
-                  "AS5600Sensor"
-                  "MT6701Sensor"
                   "HX711"
                   "MotorMechanism"
                   "Helpers"

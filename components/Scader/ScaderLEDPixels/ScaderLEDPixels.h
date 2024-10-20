@@ -10,7 +10,7 @@
 
 #define USE_RAFT_PIXELS_LIBRARY
 // #define USE_FASTLED_LIBRARY
-#define RUN_PATTERNS_IN_SYSMOD
+// #define RUN_PATTERNS_IN_SYSMOD
 
 #include "RaftSysMod.h"
 #include "ScaderCommon.h"
@@ -61,7 +61,6 @@ private:
 #ifdef USE_RAFT_PIXELS_LIBRARY
     // LED pixels
     LEDPixels _ledPixels;
-    LEDPixels _ledPixels2;
 #endif
 
 #ifdef USE_FASTLED_LIBRARY

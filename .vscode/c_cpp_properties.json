@@ -11,6 +11,10 @@
             "cppStandard": "c++14",
             "intelliSenseMode": "linux-clang-x64",
             "compileCommands": "${workspaceFolder}/build/DoorOpener/compile_commands.json"
+        },
+        {
+            "name": "ESP32",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4

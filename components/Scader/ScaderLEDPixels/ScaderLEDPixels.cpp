@@ -55,7 +55,7 @@ ScaderLEDPixels::ScaderLEDPixels(const char *pModuleName, RaftJsonIF& sysConfig)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ScaderLEDPixels::setup()
-{
+{    
     // Common
     _scaderCommon.setup();
 
@@ -68,24 +68,23 @@ void ScaderLEDPixels::setup()
         return;
     }
 
+    // Add patterns before setup so that inital pattern can be set during setup
+    _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::create);
+
     // Setup LEDs
     bool rslt = _ledPixels.setup(modConfig());
-    RaftJsonPrefixed config2(modConfig(), "ledpix2");
-    bool rslt2 = _ledPixels2.setup(config2);
 
     // Patterns
 #ifndef RUN_PATTERNS_IN_SYSMOD
-    _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
-    _ledPixels.setPattern("RainbowSnake");
-    _ledPixels2.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
-    _ledPixels2.setPattern("RainbowSnake");
+    // _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
+    // _ledPixels.setPattern("RainbowSnake");
+    // _ledPixels2.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
+    // _ledPixels2.setPattern("RainbowSnake");
 #endif
 
     // Log
 #ifdef DEBUG_LED_PIXEL_SETUP
-    LOG_I(MODULE_PREFIX, "setup %s %s numPixels %d numPixels2 %d", 
-                rslt ? "OK" : "FAILED", rslt2 ? "OK" : "FAILED",
-                _ledPixels.getNumPixels(), _ledPixels2.getNumPixels());
+    LOG_I(MODULE_PREFIX, "setup %s numPixels %d", rslt ? "OK" : "FAILED", _ledPixels.getNumPixels());
 
 #endif
 
@@ -188,7 +187,6 @@ void ScaderLEDPixels::loop()
         return;
 
     _ledPixels.loop();
-    _ledPixels2.loop();
 
 #ifdef RUN_PATTERNS_IN_SYSMOD
     // Handle patterns
@@ -225,92 +223,129 @@ void ScaderLEDPixels::addRestAPIEndpoints(RestAPIEndpointManager &endpointManage
 
 RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
-    bool rslt = true;
-    String reasonStr = "";
+    // Extract parameters
+    std::vector<String> params;
+    std::vector<RaftJson::NameValuePair> nameValues;
+    RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
+    RaftJson nameValuesJson = RaftJson::getJSONFromNVPairs(nameValues, true);
 
-    // Check init
-    if (!_isInitialised)
+    // Get element name or type
+    String elemNameOrIdx = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
+    int32_t segmentIdx = _ledPixels.getSegmentIdx(elemNameOrIdx);
+    if (segmentIdx < 0)
     {
-        LOG_I(MODULE_PREFIX, "apiControl disabled");
-        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, false);
+        // Check for elemNameOrIdx being a segment index number - i.e. digits only
+        bool isDigit = true;
+        for (uint32_t i = 0; i < elemNameOrIdx.length(); i++)
+        {
+            if (!isdigit(elemNameOrIdx[i]))
+            {
+                isDigit = false;
+                break;
+            }
+        }
+        if (isDigit)
+            segmentIdx = elemNameOrIdx.toInt();
     }
+    if (segmentIdx < 0)
+        return Raft::setJsonErrorResult(reqStr.c_str(), respStr, "invalidElement");
+    String cmd = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
+    cmd.trim();
+    String data = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3);
 
-    // Get command
-    String cmd = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 1);
+    // Debug
+    LOG_I(MODULE_PREFIX, "apiLEDs req %s numParams %d elemNameOrIdx %s segmentIdx %d cmd %s data %s args %s",
+          reqStr.c_str(), params.size(), elemNameOrIdx.c_str(), segmentIdx, cmd.c_str(), data.c_str(), nameValuesJson.c_str());
 
-    // Check command
-    if (cmd.equalsIgnoreCase("clear"))
+    // Handle commands
+    bool rslt = false;
+    if (cmd.equalsIgnoreCase("setall") || cmd.equalsIgnoreCase("color") || cmd.equalsIgnoreCase("colour"))
+    {
+        // Stop any pattern
+        _ledPixels.stopPattern(segmentIdx, false);
+
+        // Set all LEDs to a single colour
+        if (data.startsWith("#"))
+            data = data.substring(1);
+        auto rgb = Raft::getRGBFromHex(data);
+        for (uint32_t i = 0; i < _ledPixels.getNumPixels(segmentIdx); i++)
+        {
+            _ledPixels.setRGB(segmentIdx, i, rgb.r, rgb.g, rgb.b, true);
+        }
+
+        // Show
+        _ledPixels.show();
+        rslt = true;
+    }
+    else if (cmd.equalsIgnoreCase("setleds"))
+    {
+        // Stop any pattern
+        _ledPixels.stopPattern(segmentIdx, false);
+
+        // Set LEDs to a series of specified colours
+        for (uint32_t i = 0; i < _ledPixels.getNumPixels(segmentIdx); i++)
+        {
+            String subRGB = data.substring(i * 6, i * 6 + 6);
+            if (subRGB.length() != 6)
+                break;
+            auto rgb = Raft::getRGBFromHex(subRGB);
+            _ledPixels.setRGB(segmentIdx, i, rgb.r, rgb.g, rgb.b, true);
+        }
+
+        // Show
+        _ledPixels.show();
+        rslt = true;
+    }
+    else if (cmd.equalsIgnoreCase("setled") || cmd.equalsIgnoreCase("set"))
     {
         // Stop pattern
-        _pattern = PATTERN_NONE;
+        _ledPixels.stopPattern(segmentIdx, false);
 
-        // Clear the pixels
-        clearAllPixels();
+        // Get LED and RGB for a single LED
+        int ledID = strtol(data.c_str(), NULL, 10);
+        String rgbStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 4);
+        if (rgbStr.startsWith("#"))
+            rgbStr = rgbStr.substring(1);
+        auto rgb = Raft::getRGBFromHex(rgbStr);
+
+        // Set pixel
+        // LOG_I(MODULE_PREFIX, "setled %d %s r %d g %d b %d", ledID, rgbStr.c_str(), rgb.r, rgb.g, rgb.b);
+        _ledPixels.setRGB(segmentIdx, ledID, rgb.r, rgb.g, rgb.b, true);
+        _ledPixels.show();
+        rslt = true;
     }
-    else if (cmd.equalsIgnoreCase("set"))
+    else if (cmd.equalsIgnoreCase("off"))
     {
-        // Pixel idx
-        uint32_t pixIdx = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2).toInt();
-
-        // RGB hex
-        String rgbHex = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3);
-
-        // Convert to rgb
-        Raft::RGBValue rgb = Raft::getRGBFromHex(rgbHex);
-
-        if (pixIdx < totalNumPixels())
-        {
-            setPixelRGB(pixIdx, rgb.r, rgb.g, rgb.b);
-            show();
-            LOG_I(MODULE_PREFIX, "apiControl set pixel %d to %s R%02x G%02x B%02x", pixIdx, rgbHex.c_str(), rgb.r, rgb.g, rgb.b);
-        }
-        else
-        {
-            rslt = false;
-            reasonStr = "\"reason\":\"invalidPixIdx\"";
-        }
-
-        // // Set first 50 pixels to red
-        // for (uint32_t i = 0; i < _ledPixels.size(); i++)
-        // {
-        //     for (uint32_t j = 0; j < 50; j++)
-        //     {
-        //         _ledPixels[i].setPixelColor(j, 0xFF, 0x00, 0x00);
-        //     }
-        //     _ledPixels[i].show();
-        // }
-    } else if (cmd.equalsIgnoreCase("show"))
+        // Turn off all LEDs
+        _ledPixels.stopPattern(segmentIdx, false);
+        _ledPixels.show();
+        rslt = true;
+    }
+    else if (cmd.equalsIgnoreCase("pattern"))
     {
-        show();
-    } else if (cmd.equalsIgnoreCase("run"))
+        // Set a named pattern
+        _ledPixels.clear(false);
+        _ledPixels.show();
+        _ledPixels.setPattern(segmentIdx, data, nameValuesJson.c_str());
+        rslt = true;
+    }
+    else if (cmd.equalsIgnoreCase("listpatterns"))
     {
-        // Get pattern name
-        String patternName = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
-
-        // Check pattern name
-        if (patternName.equalsIgnoreCase("locate"))
+        // Get list of patterns
+        std::vector<String> patternNames;
+        _ledPixels.getPatternNames(patternNames);
+        String jsonResp;
+        for (auto& name : patternNames)
         {
-            patternLocate_start();
+            if (jsonResp.length() > 0)
+                jsonResp += ",";
+            jsonResp += "\"" + name + "\"";
         }
-        else if (patternName.equalsIgnoreCase("snake"))
-        {
-            // Snake length
-            uint32_t patternLen = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3).toInt();
-
-            // Speed
-            uint32_t speed = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 4).toInt();
-
-            patternSnake_start(patternLen, speed);
-        }
-        else
-        {
-            rslt = false;
-            reasonStr = "\"reason\":\"invalidPatternName\"";
-        }
+        jsonResp = "\"patterns\":[" + jsonResp + "]";
+        return Raft::setJsonBoolResult(reqStr.c_str(), respStr, true, jsonResp.c_str());
     }
 
-    // Set result
-    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt, reasonStr.c_str());
+    return Raft::setJsonBoolResult(reqStr.c_str(), respStr, rslt);
 }
 
 String ScaderLEDPixels::getStatusJSON() const
@@ -359,46 +394,6 @@ void show()
 uint32_t totalNumPixels()
 {
     return _ledPixels.size();
-}
-
-#else
-
-void ScaderLEDPixels::clearAllPixels()
-{
-    _ledPixels.clear();
-    _ledPixels2.clear();
-    show();
-} 
-
-void ScaderLEDPixels::setPixelRGB(uint32_t idx, uint8_t r, uint8_t g, uint8_t b)
-{
-    if (idx < _ledPixels.getNumPixels())
-        _ledPixels.setRGB(idx, r, g, b);
-    else if (idx < _ledPixels.getNumPixels() + _ledPixels2.getNumPixels())
-        _ledPixels2.setRGB(idx - _ledPixels.getNumPixels(), r, g, b);
-    else
-        LOG_E(MODULE_PREFIX, "setPixelRGB invalid idx %d", idx);
-}
-
-void ScaderLEDPixels::setPixelHSV(uint32_t idx, uint16_t h, uint8_t s, uint8_t v)
-{
-    if (idx < _ledPixels.getNumPixels())
-        _ledPixels.setHSV(idx, h, s, v);
-    else if (idx < _ledPixels.getNumPixels() + _ledPixels2.getNumPixels())
-        _ledPixels2.setHSV(idx - _ledPixels.getNumPixels(), h, s, v);
-    else
-        LOG_E(MODULE_PREFIX, "setPixelHSV invalid idx %d", idx);
-}
-
-void ScaderLEDPixels::show()
-{
-    _ledPixels.show();
-    _ledPixels2.show();
-}
-
-uint32_t ScaderLEDPixels::totalNumPixels()
-{
-    return _ledPixels.getNumPixels() + _ledPixels2.getNumPixels();
 }
 
 #endif

@@ -6,6 +6,7 @@
         "monitorPeriodMs":30000,
         "reportList":[
             "NetMan",
+            "BLEMan",
             "Scader",
             "SysMan",
             "StatsCB",
@@ -145,6 +146,26 @@
         "SDCLK": 14,
         "SDCS": 13
     },
+    "BLEMan": {
+        "enable": 1,
+        "central": 1,
+        "peripheral": 0,
+        "outQSize": 15,
+        "sendUseInd": 1,
+        "advIntervalMs": 200,
+        "connIntvPrefMs": 50,
+        "scanIntervalMs": 200,
+        "scanWindowMs": 150,
+        "scanPassive": 1,
+        "scanNoDup": 0,
+        "scanLimited": 0,
+        "scanBTHome": 1,
+        "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
+        "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
+        "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
+        "logLevel": "D",
+        "nimLogLev": "E"
+    },    
     "Publish": {
         "enable": 1,
         "pubList": [

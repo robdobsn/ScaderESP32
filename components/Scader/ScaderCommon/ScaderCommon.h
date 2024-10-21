@@ -13,6 +13,8 @@
 #include "NetworkSystem.h"
 #include "ESPUtils.h"
 
+// #define DEBUG_SCADER_COMMON_SETUP
+
 class ScaderCommon
 {
 public:
@@ -48,8 +50,10 @@ public:
         }
 
         // Debug
+#ifdef DEBUG_SCADER_COMMON_SETUP
         LOG_I("ScaderCommon", "setup scaderUIName %s scaderHostname %s", 
                     _scaderUIName.c_str(), _scaderHostname.c_str());
+#endif
     }
 
     String getStatusJSON() const
@@ -127,5 +131,8 @@ private:
 
     // System config
     RaftJsonIF& _sysConfig;
+
+    // Debug
+    static constexpr const char* MODULE_PREFIX = "ScaderCommon";
 };
 

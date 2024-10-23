@@ -160,6 +160,7 @@
         "scanNoDup": 0,
         "scanLimited": 0,
         "scanBTHome": 1,
+        "busConnName": "BusBLE",
         "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
         "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
         "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
@@ -174,6 +175,18 @@
                 "name": "ScaderOpener",
                 "trigger": "Time",
                 "msgID": "ScaderOpener",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
+            },
+            {
+                "name": "devjson",
+                "trigger": "Change",
+                "msgID": "devjson",
                 "rates": [
                     {
                         "if": "scaderOut",
@@ -204,6 +217,10 @@
                     "txPin": 47,
                     "baudRate": 115200,
                     "minAfterSendMs": 5
+                },
+                {
+                    "name": "BusBLE",
+                    "type": "BusBLE"
                 }
             ]
         },        

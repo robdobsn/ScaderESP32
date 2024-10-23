@@ -24,6 +24,7 @@
 // #include "ScaderWaterer.h"
 #include "MotorControl.h"
 #include "DeviceHX711.h"
+#include "BusBLE.h"
 
 // Entry point
 extern "C" void app_main(void)
@@ -44,7 +45,10 @@ extern "C" void app_main(void)
     
     // Register BusSerial
     raftBusSystem.registerBus("Serial", BusSerial::createFn);
-    
+
+    // Register BusBLE
+    raftBusSystem.registerBus("BusBLE", BusBLE::createFn);
+
     // Register MotorControl
     deviceFactory.registerDevice("MotorControl", MotorControl::create);
 

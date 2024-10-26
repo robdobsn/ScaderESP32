@@ -1,11 +1,12 @@
 {
-    "SysTypeName": "LightScader",
+    "HWName": "DoorOpener",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
         "monitorPeriodMs":30000,
         "reportList":[
             "NetMan",
+            "BLEMan",
             "Scader",
             "SysMan",
             "StatsCB",
@@ -26,7 +27,7 @@
         "enable": 1,
         "wifiSTAEn": 1,
         "wifiAPEn": 0,
-        "ethEn": 1,
+        "ethEn": 0,
         "wifiSSID": "",
         "wifiPW": "",
         "wifiSTAScanThreshold": "OPEN",
@@ -65,18 +66,6 @@
                 "name": "scaderOut",
                 "inbound": 0,
                 "path": "scader/out",
-                "qos": 1
-            },
-            {
-                "name": "scaderGas",
-                "inbound": 0,
-                "path": "scader/gas",
-                "qos": 1
-            },
-            {
-                "name": "scaderElec",
-                "inbound": 0,
-                "path": "scader/elec",
                 "qos": 1
             }
         ]
@@ -160,25 +149,29 @@
     "BLEMan": {
         "enable": 1,
         "central": 1,
-        "peripheral": 1,
+        "peripheral": 0,
         "outQSize": 15,
         "sendUseInd": 1,
         "advIntervalMs": 200,
         "connIntvPrefMs": 50,
+        "scanIntervalMs": 200,
+        "scanWindowMs": 150,
+        "scanPassive": 1,
+        "scanNoDup": 0,
+        "scanLimited": 0,
+        "scanBTHome": 1,
+        "busConnName": "BusBLE",
         "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
         "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
         "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
         "logLevel": "D",
         "nimLogLev": "E"
-    },
+    },    
     "Publish": {
         "enable": 1,
         "pubList": [
             {
-                "type": "HW",
-                "name": "ScaderRelays",
-                "trigger": "Time",
-                "msgID": "ScaderRelays",
+                "topic": "ScaderOpener",
                 "rates": [
                     {
                         "if": "scaderOut",
@@ -188,36 +181,10 @@
                 ]
             },
             {
-                "type": "HW",
-                "name": "ScaderPulseCounter",
-                "trigger": "Time",
-                "msgID": "ScaderPulseCounter",
+                "topic": "devjson",
                 "rates": [
                     {
                         "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.01
-                    },
-                    {
-                        "if": "scaderGas",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            },
-            {
-                "type": "HW",
-                "name": "ScaderElecMeters",
-                "trigger": "Time",
-                "msgID": "ScaderElecMeters",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.01
-                    },
-                    {
-                        "if": "scaderElec",
                         "protocol": "RICJSON",
                         "rateHz": 0.1
                     }
@@ -225,50 +192,138 @@
             }
         ]
     },
-    "ScaderRelays": {
-        "maxElems": 24,
-        "SPI_MOSI": 33,
-        "SPI_MISO": 32,
-        "SPI_CLK": 16,
-        "SPI_CS1": 4,
-        "SPI_CS2": 5,
-        "SPI_CS3": 13,
-        "ONOFF_KEY": 34,
-        "mainsSyncPin": 35,
-        "enableMainsSync": true
-    },
-    "ScaderElecMeters": {
-        "maxElems": 16,
-        "SPI_MOSI": 33,
-        "SPI_MISO": 32,
-        "SPI_CLK": 16,
-        "SPI_CS1": 15,
-        "SPI_CS2": 14,
-        "taskCore": 1,
-        "taskStack": 5000,
-        "taskPriority": 2,
-        "calibADCToAmps": 0.0889
-    },
-    "ScaderLEDPix": {
-        "brightnessPC": 20,
-        "strips": [
-            {
-                "pin": 2,
-                "num": 16
-            }
-        ],
-        "ledpix2":
-        {
-            "brightnessPC": 20,
-            "strips": [
+    "DevMan": {
+        "Buses": {
+            "buslist":
+            [
                 {
-                    "pin": 3,
-                    "num": 16
+                    "name": "I2CA",
+                    "type": "I2C",
+                    "sdaPin": 41,
+                    "sclPin": 42,
+                    "i2cFreq": 100000,
+                    "loopYieldMs": 20
+                },
+                {
+                    "name": "SERA",
+                    "type": "serial",
+                    "uartNum": 2,
+                    "rxPin": 5,
+                    "txPin": 47,
+                    "baudRate": 115200,
+                    "minAfterSendMs": 5
+                },
+                {
+                    "name": "BusBLE",
+                    "type": "BusBLE"
                 }
-            ]                
+            ]
+        },        
+        "Devices":
+        [
+            {
+                "enable": 1,
+                "class": "MotorControl",
+                "name": "Motor",
+                "bus": "SERA",
+                "motion": {
+                    "geom": "XYZ",
+                    "blockDist": 10,
+                    "allowOutOfBounds": 1,
+                    "homeBeforeMove": 0,
+                    "junctionDeviation": 0.05
+                },
+                "ramp": {
+                    "rampTimerEn": 1,
+                    "rampTimerUs": 100,
+                    "pipelineLen": 100
+                },
+                "motorEn": {
+                    "stepEnablePin": 4,
+                    "stepEnLev": 0,
+                    "stepDisableSecs": 1
+                },
+                "axes": [
+                    {
+                        "name": "X",
+                        "params": {
+                            "unitsPerRot": 360,
+                            "stepsPerRot": 3600,
+                            "maxSpeed": 10,
+                            "maxAcc": 10
+                        },
+                        "driver": {
+                            "driver": "TMC2209",
+                            "hw": "local",
+                            "addr": 0,
+                            "stepPin": 15,
+                            "dirnPin": 16,
+                            "invDirn": 0,
+                            "writeOnly": 0,
+                            "extSenseOhms": 0.5,
+                            "extVRef": 0,
+                            "extMStep": 0,
+                            "intpol": 1,
+                            "microsteps": 1,
+                            "rmsAmps": 0.5,
+                            "holdModeOrFactor": 0.5,
+                            "holdDelay": 1,
+                            "pwmFreqKHz": 35
+                        }
+                    }
+                ]
+            },
+            {
+                "enable": 1,
+                "class": "Buzzer",
+                "name": "Buzzer",
+                "pin": 21,
+                "ledcTimer": 1,
+                "ledcChan": 0,
+                "volume": 20
+            },
+            {
+                "enable": 1,
+                "class": "LightSensors",
+                "name": "Light",
+                "type": "LightV1",
+                "Ambient":
+                [
+                    {
+                       "chan": 7
+                    }
+                ]
+            },
+            { 
+                "enable": 1,
+                "class": "HX711",
+                "name": "HX711",
+                "clkPin": 38,
+                "dataPin": 48
+            },
+            {
+                "enable": 1,
+                "class": "OutputFETS",
+                "pins": [10, 11]
+            }
+        ]
+    },    
+    "ScaderOpener": {
+        "DoorRemainOpenTimeSecs": 45,
+        "DoorTimeToOpenSecs": 20,
+        "DoorOpenAngleDegs": 0,
+        "DoorClosedAngleDegs": 0,
+        "consvPirPin": 17,
+        "consvButtonPin": 6,
+        "MotorOnTimeAfterMoveSecs": 5,
+        "MaxMotorCurrentAmps": 0.4,
+        "ForceThresholdN": 5,
+        "uiModule":
+        {
+            "rxPin": 39,
+            "txPin": 40,
+            "uartNum": 1,
+            "baudRate": 115200	
         }
-    },
-    "ScaderPulseCounter": {
-        "pulseCounterPin": 39
     }
 }

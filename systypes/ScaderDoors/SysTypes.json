@@ -1,5 +1,5 @@
 {
-    "HWName": "ShadesScader",
+    "HWName": "ScaderDoorLock",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
@@ -26,7 +26,7 @@
         "enable": 1,
         "wifiSTAEn": 1,
         "wifiAPEn": 0,
-        "ethEn": 1,
+        "ethEn": 0,
         "wifiSSID": "",
         "wifiPW": "",
         "wifiSTAScanThreshold": "OPEN",
@@ -122,20 +122,9 @@
         "logLevel": "D"
     },
     "CommandSerial": {
-        "enable": 1,
+        "enable": 0,
         "logLevel": "D",
         "ports": [
-            {
-                "name": "Serial1",
-                "enable": 1,
-                "uartNum": 1,
-                "baudRate": 115200,
-                "rxBufSize": 8192,
-                "rxPin": 35,
-                "txPin": 5,
-                "protocol": "RICSerial",
-                "logLevel": "D"
-            }
         ]
     },
     "CommandSocket": {
@@ -156,27 +145,32 @@
         "SDCLK": 14,
         "SDCS": 13
     },
+    "BLEMan": {
+        "enable": 1,
+        "central": 1,
+        "peripheral": 0,
+        "outQSize": 15,
+        "sendUseInd": 1,
+        "advIntervalMs": 200,
+        "connIntvPrefMs": 50,
+        "scanIntervalMs": 200,
+        "scanWindowMs": 150,
+        "scanPassive": 1,
+        "scanNoDup": 0,
+        "scanLimited": 0,
+        "scanBTHome": 1,
+        "busConnName": "BusBLE",
+        "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
+        "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
+        "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
+        "logLevel": "D",
+        "nimLogLev": "E"
+    },    
     "Publish": {
         "enable": 1,
         "pubList": [
             {
-                "type": "HW",
-                "name": "ScaderShades",
-                "trigger": "Time",
-                "msgID": "ScaderShades",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            },
-            {
-                "type": "HW",
-                "name": "ScaderDoors",
-                "trigger": "Time",
-                "msgID": "ScaderDoors",
+                "topic": "ScaderDoors",
                 "rates": [
                     {
                         "if": "scaderOut",
@@ -187,39 +181,41 @@
             }
         ]
     },
-    "ScaderShades": {
-        "maxElems": 5,
-        "HC595_SER": 16,
-        "HC595_SCK": 4,
-        "HC595_LATCH": 14,
-        "HC595_RST": 13,
-        "LED_OP": -1,
-        "LED_ACT": 15,
-        "enableLightLevels": 0,
-        "LIGHTLVLPINS": [34, 39, -1]
+    "ScaderCat": {
+        "LIGHT_CTRL": 23,
+        "VALVE_CTRL": 19,
+        "FET_1": 18,
+        "FET_2": 5
     },
-    "ScaderDoors": {
-        "maxElems": 2,
-        "doors": [
+    "ScaderLEDPix": {
+        "brightnessPC": 20,
+        "strips": [
             {
-                "strikePin": 33,
-                "strikeOn": 1,
-                "openSensePin": 34,
-                "openSenseLevel": 0,
-                "unlockForSecs": 10
-            },
-            {
-                "strikePin": 32,
-                "strikeOn": 1,
-                "openSensePin": -1,
-                "openSenseLevel": 0,
-                "unlockForSecs": 30,
-                "delayRelockSecs": 10
+                "pin": "32",
+                "num": 16
             }
         ],
-        "masterDoorIdx": 0,
-        "reportMasterDoorOnly": true,
-        "bellSensePin": 39,
-        "bellSenseLevel": 1
+        "ledpix2":
+        {
+            "brightnessPC": 20,
+            "strips": [
+                {
+                    "pin": "33",
+                    "num": 16
+                }
+            ]                
+        }
+    },
+    "ScaderWaterer": {
+        "i2cPort": 0,
+        "sdaPin": "21",
+        "sclPin": "22",
+        "i2cFreq": 100000,
+        "adcI2CAddr": "0x48",
+        "reportSecs": 10,
+        "Pump0": "23",
+        "Pump1": "25",
+        "Pump2": "26",
+        "Pump3": "27"
     }
 }

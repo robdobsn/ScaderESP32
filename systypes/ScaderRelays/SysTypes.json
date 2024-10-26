@@ -1,5 +1,5 @@
 {
-    "HWName": "DefaultScader",
+    "SysTypeName": "LightScader",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
@@ -26,7 +26,7 @@
         "enable": 1,
         "wifiSTAEn": 1,
         "wifiAPEn": 0,
-        "ethEn": 0,
+        "ethEn": 1,
         "wifiSSID": "",
         "wifiPW": "",
         "wifiSTAScanThreshold": "OPEN",
@@ -65,6 +65,18 @@
                 "name": "scaderOut",
                 "inbound": 0,
                 "path": "scader/out",
+                "qos": 1
+            },
+            {
+                "name": "scaderGas",
+                "inbound": 0,
+                "path": "scader/gas",
+                "qos": 1
+            },
+            {
+                "name": "scaderElec",
+                "inbound": 0,
+                "path": "scader/elec",
                 "qos": 1
             }
         ]
@@ -145,14 +157,25 @@
         "SDCLK": 14,
         "SDCS": 13
     },
+    "BLEMan": {
+        "enable": 1,
+        "central": 1,
+        "peripheral": 1,
+        "outQSize": 15,
+        "sendUseInd": 1,
+        "advIntervalMs": 200,
+        "connIntvPrefMs": 50,
+        "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
+        "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
+        "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
+        "logLevel": "D",
+        "nimLogLev": "E"
+    },
     "Publish": {
         "enable": 1,
         "pubList": [
             {
-                "type": "HW",
-                "name": "ScaderDoors",
-                "trigger": "Time",
-                "msgID": "ScaderDoors",
+                "topic": "ScaderRelays",
                 "rates": [
                     {
                         "if": "scaderOut",
@@ -160,20 +183,68 @@
                         "rateHz": 0.1
                     }
                 ]
+            },
+            {
+                "topic": "ScaderPulseCounter",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.01
+                    },
+                    {
+                        "if": "scaderGas",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
+            },
+            {
+                "topic": "ScaderElecMeters",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.01
+                    },
+                    {
+                        "if": "scaderElec",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
             }
         ]
     },
-    "ScaderCat": {
-        "LIGHT_CTRL": 23,
-        "VALVE_CTRL": 19,
-        "FET_1": 18,
-        "FET_2": 5
+    "ScaderRelays": {
+        "maxElems": 24,
+        "SPI_MOSI": 33,
+        "SPI_MISO": 32,
+        "SPI_CLK": 16,
+        "SPI_CS1": 4,
+        "SPI_CS2": 5,
+        "SPI_CS3": 13,
+        "ONOFF_KEY": 34,
+        "mainsSyncPin": 35,
+        "enableMainsSync": true
+    },
+    "ScaderElecMeters": {
+        "maxElems": 16,
+        "SPI_MOSI": 33,
+        "SPI_MISO": 32,
+        "SPI_CLK": 16,
+        "SPI_CS1": 15,
+        "SPI_CS2": 14,
+        "taskCore": 1,
+        "taskStack": 5000,
+        "taskPriority": 2,
+        "calibADCToAmps": 0.0889
     },
     "ScaderLEDPix": {
         "brightnessPC": 20,
         "strips": [
             {
-                "pin": "32",
+                "pin": 2,
                 "num": 16
             }
         ],
@@ -182,22 +253,13 @@
             "brightnessPC": 20,
             "strips": [
                 {
-                    "pin": "33",
+                    "pin": 3,
                     "num": 16
                 }
             ]                
         }
     },
-    "ScaderWaterer": {
-        "i2cPort": 0,
-        "sdaPin": "21",
-        "sclPin": "22",
-        "i2cFreq": 100000,
-        "adcI2CAddr": "0x48",
-        "reportSecs": 10,
-        "Pump0": "23",
-        "Pump1": "25",
-        "Pump2": "26",
-        "Pump3": "27"
+    "ScaderPulseCounter": {
+        "pulseCounterPin": 39
     }
 }

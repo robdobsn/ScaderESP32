@@ -55,15 +55,17 @@ extern "C" void app_main(void)
     // Register HX711
     deviceFactory.registerDevice("HX711", DeviceHX711::create);
 
-    // Scader components
+    // Scader hardware support
     raftCoreApp.registerSysMod("ScaderRelays", ScaderRelays::create, true);
     raftCoreApp.registerSysMod("ScaderShades", ScaderShades::create, true);
-    raftCoreApp.registerSysMod("ScaderDoors", ScaderDoors::create, true);
     raftCoreApp.registerSysMod("ScaderOpener", ScaderOpener::create, true);
-    raftCoreApp.registerSysMod("ScaderLEDPix", ScaderLEDPixels::create, true);
     raftCoreApp.registerSysMod("ScaderRFID", ScaderRFID::create, true);
-    raftCoreApp.registerSysMod("ScaderPulseCounter", ScaderPulseCounter::create, true);
     raftCoreApp.registerSysMod("ScaderElecMeters", ScaderElecMeters::create, true);
+
+    // Optional components
+    raftCoreApp.registerSysMod("ScaderDoors", ScaderDoors::create, true);
+    raftCoreApp.registerSysMod("ScaderLEDPix", ScaderLEDPixels::create, true);
+    raftCoreApp.registerSysMod("ScaderPulseCounter", ScaderPulseCounter::create, true);
     // raftCoreApp.registerSysMod("ScaderCat", ScaderCat::create, true);
     // raftCoreApp.registerSysMod("ScaderWaterer", ScaderWaterer::create, true);
 

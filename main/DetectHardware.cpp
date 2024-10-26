@@ -149,23 +149,23 @@ void DetectHardware::detectHardware(RaftCoreApp& app)
     // Default to generic
     String hwTypeStr = "generic";
 
-#ifdef HW_DEF_DOOR_OPENER
-    hwTypeStr = "opener";
-#else
+// #ifdef HW_DEF_DOOR_OPENER
+//     hwTypeStr = "opener";
+// #else
 
-    // Check for RFID PCB hardware
-    // Pins 13, 14, 32 are pulled high on that hardware so try to pull them low with the weak ESP32 internal
-    // pull-down and see if they remain high
-    if (HWDetectConfig(
-        {
-            HWDetectPinDef(13, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-            HWDetectPinDef(14, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
-            HWDetectPinDef(32, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
-        }).isThisHW(true))
-    {
-        hwTypeStr = "rfid";
-    }
-#endif
+//     // Check for RFID PCB hardware
+//     // Pins 13, 14, 32 are pulled high on that hardware so try to pull them low with the weak ESP32 internal
+//     // pull-down and see if they remain high
+//     if (HWDetectConfig(
+//         {
+//             HWDetectPinDef(13, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
+//             HWDetectPinDef(14, HWDetectPinDef::PIN_EXPECTED_HELD_LOW),
+//             HWDetectPinDef(32, HWDetectPinDef::PIN_EXPECTED_HELD_LOW)
+//         }).isThisHW(true))
+//     {
+//         hwTypeStr = "rfid";
+//     }
+// #endif
 
     // Set the hardware revision in the system configuration
     app.setBaseSysTypeVersion(hwTypeStr.c_str());

@@ -3,14 +3,14 @@ import { DoorConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
 import { LockedIcon, UnlockedIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
-import { ScaderDoorStates, ScaderState } from './ScaderState';
+import { ScaderLockStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
 
-export default function ScaderDoors(props:ScaderScreenProps) {
+export default function ScaderLocks(props:ScaderScreenProps) {
 
-  const scaderConfigName = "ScaderDoors";
-  const scaderStateName = "ScaderDoors";
+  const scaderConfigName = "ScaderLocks";
+  const scaderStateName = "ScaderLocks";
   const configElemsName = "elems";
   const stateElemsName = "elems";
   const subElemsFriendly = "doors";
@@ -29,7 +29,7 @@ export default function ScaderDoors(props:ScaderScreenProps) {
       console.log(`${scaderStateName} onStateChange ${JSON.stringify(newState)}`);
       // Update state
       if (stateElemsName in newState) {
-        setState(new ScaderDoorStates(newState));
+        setState(new ScaderLockStates(newState));
       }
     });
   }, []);

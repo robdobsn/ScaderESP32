@@ -12,8 +12,8 @@ idf_component_register(
                   "ScaderRelays/ScaderRelays.cpp"
                   "ScaderRelays/SPIDimmer.cpp"
                   "ScaderShades/ScaderShades.cpp"
-                  "ScaderDoors/ScaderDoors.cpp"
-                  "ScaderDoors/DoorStrike.cpp"
+                  "ScaderLocks/ScaderLocks.cpp"
+                  "ScaderLocks/DoorStrike.cpp"
                   "ScaderElecMeters/ScaderElecMeters.cpp"
                   "ScaderRFID/ScaderRFID.cpp"
                   "ScaderRFID/RFIDModuleBase.cpp"
@@ -35,7 +35,7 @@ idf_component_register(
                   "ScaderCommon"
                   "ScaderRelays"
                   "ScaderShades"
-                  "ScaderDoors"
+                  "ScaderLocks"
                   "ScaderElecMeters"
                   "ScaderRFID"
                   "ScaderOpener"
@@ -47,6 +47,7 @@ idf_component_register(
                   # ${FASTLED_DIR}
                   # "FastLED"
                   # "ScaderWaterer"
+                  "ScaderTest"
                 REQUIRES
                   RaftCore
                   # FastLED-idf

@@ -14,7 +14,7 @@
 // Scader components
 #include "ScaderRelays.h"
 #include "ScaderShades.h"
-#include "ScaderDoors.h"
+#include "ScaderLocks.h"
 #include "ScaderOpener.h"
 #include "ScaderLEDPixels.h"
 #include "ScaderRFID.h"
@@ -25,6 +25,10 @@
 #include "MotorControl.h"
 #include "DeviceHX711.h"
 #include "BusBLE.h"
+
+#ifdef FEATURE_INCLUDE_SCADER_TEST_SYS_MOD
+#include "ScaderTest.h"
+#endif
 
 // Entry point
 extern "C" void app_main(void)
@@ -63,11 +67,14 @@ extern "C" void app_main(void)
     raftCoreApp.registerSysMod("ScaderElecMeters", ScaderElecMeters::create, true);
 
     // Optional components
-    raftCoreApp.registerSysMod("ScaderDoors", ScaderDoors::create, true);
+    raftCoreApp.registerSysMod("ScaderLocks", ScaderLocks::create, true);
     raftCoreApp.registerSysMod("ScaderLEDPix", ScaderLEDPixels::create, true);
     raftCoreApp.registerSysMod("ScaderPulseCounter", ScaderPulseCounter::create, true);
     // raftCoreApp.registerSysMod("ScaderCat", ScaderCat::create, true);
     // raftCoreApp.registerSysMod("ScaderWaterer", ScaderWaterer::create, true);
+
+    // TODO - remove
+    raftCoreApp.registerSysMod("ScaderTest", ScaderTest::create, true);
 
     // Loop forever
     while (1)

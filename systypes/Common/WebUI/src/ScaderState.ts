@@ -52,7 +52,7 @@ export class ScaderDoorState {
     toLockMs?: number = 0;
 }
 
-export class ScaderDoorStates {
+export class ScaderLockStates {
     module: string = "";
     elems: Array<ScaderDoorState> = [];
     bell: string = 'K';
@@ -133,7 +133,7 @@ export class ScaderElecMeterStates {
 export class ScaderState {
     ScaderRelays: ScaderRelayStates = {} as ScaderRelayStates;
     ScaderShades: ScaderShadeStates = {} as ScaderShadeStates;
-    ScaderDoors: ScaderDoorStates = {} as ScaderDoorStates;
+    ScaderLocks: ScaderLockStates = {} as ScaderLockStates;
     ScaderLEDPix: ScaderLEDPixStates = {} as ScaderLEDPixStates;
     ScaderOpener: ScaderOpenerStates = {} as ScaderOpenerStates;
     ScaderPulseCounter: ScaderPulseCounterStates = {} as ScaderPulseCounterStates;
@@ -141,5 +141,5 @@ export class ScaderState {
 }
 
 export type ScaderStateType = 
-    ScaderRelayStates | ScaderShadeStates | ScaderDoorStates | ScaderLEDPixStates | ScaderOpenerStates | ScaderPulseCounterStates | ScaderElecMeterStates;
+    ScaderRelayStates | ScaderShadeStates | ScaderLockStates | ScaderLEDPixStates | ScaderOpenerStates | ScaderPulseCounterStates | ScaderElecMeterStates;
     

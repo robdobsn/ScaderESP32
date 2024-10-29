@@ -1,5 +1,6 @@
 {
-    "HWName": "DoorOpener",
+    "SystemName": "ScaderOpener",
+    "Manufacturer": "Rob Dobson",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
@@ -150,10 +151,6 @@
         "enable": 1,
         "central": 1,
         "peripheral": 0,
-        "outQSize": 15,
-        "sendUseInd": 1,
-        "advIntervalMs": 200,
-        "connIntvPrefMs": 50,
         "scanIntervalMs": 200,
         "scanWindowMs": 150,
         "scanPassive": 1,
@@ -161,9 +158,6 @@
         "scanLimited": 0,
         "scanBTHome": 1,
         "busConnName": "BusBLE",
-        "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
-        "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
-        "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
         "logLevel": "D",
         "nimLogLev": "E"
     },    

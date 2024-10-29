@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// ScaderDoors
+// ScaderLocks
 //
 // Rob Dobson 2013-2020
 //
@@ -9,7 +9,7 @@
 #include <ctime>
 #include "Logger.h"
 #include "RaftArduino.h"
-#include "ScaderDoors.h"
+#include "ScaderLocks.h"
 #include "ConfigPinMap.h"
 #include "RaftUtils.h"
 #include "RestAPIEndpointManager.h"
@@ -20,19 +20,19 @@
 #include "ESPUtils.h"
 #include "driver/gpio.h"
 
-static const char *MODULE_PREFIX = "ScaderDoors";
+static const char *MODULE_PREFIX = "ScaderLocks";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScaderDoors::ScaderDoors(const char *pModuleName, RaftJsonIF& sysConfig)
+ScaderLocks::ScaderLocks(const char *pModuleName, RaftJsonIF& sysConfig)
     : RaftSysMod(pModuleName, sysConfig),
           _scaderCommon(*this, sysConfig, pModuleName)
 {
 }
 
-ScaderDoors::~ScaderDoors()
+ScaderLocks::~ScaderLocks()
 {
     if (_bellPressedPin >= 0)
     {
@@ -44,7 +44,7 @@ ScaderDoors::~ScaderDoors()
 // Setup
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::setup()
+void ScaderLocks::setup()
 {
     // Common setup
     _scaderCommon.setup();
@@ -181,7 +181,7 @@ void ScaderDoors::setup()
 // Loop
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::loop()
+void ScaderLocks::loop()
 {
     // Check if initialised
     if (!_isInitialised)
@@ -229,16 +229,16 @@ void ScaderDoors::loop()
 // Endpoints
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
+void ScaderLocks::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 {
     // Control door
     endpointManager.addEndpoint("door", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
-                            std::bind(&ScaderDoors::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                            std::bind(&ScaderLocks::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                             "control doors, door/<door>/<state> where door is 1-based and state is 0 or 1 for off or on");
 
     // RFID
     endpointManager.addEndpoint("RFIDTagRead", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
-                            std::bind(&ScaderDoors::apiTagRead, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                            std::bind(&ScaderLocks::apiTagRead, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                             "RFID tag has been read on door, RFIDTagRead?tagID=XXXX tagID is the tag read");
 
     LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader door");
@@ -248,7 +248,7 @@ void ScaderDoors::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
 // Control via API
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RaftRetCode ScaderDoors::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderLocks::apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check initialised
     if (!_isInitialised)
@@ -305,7 +305,7 @@ RaftRetCode ScaderDoors::apiControl(const String &reqStr, String &respStr, const
 // Scader doors
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RaftRetCode ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
+RaftRetCode ScaderLocks::apiTagRead(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo)
 {
     // Check initialised
     if (!_isInitialised)
@@ -342,7 +342,7 @@ RaftRetCode ScaderDoors::apiTagRead(const String &reqStr, String &respStr, const
 // Execute unlock / lock command
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint32_t ScaderDoors::executeUnlockLock(std::vector<int> elemNums, bool unlock)
+uint32_t ScaderLocks::executeUnlockLock(std::vector<int> elemNums, bool unlock)
 {
     // Count number of elements set
     uint32_t numElemsSet = 0;
@@ -377,7 +377,7 @@ uint32_t ScaderDoors::executeUnlockLock(std::vector<int> elemNums, bool unlock)
 // Get JSON status
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String ScaderDoors::getStatusJSON() const
+String ScaderLocks::getStatusJSON() const
 {
     // Get status
     String elemStatus;
@@ -412,7 +412,7 @@ String ScaderDoors::getStatusJSON() const
 // Check status change
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::getStatusHash(std::vector<uint8_t>& stateHash)
+void ScaderLocks::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     // Clear hash initially
     stateHash.clear();
@@ -430,7 +430,7 @@ void ScaderDoors::getStatusHash(std::vector<uint8_t>& stateHash)
 // Write the mutable config
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::saveMutableData()
+void ScaderLocks::saveMutableData()
 {
 }
 
@@ -438,7 +438,7 @@ void ScaderDoors::saveMutableData()
 // debug show relay states
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::debugShowCurrentState()
+void ScaderLocks::debugShowCurrentState()
 {
     String elemsStr;
     for (const DoorStrike& doorStrike : _doorStrikes)
@@ -454,7 +454,7 @@ void ScaderDoors::debugShowCurrentState()
 // Publish state change to CommandSerial
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ScaderDoors::publishStateChangeToCommandSerial()
+void ScaderLocks::publishStateChangeToCommandSerial()
 {
     // If any door locked/unlocked then send message over CommandSerial to inform of change
     int channelID = getCommsCore()->getChannelIDByName("Serial1", "RICSerial");

@@ -1,5 +1,6 @@
 {
-    "HWName": "TestS3",
+    "SystemName": "TestS3",
+    "Manufacturer": "Rob Dobson",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
@@ -52,7 +53,7 @@
     },
     "MQTTMan": {
         "enable": 1,
-        "brokerHostname": "benbecula",
+        "brokerHostname": "192.168.1.24",
         "brokerPort": 1883,
         "clientID": "Scader",
         "topics": [
@@ -164,6 +165,36 @@
         "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
         "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
         "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
+        "stdServices":
+        [
+            {
+                "name": "Battery",
+                "enable": 1,
+                "notify": 1,
+                "read": 1,
+                "updateIntervalMs": 30000,
+                "settings": {
+                    "sysMod": "ScaderTest",
+                    "namedValue": "batteryPC"
+                }
+            },
+            {
+                "name": "HeartRate",
+                "enable": 1,
+                "notify": 1,
+                "read": 1,
+                "updateIntervalMs": 500,
+                "settings": {
+                    "sysMod": "ScaderTest",
+                    "namedValue": "heartRate"
+                }
+            },
+            {
+                "name": "DeviceInfo",
+                "enable": 1,
+                "read": 1
+            }
+        ],
         "logLevel": "D",
         "nimLogLev": "E"
     },    
@@ -172,7 +203,13 @@
         "pubList": [
             {
                 "topic": "devjson",
-                "msgID": "devjson"
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
             }
         ]
     },
@@ -187,6 +224,10 @@
 
             ]
         }
+    },
+    "ScaderTest": {
+        "enable": 1,
+        "batteryPC": 100
     }
 
 }

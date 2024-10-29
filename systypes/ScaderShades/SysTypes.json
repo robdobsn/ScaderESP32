@@ -1,11 +1,13 @@
 {
-    "HWName": "ShadesScader",
+    "SystemName": "ScaderShades",
+    "Manufacturer": "Rob Dobson",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
         "monitorPeriodMs":30000,
         "reportList":[
             "NetMan",
+            "BLEMan",
             "Scader",
             "SysMan",
             "StatsCB",
@@ -156,6 +158,20 @@
         "SDCLK": 14,
         "SDCS": 13
     },
+    "BLEMan": {
+        "enable": 1,
+        "central": 1,
+        "peripheral": 0,
+        "scanIntervalMs": 200,
+        "scanWindowMs": 150,
+        "scanPassive": 1,
+        "scanNoDup": 0,
+        "scanLimited": 0,
+        "scanBTHome": 1,
+        "busConnName": "BusBLE",
+        "logLevel": "D",
+        "nimLogLev": "E"
+    },
     "Publish": {
         "enable": 1,
         "pubList": [
@@ -170,7 +186,7 @@
                 ]
             },
             {
-                "topic": "ScaderDoors",
+                "topic": "ScaderLocks",
                 "rates": [
                     {
                         "if": "scaderOut",
@@ -178,8 +194,23 @@
                         "rateHz": 0.1
                     }
                 ]
+            },
+            {
+                "topic": "devjson"
             }
         ]
+    },
+    "DevMan": {
+        "Buses": {
+            "buslist":
+            [
+                {
+                    "name": "BusBLE",
+                    "type": "BusBLE"
+                }
+
+            ]
+        }
     },
     "ScaderShades": {
         "maxElems": 5,
@@ -192,7 +223,7 @@
         "enableLightLevels": 0,
         "LIGHTLVLPINS": [34, 39, -1]
     },
-    "ScaderDoors": {
+    "ScaderLocks": {
         "maxElems": 2,
         "doors": [
             {

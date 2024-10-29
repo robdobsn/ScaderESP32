@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// ScaderDoors
+// ScaderLocks
 //
 // Rob Dobson 2013-2022
 //
@@ -17,17 +17,17 @@
 
 class APISourceInfo;
 
-class ScaderDoors : public RaftSysMod
+class ScaderLocks : public RaftSysMod
 {
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
-    ScaderDoors(const char *pModuleName, RaftJsonIF& sysConfig);
-    virtual ~ScaderDoors();
+    ScaderLocks(const char *pModuleName, RaftJsonIF& sysConfig);
+    virtual ~ScaderLocks();
 
     // Create function (for use by SysManager factory)
     static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
-        return new ScaderDoors(pModuleName, sysConfig);
+        return new ScaderLocks(pModuleName, sysConfig);
     }
     
 protected:

@@ -90,7 +90,7 @@ export class ScaderConfig {
         name: "ScaderShades",
         elems: [],
     }
-    ScaderDoors: {
+    ScaderLocks: {
         enable: boolean,
         maxElems: number,
         name: string,
@@ -98,7 +98,7 @@ export class ScaderConfig {
     } = {
         enable: false,
         maxElems: 2,
-        name: "ScaderDoors",
+        name: "ScaderLocks",
         elems: [],
     }
     ScaderRFID: {

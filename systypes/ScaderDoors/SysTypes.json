@@ -1,11 +1,13 @@
 {
-    "HWName": "ScaderDoorLock",
+    "SystemName": "ScaderLocks",
+    "Manufacturer": "Rob Dobson",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
         "monitorPeriodMs":30000,
         "reportList":[
             "NetMan",
+            "BLEMan",
             "Scader",
             "SysMan",
             "StatsCB",
@@ -170,7 +172,7 @@
         "enable": 1,
         "pubList": [
             {
-                "topic": "ScaderDoors",
+                "topic": "ScaderLocks",
                 "rates": [
                     {
                         "if": "scaderOut",

@@ -5,7 +5,7 @@ import ScaderRelays from './ScaderRelays';
 import ScaderElecMeters from './ScaderElecMeters';
 import { ScaderScreenProps } from './ScaderCommon';
 import ScaderShades from './ScaderShades';
-import ScaderDoors from './ScaderDoors';
+import ScaderLocks from './ScaderLocks';
 import ScaderLEDPix from './ScaderLEDPix';
 import ScaderOpener from './ScaderOpener';
 import ScaderRFID from './ScaderRFID';
@@ -68,7 +68,7 @@ export default function ScaderApp() {
       {/* Render screens pass config as props */}
       {<ScaderRelays {...screenProps} />}
       {<ScaderShades {...screenProps} />}
-      {<ScaderDoors {...screenProps} />}
+      {<ScaderLocks {...screenProps} />}
       {<ScaderLEDPix {...screenProps} />}
       {<ScaderOpener {...screenProps} />}
       {<ScaderRFID {...screenProps} />}

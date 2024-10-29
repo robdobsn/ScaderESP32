@@ -1,14 +1,16 @@
-# ScaderESP32 - Firmware for LightScader and other Home Automation
+# ScaderESP32 - Firmware for Home Automation
 
 ## Building
 
 ```
-raft run -p SERIAL_PORT
+raft run
 ```
 
-## Door Opener
+See [RaftCLI for more information on building](https://github.com/robdobsn/RaftCLI)
 
-Controls a door using a motor, angle sensor, force sensor, UI panel, exit button and motion/presence sensors on each side of the door.
+## Scader Opener
+
+Controls opening and closing a door using a motor, angle sensor, force sensor, UI panel, exit button and motion/presence sensors on each side of the door.
 
 The MotorMechanism class handles motor, angle sensor and force sensor. The motor's setting for unitsPerRot should be 360 to represent degrees and stepsPerRot should be set to the correct value for the motor and gearbox. Movement is actioned by sending a relative motion command to the stepper motor controller to rotate to the desired position from the position reported by the angle sensor. This only works if the stepsPerRot setting is accurate.
 

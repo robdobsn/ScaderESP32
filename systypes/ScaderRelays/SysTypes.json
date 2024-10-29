@@ -1,11 +1,13 @@
 {
-    "SysTypeName": "LightScader",
+    "SystemName": "ScaderRelays",
+    "Manufacturer": "Rob Dobson",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
         "monitorPeriodMs":30000,
         "reportList":[
             "NetMan",
+            "BLEMan",
             "Scader",
             "SysMan",
             "StatsCB",
@@ -160,14 +162,14 @@
     "BLEMan": {
         "enable": 1,
         "central": 1,
-        "peripheral": 1,
-        "outQSize": 15,
-        "sendUseInd": 1,
-        "advIntervalMs": 200,
-        "connIntvPrefMs": 50,
-        "uuidCmdRespService": "aa76677e-9cfd-4626-a510-0d305be57c8d",
-        "uuidCmdRespCommand": "aa76677e-9cfd-4626-a510-0d305be57c8e",
-        "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
+        "peripheral": 0,
+        "scanIntervalMs": 200,
+        "scanWindowMs": 150,
+        "scanPassive": 1,
+        "scanNoDup": 0,
+        "scanLimited": 0,
+        "scanBTHome": 1,
+        "busConnName": "BusBLE",
         "logLevel": "D",
         "nimLogLev": "E"
     },
@@ -241,23 +243,13 @@
         "calibADCToAmps": 0.0889
     },
     "ScaderLEDPix": {
-        "brightnessPC": 20,
         "strips": [
             {
-                "pin": 2,
-                "num": 16
+                "pin": 21,
+                "num": 14
             }
         ],
-        "ledpix2":
-        {
-            "brightnessPC": 20,
-            "strips": [
-                {
-                    "pin": 3,
-                    "num": 16
-                }
-            ]                
-        }
+        "brightnessPC": 20
     },
     "ScaderPulseCounter": {
         "pulseCounterPin": 39

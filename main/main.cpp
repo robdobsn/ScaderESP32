@@ -24,6 +24,7 @@
 // #include "ScaderWaterer.h"
 #include "MotorControl.h"
 #include "DeviceHX711.h"
+#include "DeviceMMWave.h"
 #include "BusBLE.h"
 
 #ifdef FEATURE_INCLUDE_SCADER_TEST_SYS_MOD
@@ -56,8 +57,9 @@ extern "C" void app_main(void)
     // Register MotorControl
     deviceFactory.registerDevice("MotorControl", MotorControl::create);
 
-    // Register HX711
+    // Register other hardware
     deviceFactory.registerDevice("HX711", DeviceHX711::create);
+    deviceFactory.registerDevice("MMWave", DeviceMMWave::create);
 
     // Scader hardware support
     raftCoreApp.registerSysMod("ScaderRelays", ScaderRelays::create, true);
@@ -73,8 +75,11 @@ extern "C" void app_main(void)
     // raftCoreApp.registerSysMod("ScaderCat", ScaderCat::create, true);
     // raftCoreApp.registerSysMod("ScaderWaterer", ScaderWaterer::create, true);
 
-    // TODO - remove
+
+#ifdef FEATURE_INCLUDE_SCADER_TEST_SYS_MOD
+    // Test component
     raftCoreApp.registerSysMod("ScaderTest", ScaderTest::create, true);
+#endif
 
     // Loop forever
     while (1)

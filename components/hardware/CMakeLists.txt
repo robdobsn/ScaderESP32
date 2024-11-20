@@ -4,6 +4,7 @@ idf_component_register(
                   "MotorMechanism/MotorMechanism.cpp"
                 INCLUDE_DIRS
                   "HX711"
+                  "MMWave"
                   "MotorMechanism"
                   "Helpers"
                 REQUIRES

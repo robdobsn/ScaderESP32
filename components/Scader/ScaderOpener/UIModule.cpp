@@ -85,7 +85,7 @@ void UIModule::setup(RaftJsonIF &config, OpenerStatus* pOpenerParams)
 #if ESP_IDF_VERSION <= ESP_IDF_VERSION_VAL(5, 0, 0)
                 .use_ref_tick = false,
 #else
-                .source_clk = UART_SCLK_APB,
+                .source_clk = UART_SCLK_DEFAULT,
 #endif
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 1)
                 .flags = 0,

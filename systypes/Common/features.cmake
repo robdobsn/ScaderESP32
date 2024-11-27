@@ -3,8 +3,8 @@ add_compile_definitions(SYSTEM_VERSION="6.5.0")
 
 # Raft components
 set(RAFT_COMPONENTS
-    RaftSysMods@feature-ble-central
-    RaftI2C@features-genericize-bus-devices
+    RaftSysMods@main
+    RaftI2C@main
     RaftMotorControl@main
     RaftWebServer@main
 )

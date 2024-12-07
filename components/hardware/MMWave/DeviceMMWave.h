@@ -72,9 +72,11 @@ public:
                 .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
                 .rx_flow_ctrl_thresh = 122,
                 .source_clk = UART_SCLK_DEFAULT,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
                 .flags = {
                     .backup_before_sleep = 0,
                 },
+#endif
         };
         esp_err_t err = uart_param_config((uart_port_t)_uartNum, &uart_config);
         if (err != ESP_OK)

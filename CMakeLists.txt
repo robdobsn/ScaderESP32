@@ -7,7 +7,7 @@ FetchContent_Declare(
     raftcore
     SOURCE_DIR RaftCore
     GIT_REPOSITORY https://github.com/robdobsn/RaftCore.git
-    GIT_TAG        feature-move-device-ident
+    GIT_TAG        main
 )
 FetchContent_Populate(raftcore)
 set(ADDED_PROJECT_DEPENDENCIES ${ADDED_PROJECT_DEPENDENCIES} "raftcore")

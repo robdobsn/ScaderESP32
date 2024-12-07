@@ -218,8 +218,8 @@ void ScaderRelays::addRestAPIEndpoints(RestAPIEndpointManager &endpointManager)
     // Control shade
     endpointManager.addEndpoint("relay", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderRelays::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "control relays, relay/<relay>/<state> where relay is 1-based and state is 0 to 100 as a percentage on/off (except that 1 is full on)");
-    LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader relays");
+                            "relay/<relay>/<state> relay is 1-based, state %% on/off (but 1 is full on)");
+    // LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader relays");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -4,8 +4,8 @@
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
-        "monitorPeriodMs":30000,
-        "reportList":[
+        "monitorPeriodMs": 30000,
+        "reportList": [
             "NetMan",
             "BLEMan",
             "Scader",
@@ -14,14 +14,14 @@
             "ESPOTAUpdate"
         ],
         "slowSysModMs": 100,
-        "pauseWiFiforBLE":1,
+        "pauseWiFiforBLE": 1,
         "rebootAfterNHours": 24,
         "rebootIfDiscMins": 10
     },
     "ProtExchg": {
-        "RICSerial":{
-            "FrameBound":"0xE7",
-            "CtrlEscape":"0xD7"
+        "RICSerial": {
+            "FrameBound": "0xE7",
+            "CtrlEscape": "0xD7"
         }
     },
     "NetMan": {
@@ -138,8 +138,7 @@
     "CommandSerial": {
         "enable": 0,
         "logLevel": "D",
-        "ports": [
-        ]
+        "ports": []
     },
     "CommandSocket": {
         "enable": 0,

@@ -1,5 +1,5 @@
 {
-    "SystemName": "ScaderPresence2",
+    "SystemName": "ScaderPresence",
     "Manufacturer": "Rob Dobson",
     "CmdsAtStart": "",
     "WebUI": "",
@@ -53,7 +53,7 @@
     },
     "MQTTMan": {
         "enable": 1,
-        "brokerHostname": "192.168.1.24",
+        "brokerHostname": "benbecula",
         "brokerPort": 1883,
         "clientID": "Scader",
         "topics": [

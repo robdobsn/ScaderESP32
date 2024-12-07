@@ -26,7 +26,7 @@
     },
     "NetMan": {
         "enable": 1,
-        "wifiSTAEn": 1,
+        "wifiSTAEn": 0,
         "wifiAPEn": 0,
         "ethEn": 1,
         "wifiSSID": "",

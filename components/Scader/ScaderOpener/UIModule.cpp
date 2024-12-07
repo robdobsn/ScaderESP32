@@ -157,7 +157,7 @@ void UIModule::loop()
 
         // Encode to HDLC
         uint32_t maxEncodedLen = _miniHDLC.calcEncodedLen((const uint8_t*)statusJson.c_str(), statusJson.length());
-        std::vector<uint8_t, SpiramAwareAllocator<uint8_t>> encodedBuf;
+        SpiramAwareUint8Vector encodedBuf;
         encodedBuf.resize(maxEncodedLen);
         uint32_t encodedLen = _miniHDLC.encodeFrame(encodedBuf.data(), maxEncodedLen, 
                         (const uint8_t*)statusJson.c_str(), statusJson.length());

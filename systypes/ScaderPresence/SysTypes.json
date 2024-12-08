@@ -104,7 +104,7 @@
         "taskPriority": 9
     },
     "LogManager": {
-        "enable": 0,
+        "enable": 1,
         "logDests": [
             {
                 "enable": true,

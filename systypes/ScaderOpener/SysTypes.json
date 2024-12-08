@@ -148,7 +148,7 @@
         "SDCS": 13
     },
     "BLEMan": {
-        "enable": 1,
+        "enable": 0,
         "central": 1,
         "peripheral": 0,
         "scanIntervalMs": 200,

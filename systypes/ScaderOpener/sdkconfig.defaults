@@ -4,6 +4,9 @@
 # Default log level
 CONFIG_LOG_DEFAULT_LEVEL_DEBUG=n
 
+# UART option to avoid dropping chars
+CONFIG_UART_ISR_IN_IRAM=y
+
 # Serial Baud-Rate
 CONFIG_ESP_PHY_ENABLE_USB=y
 CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200

@@ -13,5 +13,4 @@ scripts/config.ini
 test/eepromPartitionTest/prewritedata.bin
 test/eepromPartitionTest/readbackdata.bin
 node_modules
-
-
+raftcli_history.txt

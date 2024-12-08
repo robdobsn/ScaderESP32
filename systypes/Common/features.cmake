@@ -1,5 +1,5 @@
 # System version
-add_compile_definitions(SYSTEM_VERSION="6.5.2")
+add_compile_definitions(SYSTEM_VERSION="6.5.3")
 
 # Raft components
 set(RAFT_COMPONENTS

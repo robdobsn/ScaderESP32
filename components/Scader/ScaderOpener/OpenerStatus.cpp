@@ -21,15 +21,13 @@ static const char* MODULE_PREFIX = "OpenerStatus";
 void OpenerStatus::readFromNVS()
 {
     // Get mutable data
-    if (_pConfig)
-    {
-        _inEnabled = _pConfig->getBool("openerState/inEn", false);
-        _outEnabled = _pConfig->getBool("openerState/outEn", false);
-    }
+    _inEnabled = _scaderModuleState.getBool("inEn", false);
+    _outEnabled = _scaderModuleState.getBool("outEn", false);
 
     // Log
 #ifdef DEBUG_OPENER_MUTABLE_DATA
-    LOG_I(MODULE_PREFIX, "setup inEn %d outEn %d", _inEnabled, _outEnabled);
+    LOG_I(MODULE_PREFIX, "setup inEn %d outEn %d getConfig %s", _inEnabled, _outEnabled, 
+                _scaderModuleState.getJsonDoc());
 #endif
 
 }
@@ -49,7 +47,7 @@ void OpenerStatus::saveToNVSIfRequired()
         return;
 
     // Form JSON
-    String jsonConfig = R"("openerState":{"inEn":__INEN__,"outEn":__OUTEN__})";
+    String jsonConfig = R"("inEn":__INEN__,"outEn":__OUTEN__)";
     jsonConfig.replace("__INEN__", String(_inEnabled));
     jsonConfig.replace("__OUTEN__", String(_outEnabled));
 
@@ -62,10 +60,7 @@ void OpenerStatus::saveToNVSIfRequired()
 #endif
 
     // Save
-    if (_pConfig)
-    {
-        _pConfig->setJsonDoc(jsonConfig.c_str());
-    }
+    _scaderModuleState.setJsonDoc(jsonConfig.c_str());
 
     // No longer required
     _isNVSWriteReqd = false;

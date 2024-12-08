@@ -52,6 +52,9 @@ private:
     // Initalised flag
     bool _isInitialised = false;
 
+    // Opener state NVS
+    RaftJsonNVS _scaderModuleState;
+
     // Opener hardware
     DoorOpener _doorOpener;
 

@@ -15,7 +15,8 @@
 
 static const char* MODULE_PREFIX = "DoorOpener";
 
-DoorOpener::DoorOpener() :
+DoorOpener::DoorOpener(RaftJsonNVS& nvsData) :
+    OpenerStatus(nvsData),
     _consvPIRChangeDetector(std::bind(&DoorOpener::onConservatoryPIRChanged, this, std::placeholders::_1, std::placeholders::_2))
 {
 }
@@ -33,9 +34,6 @@ void DoorOpener::setup(DeviceManager* pDevMan, RaftJsonIF& config)
     // Setup motor and angle sensor
     RaftJsonPrefixed motorMechanismConfig(config, "MotorMechanism");
     _motorMechanism.setup(pDevMan, motorMechanismConfig);
-
-    // Record config
-    recordConfig(config);
 
     // Configure conservatory button and PIR GPIO pins
     ConfigPinMap::PinDef gpioPins[] = {

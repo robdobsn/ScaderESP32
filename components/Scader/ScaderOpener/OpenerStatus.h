@@ -9,18 +9,17 @@
 #pragma once
 #include <vector>
 #include "RaftArduino.h"
-#include "RaftJsonIF.h"
+#include "RaftJsonNVS.h"
 
 class OpenerStatus
 {
 public:
 
-    // Setup
-    void recordConfig(RaftJsonIF& config)
+    // Constructor
+    OpenerStatus(RaftJsonNVS& nvsData) : 
+        _scaderModuleState(nvsData)
     {
-        _pConfig = &config;
     }
-
     // Settings
     void setOutEnabled(bool enabled) 
     { 
@@ -184,6 +183,6 @@ private:
     // Status strings
     std::vector<String> _statusStrs = { "", "", "" };
 
-    // Config
-    RaftJsonIF* _pConfig = nullptr;
+    // Opener state NVS
+    RaftJsonNVS& _scaderModuleState;
 };

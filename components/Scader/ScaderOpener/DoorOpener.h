@@ -13,7 +13,7 @@
 #include "RaftArduino.h"
 #include "DebounceButton.h"
 #include "RaftUtils.h"
-#include "RaftJsonIF.h"
+#include "RaftJsonNVS.h"
 #include "SimpleMovingAverage.h"
 #include "OpenerStatus.h"
 #include "MotorMechanism.h"
@@ -25,7 +25,7 @@ class DoorOpener : public OpenerStatus
 {
 public:
     // Constructor and destructor
-    DoorOpener();
+    DoorOpener(RaftJsonNVS& nvsData);
     virtual ~DoorOpener();
 
     // Setup

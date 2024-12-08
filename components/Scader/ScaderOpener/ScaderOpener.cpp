@@ -25,7 +25,9 @@ static const char *MODULE_PREFIX = "ScaderOpener";
 
 ScaderOpener::ScaderOpener(const char* pModuleName, RaftJsonIF& sysConfig)
     : RaftSysMod(pModuleName, sysConfig),
-          _scaderCommon(*this, sysConfig, pModuleName)
+          _scaderCommon(*this, sysConfig, pModuleName),
+          _scaderModuleState("scaderOpener"),
+          _doorOpener(_scaderModuleState)
 {
 }
 

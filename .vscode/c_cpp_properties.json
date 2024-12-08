@@ -10,10 +10,21 @@
             "cStandard": "c17",
             "cppStandard": "c++14",
             "intelliSenseMode": "linux-clang-x64",
-            "compileCommands": "${workspaceFolder}/build/DoorOpener/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         },
         {
             "name": "ESP32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/rob/esp/esp-idf-v5.3.1/components/**"
+            ],
+            "defines": [
+                "ESP_PLATFORM"
+            ],
+            "compilerPath": "/home/rob/.espressif/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-gcc-x64",
             "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],

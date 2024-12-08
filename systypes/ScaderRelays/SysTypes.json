@@ -252,5 +252,16 @@
     },
     "ScaderPulseCounter": {
         "pulseCounterPin": 39
+    },
+    "DevMan": {
+        "Buses": {
+            "buslist":
+            [
+                {
+                    "name": "BusBLE",
+                    "type": "BusBLE"
+                }
+            ]
+        }
     }
 }

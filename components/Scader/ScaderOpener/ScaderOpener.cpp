@@ -122,7 +122,7 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
     // Handle commands
     bool rslt = true;
     String rsltStr;
-    if (params.size() > 0)
+    if (params.size() > 1)
     {
         // Open
         if (params[1] == "open")

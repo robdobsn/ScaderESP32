@@ -180,6 +180,10 @@
     "ScaderLEDPix": {
         "strips": [
             {
+                "pin": 33,
+                "num": 750
+            },
+            {
                 "pin": 32,
                 "num": 750
             }

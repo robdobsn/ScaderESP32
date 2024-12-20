@@ -10,6 +10,8 @@
 
 #include "RaftCore.h"
 
+#define DEBUG_LEDPATTERN_RAINBOW_SNAKE_SETUP
+
 class LEDPatternRainbowSnake : public LEDPatternBase
 {
 public:
@@ -39,6 +41,9 @@ public:
             // Get max brightness percent
             _maxBrightnessPC = paramsJson.getDouble("brightnessPC", 10);
         }
+#ifdef DEBUG_LEDPATTERN_RAINBOW_SNAKE_SETUP
+        LOG_I(MODULE_PREFIX, "Setup rateMs %d brightnessPC %f numPix %d", _refreshRateMs, _maxBrightnessPC, _pixels.getNumPixels());
+#endif
     }
 
     // Loop

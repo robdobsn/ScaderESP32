@@ -247,7 +247,7 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         if (isDigit)
             segmentIdx = elemNameOrIdx.toInt();
     }
-    if (segmentIdx < 0)
+    if ((segmentIdx < 0) || (segmentIdx >= _ledPixels.getNumSegments()))
         return Raft::setJsonErrorResult(reqStr.c_str(), respStr, "invalidElement");
     String cmd = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 2);
     cmd.trim();
@@ -314,11 +314,11 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         _ledPixels.show();
         rslt = true;
     }
-    else if (cmd.equalsIgnoreCase("off"))
+    else if (cmd.equalsIgnoreCase("off") || cmd.equalsIgnoreCase("clear"))
     {
         // Turn off all LEDs
         _ledPixels.stopPattern(segmentIdx, false);
-        _ledPixels.show();
+        _ledPixels.clear(true);
         rslt = true;
     }
     else if (cmd.equalsIgnoreCase("pattern"))

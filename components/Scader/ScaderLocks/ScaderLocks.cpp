@@ -17,7 +17,7 @@
 #include "CommsCoreIF.h"
 #include "NetworkSystem.h"
 #include "CommsChannelMsg.h"
-#include "ESPUtils.h"
+#include "PlatformUtils.h"
 #include "driver/gpio.h"
 
 static const char *MODULE_PREFIX = "ScaderLocks";

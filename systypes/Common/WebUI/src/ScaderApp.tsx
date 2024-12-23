@@ -12,6 +12,7 @@ import ScaderRFID from './ScaderRFID';
 import ScaderPulseCounter from './ScaderPulseCounter';
 import ReactDOM from 'react-dom';
 import './ScaderApp.css';
+import ScaderBTHome from './ScaderBTHome';
 
 // const testServerPath = "http://localhost:3123";
 const testServerPath = "http://192.168.86.105";
@@ -74,6 +75,7 @@ export default function ScaderApp() {
       {<ScaderRFID {...screenProps} />}
       {<ScaderPulseCounter {...screenProps} />}
       {<ScaderElecMeters {...screenProps} />}
+      {<ScaderBTHome {...screenProps} />}
     </div>
   </div>
   );

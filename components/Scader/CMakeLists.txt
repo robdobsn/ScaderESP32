@@ -8,7 +8,7 @@
 
 idf_component_register(
                 SRCS 
-                  # "ScaderCommon/ScaderCommon.cpp"
+                  "ScaderCommon/ScaderCommon.cpp"
                   "ScaderRelays/ScaderRelays.cpp"
                   "ScaderRelays/SPIDimmer.cpp"
                   "ScaderShades/ScaderShades.cpp"
@@ -24,6 +24,7 @@ idf_component_register(
                   "ScaderOpener/DoorOpener.cpp"
                   "ScaderOpener/UIModule.cpp"
                   "ScaderPulseCounter/ScaderPulseCounter.cpp"
+                  "ScaderBTHome/ScaderBTHome.cpp"
                   # "ScaderCat/ScaderCat.cpp"
                   # "TinyPICO/TinyPICO.cpp"
                   # "HWElemINA219/HWElemINA219.cpp"
@@ -42,6 +43,7 @@ idf_component_register(
                   "ScaderPulseCounter"
                   # "ScaderCat"
                   "ScaderLEDPixels"
+                  "ScaderBTHome"
                   # "TinyPICO"
                   # "HWElemINA219"
                   # ${FASTLED_DIR}

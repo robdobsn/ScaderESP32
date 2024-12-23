@@ -128,4 +128,11 @@ export class ScaderConfig {
         mainsVoltage: 240,
         elems: [],
     }
+    ScaderBTHome: {
+        enable: boolean,
+        name: string,
+    } = {
+        enable: false,
+        name: "ScaderBTHome"
+    }
 }

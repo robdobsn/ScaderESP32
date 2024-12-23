@@ -142,4 +142,3 @@ export class ScaderState {
 
 export type ScaderStateType = 
     ScaderRelayStates | ScaderShadeStates | ScaderLockStates | ScaderLEDPixStates | ScaderOpenerStates | ScaderPulseCounterStates | ScaderElecMeterStates;
-    

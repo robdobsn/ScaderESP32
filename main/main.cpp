@@ -20,6 +20,7 @@
 #include "ScaderRFID.h"
 #include "ScaderPulseCounter.h"
 #include "ScaderElecMeters.h"
+#include "ScaderBTHome.h"
 // #include "ScaderCat.h"
 // #include "ScaderWaterer.h"
 #include "MotorControl.h"
@@ -72,6 +73,7 @@ extern "C" void app_main(void)
     raftCoreApp.registerSysMod("ScaderLocks", ScaderLocks::create, true);
     raftCoreApp.registerSysMod("ScaderLEDPix", ScaderLEDPixels::create, true);
     raftCoreApp.registerSysMod("ScaderPulseCounter", ScaderPulseCounter::create, true);
+    raftCoreApp.registerSysMod("ScaderBTHome", ScaderBTHome::create, true);
     // raftCoreApp.registerSysMod("ScaderCat", ScaderCat::create, true);
     // raftCoreApp.registerSysMod("ScaderWaterer", ScaderWaterer::create, true);
 

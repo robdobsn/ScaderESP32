@@ -173,16 +173,6 @@
                         "rateHz": 0.1
                     }
                 ]
-            },
-            {
-                "topic": "devjson",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
             }
         ]
     },

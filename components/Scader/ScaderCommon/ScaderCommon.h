@@ -23,6 +23,8 @@ public:
                 _sysConfig(sysConfig)
     {
         _moduleName = moduleName;
+
+        LOG_I("ScaderCommon", "ScaderCommon created moduleName %s", _moduleName.c_str());
     }
 
     void setup()

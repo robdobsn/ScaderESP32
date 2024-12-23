@@ -159,28 +159,31 @@ String ScaderBTHome::getStatusJSON() const
                     deviceData.light);
 #endif
 
-            // MAC address
-            String macAddr = Raft::formatMACAddr(((uint8_t*)&deviceData.MAC), ":", true);
+            if (recsDecoded > 0)
+            {
+                // MAC address
+                String macAddr = Raft::formatMACAddr(((uint8_t*)&deviceData.MAC), ":", true);
 
-            // Form JSON
-            String jsonStr;
-            jsonStr += "{\"timeMs\":" + String(bthomeUpdate.timestampMs) + ",";
-            jsonStr += "\"mac\":\"" + macAddr + "\",";
-            jsonStr += "\"motion\":" + String(deviceData.motion);
-            if (deviceData.battery != 255)
-                jsonStr += ",\"batt\":" + String(deviceData.battery);
-            if (deviceData.temp < 200.0)
-                jsonStr += ",\"temp\":" + String(deviceData.temp);
-            if (deviceData.light < 10000000.0)
-                jsonStr += ",\"light\":" + String(deviceData.light);
-            jsonStr += "}";
+                // Form JSON
+                String jsonStr;
+                jsonStr += "{\"timeMs\":" + String(bthomeUpdate.timestampMs) + ",";
+                jsonStr += "\"mac\":\"" + macAddr + "\",";
+                jsonStr += "\"motion\":" + String(deviceData.motion);
+                if (deviceData.battery != 255)
+                    jsonStr += ",\"batt\":" + String(deviceData.battery);
+                if (deviceData.temp < 200.0)
+                    jsonStr += ",\"temp\":" + String(deviceData.temp);
+                if (deviceData.light < 10000000.0)
+                    jsonStr += ",\"light\":" + String(deviceData.light);
+                jsonStr += "}";
 
 #ifdef DEBUG_SCADER_BTHOME
-            LOG_I(MODULE_PREFIX, "getStatusJSON %s", jsonStr.c_str());
+                LOG_I(MODULE_PREFIX, "getStatusJSON %s", jsonStr.c_str());
 #endif
 
-            // Return JSON
-            return "{" + _scaderCommon.getStatusJSON() + ",\"msgs\":[" + jsonStr + "]}";
+                // Return JSON
+                return "{" + _scaderCommon.getStatusJSON() + ",\"msgs\":[" + jsonStr + "]}";
+            }
         }
     }
 

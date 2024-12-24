@@ -26,6 +26,8 @@
 #include "MotorControl.h"
 #include "DeviceHX711.h"
 #include "DeviceMMWave.h"
+#include "RaftBusSystem.h"
+#include "DeviceFactory.h"
 #include "BusBLE.h"
 
 #ifdef FEATURE_INCLUDE_SCADER_TEST_SYS_MOD

@@ -11,12 +11,9 @@
 #include "RaftCore.h"
 #include "DevicePollRecords_generated.h"
 #include "DeviceTypeRecords.h"
-#include <vector>
-#include "sdkconfig.h"
+#include "RaftThreading.h"
 #include "esp_idf_version.h"
 #include "driver/uart.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
 // #define DEBUG_DEVICE_READING
 

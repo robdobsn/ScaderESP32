@@ -182,7 +182,7 @@ String ScaderBTHome::getStatusJSON() const
 #endif
 
                 // Return JSON
-                return "{" + _scaderCommon.getStatusJSON() + ",\"msgs\":[" + jsonStr + "]}";
+                return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + jsonStr + "]}";
             }
         }
     }
@@ -200,7 +200,7 @@ String ScaderBTHome::getStatusJSON() const
     // }
 
     // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"msgs\":[" + elemStatus + "]}";
+    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elemStatus + "]}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,6 +209,19 @@ String ScaderBTHome::getStatusJSON() const
 
 void ScaderBTHome::getStatusHash(std::vector<uint8_t>& stateHash)
 {
-    stateHash.clear();
-    stateHash.push_back(_bthomeUpdateQueue.count());
+    if (_bthomeUpdateQueue.count() == 0)
+    {
+        stateHash.clear();
+        return;
+    }
+
+    // Check if state hash already has an element
+    if (stateHash.size() == 0)
+    {
+        stateHash.push_back(0);
+        return;
+    }
+
+    // Increment state hash
+    stateHash[0]++;
 }

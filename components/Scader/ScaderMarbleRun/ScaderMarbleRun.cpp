@@ -63,7 +63,7 @@ void ScaderMarbleRun::addRestAPIEndpoints(RestAPIEndpointManager &endpointManage
     // Control shade
     endpointManager.addEndpoint("marbles", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderMarbleRun::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "Control Marble Run - marbles/run, marbles/stop, marbles/<speedPercent>");
+                            "Control Marble Run - marbles/run?speed=N&duration=M (where N is percent and M is mins - if not specified run forever), marbles/stop");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ RaftRetCode ScaderMarbleRun::apiControl(const String &reqStr, String &respStr, c
     std::vector<String> params;
     std::vector<RaftJson::NameValuePair> nameValues;
     RestAPIEndpointManager::getParamsAndNameValues(reqStr.c_str(), params, nameValues);
-    String paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
+    RaftJson paramsJSON = RaftJson::getJSONFromNVPairs(nameValues, true);
 
     // Handle commands
     bool rslt = false;
@@ -87,25 +87,46 @@ RaftRetCode ScaderMarbleRun::apiControl(const String &reqStr, String &respStr, c
         // Run
         if (params[1].equalsIgnoreCase("run"))
         {
+            // Get optional speed and duration
+            double speedPC = paramsJSON.getDouble("speed", 100.0);
+            if (speedPC <= 0)
+                speedPC = 100;
+            if (speedPC > 500)
+                speedPC = 500;
+            double durationMins = paramsJSON.getDouble("duration", 10.0);
+            if (durationMins < 0)
+                durationMins = 10;
+            double extendFactor = speedPC / 100.0;
             // Get motor device
             RaftDevice* pMotor = getMotorDevice();
             if (pMotor)
             {
                 rslt = true;
                 rsltStr = "Run";
-                String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"steps":1,"nosplit":1,"speed":__SPEED__,"speedOk":1,"pos":[{"a":0,"p":__POS__}]})";
-                moveCmd.replace("__POS__", String(10000000));
-                moveCmd.replace("__SPEED__", String(100));
+                String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"nosplit":1,"feedrate":__SPEED__,"pos":[{"a":0,"p":__POS__}]})";
+                moveCmd.replace("__POS__", String(12000 * durationMins * extendFactor));
+                moveCmd.replace("__SPEED__", String(speedPC*2));
                 // Send command
                 pMotor->sendCmdJSON(moveCmd.c_str());
                 // Debug
-                LOG_I(MODULE_PREFIX, "api Run");
+                LOG_I(MODULE_PREFIX, "api Run %s", moveCmd.c_str());
             }
         }
         // Stop
         else if (params[1].equalsIgnoreCase("stop"))
         {
             rsltStr = "Stopped";
+            rslt = true;
+            // Get motor device
+            RaftDevice* pMotor = getMotorDevice();
+            if (pMotor)
+            {
+                // Send command
+                String stopCmd = R"({"cmd":"motion","stop":1})";
+                pMotor->sendCmdJSON(stopCmd.c_str());
+                // Debug
+                LOG_I(MODULE_PREFIX, "api Stop %s", stopCmd.c_str());
+            }
         }
         // Speed
         else if ((params.size() > 2) && params[1].equalsIgnoreCase("raw"))
@@ -116,18 +137,12 @@ RaftRetCode ScaderMarbleRun::apiControl(const String &reqStr, String &respStr, c
             {
                 rslt = true;
                 rsltStr = "Raw";
-                String moveCmd = R"({"cmd":"motion",)" + params[2] + R"("})";
+                String moveCmd = R"({"cmd":"motion",)" + params[2] + R"(})";
                 // Send command
                 pMotor->sendCmdJSON(moveCmd.c_str());
                 // Debug
                 LOG_I(MODULE_PREFIX, "api Raw %s", moveCmd.c_str());
             }
-        }
-        // Speed
-        else if ((params.size() > 2) && isdigit(params[2][0]))
-        {
-            uint32_t speed = params[2].toInt();
-            rsltStr = "Speed " + String(speed) + "%";
         }
         // Unknown
         else

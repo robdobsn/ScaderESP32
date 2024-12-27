@@ -138,8 +138,12 @@ export class ScaderConfig {
     ScaderMarbleRun: {
         enable: boolean,
         name: string,
+        speedPC: number,
+        durationMins: number
     } = {
         enable: false,
-        name: "ScaderMarbleRun"
+        name: "ScaderMarbleRun",
+        speedPC: 100,
+        durationMins: 5
     }
 }

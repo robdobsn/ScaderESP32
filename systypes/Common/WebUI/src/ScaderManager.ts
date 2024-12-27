@@ -244,6 +244,11 @@ export class ScaderManager {
         }
         this._scaderConfig = JSON.parse(JSON.stringify(this._mutableConfig));
         await this.postAppSettings();
+
+        // Inform screens of config change
+        this._configChangeCallbacks.forEach(callback => {
+            callback(this._scaderConfig);
+        });
     }
 
     // Check if config changed

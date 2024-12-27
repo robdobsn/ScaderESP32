@@ -224,9 +224,9 @@
                         "name": "X",
                         "params": {
                             "unitsPerRot": 360,
-                            "stepsPerRot": 3600,
-                            "maxSpeed": 10,
-                            "maxAcc": 10
+                            "stepsPerRot": 768,
+                            "maxSpeed": 100,
+                            "maxAcc": 50
                         },
                         "driver": {
                             "driver": "TMC2209",
@@ -240,7 +240,7 @@
                             "extVRef": 0,
                             "extMStep": 0,
                             "intpol": 1,
-                            "microsteps": 1,
+                            "microsteps": 16,
                             "rmsAmps": 0.5,
                             "holdModeOrFactor": 0.5,
                             "holdDelay": 1,

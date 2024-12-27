@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 import { ScaderScreenProps } from './ScaderCommon';
 import { ScaderManager } from './ScaderManager';
 import { ScaderOpenerStates, ScaderState } from './ScaderState';
+import { ScaderConfig } from './ScaderConfig';
 
 const scaderManager = ScaderManager.getInstance();
+type ScaderOpenerConfig = ScaderConfig['ScaderOpener'];
 
 export default function ScaderOpener(props:ScaderScreenProps) {
 
@@ -43,7 +45,7 @@ export default function ScaderOpener(props:ScaderScreenProps) {
     console.log(`updateConfigValue afterChange key ${key} value ${value} ${JSON.stringify(config)}`);
   }
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderOpenerConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderConfigName] = newConfig;
   }
@@ -239,14 +241,14 @@ export default function ScaderOpener(props:ScaderScreenProps) {
   const normalModeScreen = () => {
 
     // Out enabled button class
-    let outEnabledButtonClass = "ScaderElem-button button-onoff " +
+    const outEnabledButtonClass = "ScaderElem-button button-onoff " +
           (state.status && state.status.outEnabled ? "out-enabled" : "inout-disabled");
     // In enabled button class
-    let inEnabledButtonClass = "ScaderElem-button button-onoff " +
+    const inEnabledButtonClass = "ScaderElem-button button-onoff " +
           (state.status && state.status.inEnabled ? "in-enabled" : "inout-disabled");
 
     // Open state text
-    let openState = state.status && state.status.doorStateStr;
+    const openState = state.status && state.status.doorStateStr;
     
     // (state.status && state.status.motorActive) ? "Closing" : "Closed";
     // if (state.status && (state.status.angleFromClosed > state.status.closedAngleTolerance)) {

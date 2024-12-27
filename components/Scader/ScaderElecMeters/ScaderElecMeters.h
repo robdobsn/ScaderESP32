@@ -139,4 +139,7 @@ private:
     // Debug raw samples in batches 
     uint32_t _debugBatchSampleCounter = 0;
     uint32_t _debugBatchStartTimeMs = 0;
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderElecMeters";
 };

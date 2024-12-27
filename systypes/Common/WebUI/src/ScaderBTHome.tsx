@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { ScaderScreenProps } from './ScaderCommon';
 import { ScaderManager } from './ScaderManager';
+import { ScaderConfig } from './ScaderConfig';
 
 const scaderManager = ScaderManager.getInstance();
+type ScaderBTHomeConfig = ScaderConfig['ScaderBTHome'];
 
 export default function ScaderBTHome(props: ScaderScreenProps) {
 
@@ -20,7 +22,7 @@ export default function ScaderBTHome(props: ScaderScreenProps) {
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderBTHomeConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderName] = newConfig;
   }
@@ -58,7 +60,6 @@ export default function ScaderBTHome(props: ScaderScreenProps) {
       config.enable ?
         <div className="ScaderElem">
           <div className="ScaderElem-header">
-            BTHome Decode
           </div>
         </div>
         : null

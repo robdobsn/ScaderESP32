@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include "RaftSysMod.h"
-#include "SysManager.h"
-#include "NetworkSystem.h"
+#include "RaftCore.h"
 #include "PlatformUtils.h"
+#include "NetworkSystem.h"
 
 // #define DEBUG_SCADER_COMMON_SETUP
 

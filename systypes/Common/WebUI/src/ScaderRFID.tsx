@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { ScaderScreenProps } from './ScaderCommon';
 import { ScaderManager } from './ScaderManager';
+import { ScaderConfig } from './ScaderConfig';
 // import { ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
+type ScaderRFIDConfig = ScaderConfig['ScaderRFID'];
 
 export default function ScaderRFID(props:ScaderScreenProps) {
 
@@ -21,7 +23,7 @@ export default function ScaderRFID(props:ScaderScreenProps) {
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderRFIDConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderName] = newConfig;
   }

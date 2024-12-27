@@ -135,4 +135,11 @@ export class ScaderConfig {
         enable: false,
         name: "ScaderBTHome"
     }
+    ScaderMarbleRun: {
+        enable: boolean,
+        name: string,
+    } = {
+        enable: false,
+        name: "ScaderMarbleRun"
+    }
 }

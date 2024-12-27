@@ -4,12 +4,11 @@ import { ScaderManager } from './ScaderManager';
 import { ScaderConfig } from './ScaderConfig';
 
 const scaderManager = ScaderManager.getInstance();
-type ScaderLEDPixConfig = ScaderConfig['ScaderLEDPix'];
+type ScaderMarbleRunConfig = ScaderConfig['ScaderMarbleRun'];
 
-export default function ScaderLEDPix(props:ScaderScreenProps) {
+export default function ScaderMarbleRun(props: ScaderScreenProps) {
 
-  const scaderName = "ScaderLEDPix";
-  
+  const scaderName = "ScaderMarbleRun";
   const [config, setConfig] = React.useState(props.config[scaderName]);
 
   useEffect(() => {
@@ -23,7 +22,7 @@ export default function ScaderLEDPix(props:ScaderScreenProps) {
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: ScaderLEDPixConfig) => {
+  const updateMutableConfig = (newConfig: ScaderMarbleRunConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderName] = newConfig;
   }
@@ -31,16 +30,17 @@ export default function ScaderLEDPix(props:ScaderScreenProps) {
   const handleEnableChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log(`${scaderName}.handleEnableChange`);
     // Update config
-    const newConfig = {...config, enable: event.target.checked};
+    const newConfig = { ...config, enable: event.target.checked };
     setConfig(newConfig);
     updateMutableConfig(newConfig);
   };
+
 
   const editModeScreen = () => {
     return (
       <div className="ScaderElem-edit">
         <div className="ScaderElem-editmode">
-          {/* Checkbox for enable with label */}
+          {/* Checkbox for enable shades */}
           <label>
             <input className="ScaderElem-checkbox" type="checkbox" 
                   checked={config.enable} 
@@ -53,7 +53,7 @@ export default function ScaderLEDPix(props:ScaderScreenProps) {
       </div>
     );
   }
-
+   
   const normalModeScreen = () => {
     return (
       // Display if enabled
@@ -62,12 +62,11 @@ export default function ScaderLEDPix(props:ScaderScreenProps) {
           <div className="ScaderElem-header">
           </div>
         </div>
-      : null
+        : null
     )
   }
 
   return (
-    // Show appropriate screen based on mode
     props.isEditingMode ? editModeScreen() : normalModeScreen()
   );
 }

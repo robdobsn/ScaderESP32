@@ -10,9 +10,10 @@ import ScaderLEDPix from './ScaderLEDPix';
 import ScaderOpener from './ScaderOpener';
 import ScaderRFID from './ScaderRFID';
 import ScaderPulseCounter from './ScaderPulseCounter';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import './ScaderApp.css';
 import ScaderBTHome from './ScaderBTHome';
+import ScaderMarbleRun from './ScaderMarbleRun';
 
 // const testServerPath = "http://localhost:3123";
 const testServerPath = "http://192.168.86.105";
@@ -35,7 +36,7 @@ export default function ScaderApp() {
   }, []);
   
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log("ScaderApp.handleMenuClick");
+    console.log(`ScaderApp.handleMenuClick ${event}`);
     if (isEditingMode) {
       ScaderManager.getInstance().revertConfig();
     }
@@ -43,13 +44,13 @@ export default function ScaderApp() {
   };
 
   const handleSettingsSave = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(`ScaderApp.handleSettingsSave isChanged ${ScaderManager.getInstance().isConfigChanged()} newConfig ${JSON.stringify(ScaderManager.getInstance().getMutableConfig())}`);
+    console.log(`ScaderApp.handleSettingsSave isChanged ${ScaderManager.getInstance().isConfigChanged()} newConfig ${JSON.stringify(ScaderManager.getInstance().getMutableConfig())} ${event}`);
     setEditingMode(false);
     ScaderManager.getInstance().persistConfig();
   };
 
   const handleSettingsCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log("ScaderApp.handleSettingsCancel");
+    console.log(`ScaderApp.handleSettingsCancel ${event}`);
     setEditingMode(false);
     ScaderManager.getInstance().revertConfig();
   }
@@ -76,9 +77,16 @@ export default function ScaderApp() {
       {<ScaderPulseCounter {...screenProps} />}
       {<ScaderElecMeters {...screenProps} />}
       {<ScaderBTHome {...screenProps} />}
+      {<ScaderMarbleRun {...screenProps} />}
     </div>
   </div>
   );
 }
 
-ReactDOM.render(<ScaderApp />, document.getElementById('root'));
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = createRoot(rootElement);
+  root.render(<ScaderApp />);
+} else {
+  console.error('Root element not found');
+}

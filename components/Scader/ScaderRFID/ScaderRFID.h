@@ -77,4 +77,7 @@ private:
     void debugShowCurrentState();
     void getStatusHash(std::vector<uint8_t>& stateHash);
     RaftRetCode apiDoorStatusChange(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderRFID";
 };

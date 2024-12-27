@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// ScaderOpener
+// ScaderMarbleRun
 //
 // Rob Dobson 2013-2024
 //
@@ -8,28 +8,23 @@
 
 #pragma once
 
-#include "RaftArduino.h"
 #include "ScaderCommon.h"
-#include "RaftUtils.h"
 #include "DoorOpener.h"
 #include "UIModule.h"
 
 class APISourceInfo;
 
-class ScaderOpener : public RaftSysMod
+class ScaderMarbleRun : public RaftSysMod
 {
 public:
-    ScaderOpener(const char *pModuleName, RaftJsonIF& sysConfig);
+    ScaderMarbleRun(const char *pModuleName, RaftJsonIF& sysConfig);
 
     // Create function (for use by SysManager factory)
     static RaftSysMod* create(const char* pModuleName, RaftJsonIF& sysConfig)
     {
-        return new ScaderOpener(pModuleName, sysConfig);
+        return new ScaderMarbleRun(pModuleName, sysConfig);
     }
     
-    // // Check if moving
-    // bool isBusy();
-
 protected:
 
     // Setup
@@ -41,9 +36,6 @@ protected:
     // Add endpoints
     virtual void addRestAPIEndpoints(RestAPIEndpointManager& pEndpoints) override final;
 
-    // Status
-    virtual String getStatusJSON() const override final;
-
 private:
 
     // Common
@@ -52,19 +44,15 @@ private:
     // Initalised flag
     bool _isInitialised = false;
 
-    // Opener state NVS
+    // NVS State
     RaftJsonNVS _scaderModuleState;
-
-    // Opener hardware
-    DoorOpener _doorOpener;
-
-    // UI module
-    UIModule _uiModule;
+    
+    // Get motor device
+    RaftDevice* getMotorDevice() const;
 
     // Helpers
     RaftRetCode apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
-    void getStatusHash(std::vector<uint8_t>& stateHash);
 
     // Debug
-    static constexpr const char *MODULE_PREFIX = "ScaderOpener";
+    static constexpr const char* MODULE_PREFIX = "ScaderMarbleRun";
 };

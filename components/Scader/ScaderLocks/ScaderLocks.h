@@ -93,4 +93,7 @@ private:
     void getStatusHash(std::vector<uint8_t>& stateHash);
     uint32_t executeUnlockLock(std::vector<int> elemNums, bool unlock);
     void publishStateChangeToCommandSerial();
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderLocks";
 };

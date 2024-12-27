@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ShadesConfig } from './ScaderConfig';
+import { ScaderConfig, ShadesConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
 import { DownIcon, StopIcon, UpIcon, PlusIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
@@ -15,6 +15,7 @@ export default function ScaderShades(props:ScaderScreenProps) {
   const subElemsFriendly = "shades";
   const subElemsFriendlyCaps = "Shade";
   const restCommandName = "shade";
+  type ScaderShadesConfig = ScaderConfig['ScaderShades'];
   
   const [config, setConfig] = React.useState(props.config[scaderName]);
   const [state, setState] = React.useState(new ScaderState()[scaderName]);
@@ -30,12 +31,12 @@ export default function ScaderShades(props:ScaderScreenProps) {
       console.log(`${scaderName} onStateChange newState ${JSON.stringify(newState)}`);
       // Update state
       if (stateElemsName in newState) {
-        setState(new ScaderShadeStates(newState));
+        setState(new ScaderShadeStates(newState as ScaderShadeStates));
       }
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderShadesConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderName] = newConfig;
   }
@@ -63,7 +64,7 @@ export default function ScaderShades(props:ScaderScreenProps) {
     if (config[configElemsName].length < Number(event.target.value)) {
       // Add elements
       console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
-      let newElems:Array<ShadesConfig> = [];
+      const newElems:Array<ShadesConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
         newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`});
       }
@@ -80,7 +81,7 @@ export default function ScaderShades(props:ScaderScreenProps) {
     console.log(`${scaderName}.handleElemNameChange ${event.target.id} = ${event.target.value}`);
     // Update config
     const newConfig = {...config};
-    let elemIndex = Number(event.target.id.split("-")[1]);
+    const elemIndex = Number(event.target.id.split("-")[1]);
     newConfig[configElemsName][elemIndex].name = event.target.value;
     setConfig(newConfig);
     updateMutableConfig(newConfig);
@@ -109,7 +110,7 @@ export default function ScaderShades(props:ScaderScreenProps) {
   };
 
   const handleAdvancedClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(`${scaderName}.handleAdvancedClick`);
+    console.log(`${scaderName}.handleAdvancedClick ID ${event.currentTarget.id}`);
     setAdvanced(!advanced);
   };
 

@@ -9,14 +9,8 @@ export class ScaderRelayStates {
     mainsHz?: number = 0;
     elems: Array<ScaderRelayState> = [];
     pulseCount?: number = 0;
-    constructor(obj: any) {
-        if (obj) {
-            if (obj.module)
-                this.module = obj.module;
-            this.elems = obj.elems;
-            if (obj.pulseCount)
-                this.pulseCount = obj.pulseCount;
-        }
+    constructor(obj: Partial<ScaderRelayStates> = {}) {
+        Object.assign(this, obj);
     }
 }
 
@@ -29,14 +23,8 @@ export class ScaderShadeStates {
     module: string = "";
     elems: Array<ScaderShadeState> = [];
     lux: Array<number> = [];
-    constructor(obj: any) {
-        if (obj) {
-            if (obj.module)
-                this.module = obj.module;
-            this.elems = obj.elems;
-            if (obj.lux)
-                this.lux = obj.lux;
-        }
+    constructor(obj: Partial<ScaderShadeStates> = {}) {
+        Object.assign(this, obj);
     }
 }
 
@@ -56,13 +44,8 @@ export class ScaderLockStates {
     module: string = "";
     elems: Array<ScaderDoorState> = [];
     bell: string = 'K';
-    constructor(obj: any) {
-        if (obj) {
-            if (obj.module)
-                this.module = obj.module;
-            this.elems = obj.elems;
-            this.bell = obj.bell;
-        }
+    constructor(obj: Partial<ScaderLockStates> = {}) {
+        Object.assign(this, obj);
     }
 }
 
@@ -89,25 +72,16 @@ export class ScaderOpenStatus {
 export class ScaderOpenerStates {
     module: string = "";
     status: ScaderOpenStatus = {} as ScaderOpenStatus;
-    constructor(obj: any) {
-        if (obj) {
-            if (obj.module)
-                this.module = obj.module;
-            this.status = obj.status;
-        }
+    constructor(obj: Partial<ScaderOpenerStates> = {}) {
+        Object.assign(this, obj);
     }
 }
 
 export class ScaderPulseCounterStates {
     module: string = "";
     pulseCount?: number = 0;
-    constructor(obj: any) {
-        if (obj) {
-            if (obj.module)
-                this.module = obj.module;
-            if (obj.pulseCount)
-                this.pulseCount = obj.pulseCount;
-        }
+    constructor(obj: Partial<ScaderPulseCounterStates> = {}) {
+        Object.assign(this, obj);
     }
 }
 
@@ -121,12 +95,8 @@ export class ScaderElecMeterState {
 export class ScaderElecMeterStates {
     module: string = "";
     elems: Array<ScaderElecMeterState> = [];
-    constructor(obj: any) {
-        if (obj) {
-            if (obj.module)
-                this.module = obj.module;
-            this.elems = obj.elems;
-        }
+    constructor(obj: Partial<ScaderPulseCounterStates> = {}) {
+        Object.assign(this, obj);
     }
 }
 

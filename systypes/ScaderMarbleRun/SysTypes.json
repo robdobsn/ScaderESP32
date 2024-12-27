@@ -1,10 +1,10 @@
 {
-    "SystemName": "ScaderLeds",
+    "SystemName": "ScaderMarbleRun",
     "Manufacturer": "Rob Dobson",
     "CmdsAtStart": "",
     "WebUI": "",
     "SysManager": {
-        "monitorPeriodMs": 30000,
+        "monitorPeriodMs": 10000,
         "reportList": [
             "NetMan",
             "BLEMan",
@@ -26,9 +26,9 @@
     },
     "NetMan": {
         "enable": 1,
-        "wifiSTAEn": 0,
+        "wifiSTAEn": 1,
         "wifiAPEn": 0,
-        "ethEn": 1,
+        "ethEn": 0,
         "wifiSSID": "",
         "wifiPW": "",
         "wifiSTAScanThreshold": "OPEN",
@@ -177,17 +177,78 @@
         "pubList": [
         ]
     },
-    "ScaderLEDPix": {
-        "strips": [
-            {
-                "pin": 33,
-                "num": 750
-            },
-            {
-                "pin": 32,
-                "num": 750
-            }
-        ],
-        "brightnessPC": 20
+    "ScaderMarbleRun": {
     }
+    ,
+    "DevMan": {
+        "Buses": {
+            "buslist":
+            [
+                {
+                    "name": "SERA",
+                    "type": "serial",
+                    "uartNum": 2,
+                    "rxPin": 35,
+                    "txPin": 5,
+                    "baudRate": 115200,
+                    "minAfterSendMs": 5
+                }
+            ]
+        },        
+        "Devices":
+        [
+            {
+                "enable": 1,
+                "class": "MotorControl",
+                "name": "Motor",
+                "bus": "SERA",
+                "motion": {
+                    "geom": "XYZ",
+                    "blockDist": 10,
+                    "allowOutOfBounds": 1,
+                    "homeBeforeMove": 0,
+                    "junctionDeviation": 0.05
+                },
+                "ramp": {
+                    "rampTimerEn": 1,
+                    "rampTimerUs": 100,
+                    "pipelineLen": 100
+                },
+                "motorEn": {
+                    "stepEnablePin": 27,
+                    "stepEnLev": 0,
+                    "stepDisableSecs": 1
+                },
+                "axes": [
+                    {
+                        "name": "X",
+                        "params": {
+                            "unitsPerRot": 360,
+                            "stepsPerRot": 3600,
+                            "maxSpeed": 10,
+                            "maxAcc": 10
+                        },
+                        "driver": {
+                            "driver": "TMC2209",
+                            "hw": "local",
+                            "addr": 0,
+                            "stepPin": 15,
+                            "dirnPin": 12,
+                            "invDirn": 0,
+                            "writeOnly": 0,
+                            "extSenseOhms": 0.5,
+                            "extVRef": 0,
+                            "extMStep": 0,
+                            "intpol": 1,
+                            "microsteps": 1,
+                            "rmsAmps": 0.5,
+                            "holdModeOrFactor": 0.5,
+                            "holdDelay": 1,
+                            "pwmFreqKHz": 35
+                        }
+                    }
+                ]
+            }
+        ]
+    }    
 }

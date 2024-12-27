@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 import { ScaderScreenProps } from './ScaderCommon';
 import { ScaderManager } from './ScaderManager';
 import { ScaderPulseCounterStates, ScaderState } from './ScaderState';
+import { ScaderConfig } from './ScaderConfig';
 
 const scaderManager = ScaderManager.getInstance();
+type ScaderPulseCounterConfig = ScaderConfig['ScaderPulseCounter'];
 
 export default function ScaderPulseCounter(props:ScaderScreenProps) {
 
@@ -28,7 +30,7 @@ export default function ScaderPulseCounter(props:ScaderScreenProps) {
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderPulseCounterConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderName] = newConfig;
   }
@@ -74,7 +76,7 @@ export default function ScaderPulseCounter(props:ScaderScreenProps) {
                 Pulse Count:
                 <input className="ScaderElem-input" type="number" id={`scader-pulseCount`} placeholder='enter count'  />
                 <button className="ScaderElem-button-editmode" 
-                          onClick={(event) => {
+                          onClick={() => {
                             scaderManager.sendCommand(`/${restCommandName}/${(document.getElementById(`scader-pulseCount`) as HTMLInputElement).value}`);
                           }}
                           id={`scader-pulseCountBtn`}>

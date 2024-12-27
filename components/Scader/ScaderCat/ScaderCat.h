@@ -98,4 +98,7 @@ private:
     // Helper functions
     void deinit();
     void apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderCat";
 };

@@ -107,4 +107,7 @@ private:
     void patternSnake_start(uint32_t snakeLen, uint32_t snakeSpeed);
     void patternSnake_loop();
 #endif
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderLEDPixels";
 };

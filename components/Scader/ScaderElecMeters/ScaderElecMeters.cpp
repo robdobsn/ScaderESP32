@@ -21,8 +21,6 @@
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 
-static const char *MODULE_PREFIX = "ScaderElecMeters";
-
 // Debug
 // #define DEBUG_IN_BATCHES_CHANNEL_NO 0
 #define DEBUG_ELEC_METER_MUTABLE_DATA

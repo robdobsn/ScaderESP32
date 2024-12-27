@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { DoorConfig } from './ScaderConfig';
+import { DoorConfig, ScaderConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
 import { LockedIcon, UnlockedIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
 import { ScaderLockStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
+type ScaderLocksConfig = ScaderConfig['ScaderLocks'];
 
 export default function ScaderLocks(props:ScaderScreenProps) {
 
@@ -29,12 +30,12 @@ export default function ScaderLocks(props:ScaderScreenProps) {
       console.log(`${scaderStateName} onStateChange ${JSON.stringify(newState)}`);
       // Update state
       if (stateElemsName in newState) {
-        setState(new ScaderLockStates(newState));
+        setState(new ScaderLockStates(newState as ScaderLockStates));
       }
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderLocksConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderConfigName] = newConfig;
   }
@@ -54,7 +55,7 @@ export default function ScaderLocks(props:ScaderScreenProps) {
     if (config[configElemsName].length < Number(event.target.value)) {
       // Add elements
       console.log(`${scaderConfigName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
-      let newElems:Array<DoorConfig> = [];
+      const newElems:Array<DoorConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
         newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`});
       }
@@ -71,7 +72,7 @@ export default function ScaderLocks(props:ScaderScreenProps) {
     console.log(`${scaderConfigName}.handleElemNameChange ${event.target.id} = ${event.target.value}`);
     // Update config
     const newConfig = {...config};
-    let elemIndex = Number(event.target.id.split("-")[1]);
+    const elemIndex = Number(event.target.id.split("-")[1]);
     newConfig[configElemsName][elemIndex].name = event.target.value;
     setConfig(newConfig);
     updateMutableConfig(newConfig);
@@ -81,7 +82,7 @@ export default function ScaderLocks(props:ScaderScreenProps) {
   const handleElemClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     console.log(`${scaderConfigName}.handleElemClick ${event.currentTarget.id}`);
     // Send command to change elem state
-    let elemIndex = Number(event.currentTarget.id.split("-")[1]);
+    const elemIndex = Number(event.currentTarget.id.split("-")[1]);
     scaderManager.sendCommand(`/${restCommandName}/${elemIndex+1}/unlock`);
   };
 

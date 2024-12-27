@@ -25,6 +25,7 @@ idf_component_register(
                   "ScaderOpener/UIModule.cpp"
                   "ScaderPulseCounter/ScaderPulseCounter.cpp"
                   "ScaderBTHome/ScaderBTHome.cpp"
+                  "ScaderMarbleRun/ScaderMarbleRun.cpp"
                   # "ScaderCat/ScaderCat.cpp"
                   # "TinyPICO/TinyPICO.cpp"
                   # "HWElemINA219/HWElemINA219.cpp"
@@ -44,6 +45,7 @@ idf_component_register(
                   # "ScaderCat"
                   "ScaderLEDPixels"
                   "ScaderBTHome"
+                  "ScaderMarbleRun"
                   # "TinyPICO"
                   # "HWElemINA219"
                   # ${FASTLED_DIR}

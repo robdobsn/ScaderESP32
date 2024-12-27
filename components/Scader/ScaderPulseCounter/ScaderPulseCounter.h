@@ -75,4 +75,7 @@ private:
 
     // Pulse count
     RaftJsonNVS _scaderModuleState;
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderPulseCounter";
 };

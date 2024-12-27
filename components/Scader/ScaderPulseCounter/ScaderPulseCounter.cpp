@@ -20,8 +20,6 @@
 #include "PlatformUtils.h"
 #include "driver/gpio.h"
 
-static const char *MODULE_PREFIX = "ScaderPulseCounter";
-
 // #define DEBUG_PULSE_COUNTER_MUTABLE_DATA
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

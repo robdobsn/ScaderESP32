@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
-import { ElecMeterConfig } from './ScaderConfig';
+import { ElecMeterConfig, ScaderConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
-import { OffIcon, OnIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
 import { ScaderElecMeterStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
+type ScaderElecMetersConfig = ScaderConfig['ScaderElecMeters'];
 
 export default function ScaderElecMeters(props:ScaderScreenProps) {
 
@@ -34,7 +34,7 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderElecMetersConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderName] = newConfig;
   }
@@ -54,7 +54,7 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
     if (config[configElemsName].length < Number(event.target.value)) {
       // Add elements
       console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
-      let newElems:Array<ElecMeterConfig> = [];
+      const newElems:Array<ElecMeterConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
         newElems.push({name: `${subElemsFriendlyCaps} ${i+1}`, calibADCToAmps: 0.05});
       }
@@ -71,7 +71,7 @@ export default function ScaderElecMeters(props:ScaderScreenProps) {
     console.log(`${scaderName}.handleElemConfigChange ${event.target.id} = ${event.target.value}`);
     // Update config
     const newConfig = {...config};
-    let elemIndex = Number(event.target.id.split("-")[1]);
+    const elemIndex = Number(event.target.id.split("-")[1]);
     // Get the value for the element name using the id of the input element `${configElemsName}-name-${index}`
     const nameElem = document.getElementById(`${configElemsName}_name-${elemIndex}`) as HTMLInputElement;
     if (nameElem) {

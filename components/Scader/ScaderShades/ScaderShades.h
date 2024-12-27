@@ -167,4 +167,7 @@ private:
     void sequenceStartStep(int stepIdx);
     void sequenceStepComplete();
     RaftRetCode apiControl(const String &reqStr, String &respStr, const APISourceInfo& sourceInfo);
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderShades";
 };

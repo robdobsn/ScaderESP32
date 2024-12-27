@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { RelayConfig } from './ScaderConfig';
+import { RelayConfig, ScaderConfig } from './ScaderConfig';
 import { ScaderScreenProps } from './ScaderCommon';
-import { OffIcon, OnIcon } from './ScaderIcons';
+import { OnIcon } from './ScaderIcons';
 import { ScaderManager } from './ScaderManager';
 import { ScaderRelayStates, ScaderState } from './ScaderState';
 
 const scaderManager = ScaderManager.getInstance();
+type ScaderRelaysConfig = ScaderConfig['ScaderRelays'];
 
 export default function ScaderRelays(props: ScaderScreenProps) {
 
@@ -29,12 +30,12 @@ export default function ScaderRelays(props: ScaderScreenProps) {
 
       // Update state
       if (stateElemsName in newState) {
-        setState(new ScaderRelayStates(newState));
+        setState(new ScaderRelayStates(newState as ScaderRelayStates));
       }
     });
   }, []);
 
-  const updateMutableConfig = (newConfig: any) => {
+  const updateMutableConfig = (newConfig: ScaderRelaysConfig) => {
     // Update ScaderManager
     scaderManager.getMutableConfig()[scaderName] = newConfig;
   }
@@ -54,7 +55,7 @@ export default function ScaderRelays(props: ScaderScreenProps) {
     if (config[configElemsName].length < Number(event.target.value)) {
       // Add elements
       console.log(`${scaderName}.handleNumElemsChange add ${Number(event.target.value) - config[configElemsName].length} elems`);
-      let newElems: Array<RelayConfig> = [];
+      const newElems: Array<RelayConfig> = [];
       for (let i = config[configElemsName].length; i < Number(event.target.value); i++) {
         newElems.push({ name: `${subElemsFriendlyCaps} ${i + 1}`, isDimmable: false });
       }
@@ -71,7 +72,7 @@ export default function ScaderRelays(props: ScaderScreenProps) {
     console.log(`${scaderName}.handleElemNameChange ${event.target.id} = ${event.target.value}`);
     // Update config
     const newConfig = { ...config };
-    let elemIndex = Number(event.target.id.split("-")[1]);
+    const elemIndex = Number(event.target.id.split("-")[1]);
     newConfig[configElemsName][elemIndex].name = event.target.value;
     setConfig(newConfig);
     updateMutableConfig(newConfig);
@@ -82,7 +83,7 @@ export default function ScaderRelays(props: ScaderScreenProps) {
     console.log(`${scaderName}.handleElemDimmableChange ${event.target.id} = ${event.target.checked}`);
     // Update config
     const newConfig = { ...config };
-    let elemIndex = Number(event.target.id.split("-")[1]);
+    const elemIndex = Number(event.target.id.split("-")[1]);
     newConfig[configElemsName][elemIndex].isDimmable = event.target.checked;
     setConfig(newConfig);
     updateMutableConfig(newConfig);
@@ -91,8 +92,8 @@ export default function ScaderRelays(props: ScaderScreenProps) {
 
   const handleElemClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     // Send command to change elem state
-    let elemIndex = Number(event.currentTarget.id.split("-")[1]);
-    let curState = state[stateElemsName]?.[elemIndex]?.state || 0;
+    const elemIndex = Number(event.currentTarget.id.split("-")[1]);
+    const curState = state[stateElemsName]?.[elemIndex]?.state || 0;
     let newState = curState < 0 ? 0 : (curState < 100 ? curState : 100);
     if (config[configElemsName][elemIndex].isDimmable) {
       newState = curState + 10 > 100 ? 0 : curState + 10;

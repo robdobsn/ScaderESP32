@@ -92,4 +92,7 @@ private:
             return 0;
         return elemStateStr.toInt();
     }
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderRelays";
 };

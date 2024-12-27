@@ -63,4 +63,7 @@ private:
 
     // Helper
     void getStatusHash(std::vector<uint8_t>& stateHash);
+
+    // Debug
+    static constexpr const char *MODULE_PREFIX = "ScaderBTHome";
 };

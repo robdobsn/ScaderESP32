@@ -78,6 +78,10 @@ private:
     // Conservatory button
     DebounceButton _conservatoryButton;
 
+    // State change timing
+    uint32_t _lastStateChangeMs = 0;
+    static const uint32_t MIN_TIME_BETWEEN_STATE_HASH_CHANGES_MS = 330;
+
     // Debug
     uint32_t _debugLastDisplayMs = 0;
 

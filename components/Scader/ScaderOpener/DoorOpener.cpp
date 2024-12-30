@@ -443,7 +443,13 @@ String DoorOpener::getStatusJSON(bool includeBraces) const
 
 void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
 {
+    // Check if time to update state hash
+    if (!Raft::isTimeout(millis(), _lastStateChangeMs, MIN_TIME_BETWEEN_STATE_HASH_CHANGES_MS))
+        return;
+    _lastStateChangeMs = millis();
+
     // Add state
+    stateHash.clear();
     float measuredForce = _motorMechanism.getMeasuredForceN();
     uint32_t forceMod = (uint32_t)(measuredForce * 10);
     stateHash.push_back(_motorMechanism.isMotorActive() ? 1 : 0);

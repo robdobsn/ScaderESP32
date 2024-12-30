@@ -192,6 +192,7 @@ bool DoorStrike::getStatus(DoorLockedEnum& lockedEnum, DoorOpenSense& openSense,
 
 void DoorStrike::getStatusHash(std::vector<uint8_t>& stateHash) const
 {
+    stateHash.clear();
     DoorLockedEnum lockedEnum = DoorLockedEnum::LockStateUnknown;
     DoorOpenSense openSense = DoorOpenSense::DoorSenseUnknown;
     uint32_t timeBeforeRelock = 0;

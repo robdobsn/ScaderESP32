@@ -190,6 +190,7 @@ public:
     void getStatusHash(std::vector<uint8_t>& stateHash)
     {
         // Hash changes on 200mA intervals
+        stateHash.clear();
         uint8_t hashVal = 0;
         float rmsVal = _rmsAmpsAverager.getAverage();
         uint16_t rmsValInt = (uint16_t)(rmsVal*5);

@@ -450,8 +450,6 @@ void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
 
     // Add state
     stateHash.clear();
-    float measuredForce = _motorMechanism.getMeasuredForceN();
-    uint32_t forceMod = (uint32_t)(measuredForce * 10);
     stateHash.push_back(_motorMechanism.isMotorActive() ? 1 : 0);
     stateHash.push_back(_inEnabled ? 1 : 0);
     stateHash.push_back(_outEnabled ? 1 : 0);
@@ -462,6 +460,5 @@ void DoorOpener::getStatusHash(std::vector<uint8_t>& stateHash)
     stateHash.push_back(int(_motorMechanism.getMeasuredAngleDegs()) & 0xff);
     stateHash.push_back(_doorOpenAngleDegs & 0xff);
     stateHash.push_back(_doorClosedAngleDegs & 0xff);
-    stateHash.push_back(forceMod & 0xff);
     stateHash.push_back(getOpenerState());
 }

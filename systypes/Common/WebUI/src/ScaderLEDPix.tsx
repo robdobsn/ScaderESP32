@@ -115,16 +115,16 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
 
           <div className="ScaderElem-section-horiz">
           <h3>Set LED Range</h3>
-          <div className="color-picker" style={{ textAlign: 'center' }}>
+          <div className="color-picker" style={{ textAlign: 'center', marginBottom: '20px' }}>
             <HexColorPicker color={selectedColor} onChange={handleColorChange} />
           </div>
           <div className="slider-range" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label>
-                Start: <input type="number" min="0" max="1500" value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
+                Start: <input className='ScaderElem-input-inline' type="number" min="0" max="1500" value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
               </label>
               <label>
-                End: <input type="number" min="0" max="1500" value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
+                End: <input className='ScaderElem-input-inline' type="number" min="0" max="1500" value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
               </label>
             </div>
             <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>

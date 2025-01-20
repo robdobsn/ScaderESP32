@@ -116,13 +116,18 @@
         "taskPriority": 9
     },
     "LogManager": {
-        "enable": 0,
+        "enable": 1,
         "logDests": [
             {
-                "enable": true,
+                "enable": false,
                 "type": "Papertrail",
                 "host": "logs2.papertrailapp.com",
                 "port": 48992
+            },
+            {
+                "enable": true,
+                "type": "RaftRemote",
+                "port": 8080
             }
         ]
     },

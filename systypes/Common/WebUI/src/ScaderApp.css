@@ -66,6 +66,13 @@ code {
   align-items: center;
 }
 
+.ScaderElem-section-horiz {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 .ScaderElem-header {
   flex-direction: row;
   justify-content: center;

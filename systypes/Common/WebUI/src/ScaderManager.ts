@@ -55,16 +55,17 @@ export class ScaderManager {
     // Send REST commands
     ////////////////////////////////////////////////////////////////////////////
 
-    async sendCommand(cmd: string): Promise<boolean> {
+    async sendCommand(cmd: string): Promise<Response | null> {
         try {
-            const sendCommandResponse = await fetch(this._serverAddressPrefix + this._urlPrefix + cmd);
+            const sendCommandResponse = await fetch(this._serverAddressPrefix + this._urlPrefix +
+                    (cmd.startsWith("/") ? cmd : "/" + cmd));
             if (!sendCommandResponse.ok) {
                 console.log(`ScaderManager sendCommand response not ok ${sendCommandResponse.status}`);
             }
-            return sendCommandResponse.ok;
+            return sendCommandResponse;
         } catch (error) {
             console.log(`ScaderManager sendCommand error ${error}`);
-            return false;
+            return null;
         }
     }
 

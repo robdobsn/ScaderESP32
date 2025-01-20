@@ -5,7 +5,7 @@ import { ScaderConfig } from './ScaderConfig';
 import { HexColorPicker } from "react-colorful";
 
 const scaderManager = ScaderManager.getInstance();
-const API_BASE_URL = "/api/ledpix/0";
+const API_BASE_URL = "/api";
 type ScaderLEDPixConfig = ScaderConfig['ScaderLEDPix'];
 
 export default function ScaderLEDPix(props: ScaderScreenProps) {
@@ -27,7 +27,7 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
 
   const fetchPatterns = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/listpatterns`);
+      const response = await fetch(`${API_BASE_URL}/ledpix/listpatterns`);
       if (!response.ok) {
         console.error("Failed to fetch patterns");
         return;
@@ -41,7 +41,7 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
 
   const startPattern = async (patternName: string) => {
     try {
-      await fetch(`${API_BASE_URL}/pattern/${patternName}`, { method: 'GET' });
+      await fetch(`${API_BASE_URL}/ledpix/pattern/${patternName}`, { method: 'GET' });
     } catch (error) {
       console.error(`Error starting pattern ${patternName}:`, error);
     }
@@ -49,7 +49,7 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
 
   const clearPattern = async () => {
     try {
-      await fetch(`${API_BASE_URL}/pattern/`, { method: 'GET' });
+      await fetch(`${API_BASE_URL}/ledpix/pattern/`, { method: 'GET' });
     } catch (error) {
       console.error("Error clearing pattern:", error);
     }
@@ -70,8 +70,8 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
 
   const sendRangeCommand = async (start: number, end: number, color: string) => {
     try {
-      await fetch(`${API_BASE_URL}/clear`, { method: 'GET' });
-      await fetch(`${API_BASE_URL}/setall/${color.replace('#', '')}/${start}/${end}`, { method: 'GET' });
+      await fetch(`${API_BASE_URL}/ledpix/clear`, { method: 'GET' });
+      await fetch(`${API_BASE_URL}/ledpix/setall/${color.replace('#', '')}/${start}/${end}`, { method: 'GET' });
     } catch (error) {
       console.error(`Error sending range command:`, error);
     }
@@ -103,38 +103,28 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
     return (
       config.enable && (
         <div className="ScaderElem">
-          <div className="ScaderElem-section-horiz">
-                      <h3>Patterns</h3>
+          <div className="ScaderElem-row">
+          <h3>Patterns</h3>
           <div className="patterns">
             {patterns.map((pattern, index) => (
-              <button className="ScaderElem-button button-small" key={index} onClick={() => startPattern(pattern)}>{pattern}</button>
+              <button key={index} onClick={() => startPattern(pattern)}>{pattern}</button>
             ))}
-            <button className="ScaderElem-button button-small" onClick={clearPattern}>Clear</button>
+            <button onClick={clearPattern}>Clear</button>
           </div>
           </div>
 
-          <div className="ScaderElem-section-horiz">
+          <div className="ScaderElem-row">
           <h3>Set LED Range</h3>
-          <div className="color-picker" style={{ textAlign: 'center' }}>
+          <div className="color-picker" style={{ textAlign: 'center', marginBottom: '10px' }}>
             <HexColorPicker color={selectedColor} onChange={handleColorChange} />
           </div>
-          <div className="slider-range" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label>
-                Start: <input type="number" min="0" max="1500" value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
-              </label>
-              <label>
-                End: <input type="number" min="0" max="1500" value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
-              </label>
-            </div>
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-              <label>
-                Start: <input type="range" min="0" max="1500" value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
-              </label>
-              <label>
-                End: <input type="range" min="0" max="1500" value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
-              </label>
-            </div>
+          <div className="slider-range">
+            <label>
+              Start: <input type="range" min="0" max="1500" value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
+            </label>
+            <label>
+              End: <input type="range" min="0" max="1500" value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
+            </label>
           </div>
           </div>
         </div>

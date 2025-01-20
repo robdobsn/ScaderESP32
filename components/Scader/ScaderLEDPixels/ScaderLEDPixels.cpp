@@ -211,7 +211,7 @@ void ScaderLEDPixels::addRestAPIEndpoints(RestAPIEndpointManager &endpointManage
     // Control shade
     endpointManager.addEndpoint("ledpix", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderLEDPixels::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "control LED pixels, ledpix/clear, ledpix/set/<N>/<RGBHex> or ledpix/run/<pattern-name>");
+                            "control LED pixels, ledpix/S/clear, ledpix/S/set/<N>/<RGBHex> or ledpix/S/run/<pattern-name> (S is the segment)");
     LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader LEDPixels");
 }
 
@@ -252,8 +252,8 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
     String data = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 3);
 
     // Debug
-    LOG_I(MODULE_PREFIX, "apiLEDs req %s numParams %d elemNameOrIdx %s segmentIdx %d cmd %s data %s args %s",
-          reqStr.c_str(), params.size(), elemNameOrIdx.c_str(), segmentIdx, cmd.c_str(), data.c_str(), nameValuesJson.c_str());
+    // LOG_I(MODULE_PREFIX, "apiLEDs req %s numParams %d elemNameOrIdx %s segmentIdx %d cmd %s data %s args %s",
+    //       reqStr.c_str(), params.size(), elemNameOrIdx.c_str(), segmentIdx, cmd.c_str(), data.c_str(), nameValuesJson.c_str());
 
     // Handle commands
     bool rslt = false;
@@ -262,11 +262,23 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
         // Stop any pattern
         _ledPixels.stopPattern(segmentIdx, false);
 
+        // See if a start LED is specified
+        int startLED = 0;
+        String startLEDStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 4);
+        if (startLEDStr.length() > 0)
+            startLED = strtol(startLEDStr.c_str(), NULL, 10);
+
+        // See if an end LED is specified
+        int endLED = _ledPixels.getNumPixels(segmentIdx);
+        String endLEDStr = RestAPIEndpointManager::getNthArgStr(reqStr.c_str(), 5);
+        if (endLEDStr.length() > 0)
+            endLED = strtol(endLEDStr.c_str(), NULL, 10);
+
         // Set all LEDs to a single colour
         if (data.startsWith("#"))
             data = data.substring(1);
         auto rgb = Raft::getRGBFromHex(data);
-        for (uint32_t i = 0; i < _ledPixels.getNumPixels(segmentIdx); i++)
+        for (uint32_t i = startLED; i < endLED; i++)
         {
             _ledPixels.setRGB(segmentIdx, i, rgb.r, rgb.g, rgb.b, true);
         }

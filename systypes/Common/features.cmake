@@ -1,5 +1,5 @@
-# System version
-add_compile_definitions(SYSTEM_VERSION="6.5.8")
+# RaftCore device types
+set(DEV_TYPE_JSON_FILES "${raftcore_SOURCE_DIR}/devtypes/DeviceTypeRecords.json")
 
 # Raft components
 set(RAFT_COMPONENTS

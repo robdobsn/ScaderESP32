@@ -186,11 +186,11 @@
         "strips": [
             {
                 "pin": 33,
-                "num": 750
+                "num": 1000
             },
             {
                 "pin": 32,
-                "num": 750
+                "num": 1000
             }
         ],
         "brightnessPC": 20

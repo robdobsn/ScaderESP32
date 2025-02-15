@@ -182,10 +182,11 @@ code {
 }
 
 .ScaderElem-button-small {
-  width: 60%;
+  width: auto;
   height: 60%;
   position: relative;
   top: 0rem;
+  padding: 1rem;
 }
 
 .ScaderElem-button-inline {

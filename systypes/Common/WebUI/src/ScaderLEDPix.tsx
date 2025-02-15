@@ -8,12 +8,16 @@ const scaderManager = ScaderManager.getInstance();
 const API_BASE_URL = "/api/ledpix/0";
 type ScaderLEDPixConfig = ScaderConfig['ScaderLEDPix'];
 
+const maxLedCount = 2000;
+
 export default function ScaderLEDPix(props: ScaderScreenProps) {
   const scaderName = "ScaderLEDPix";
   const [config, setConfig] = useState(props.config[scaderName]);
   const [patterns, setPatterns] = useState([]);
   const [selectedColor, setSelectedColor] = useState("#ffffff");
-  const [range, setRange] = useState([0, 1500]);
+  const [range, setRange] = useState([0, maxLedCount]);
+  const [immediateMode, setImmediateMode] = useState(true);
+  const [pendingChanges, setPendingChanges] = useState({ color: "#ffffff", range: [0, maxLedCount] });
 
   useEffect(() => {
     scaderManager.onConfigChange((newConfig) => {
@@ -56,8 +60,13 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
   };
 
   const handleColorChange = (color: string) => {
-    setSelectedColor(color);
-    sendRangeCommand(range[0], range[1], color);
+    if (immediateMode) {
+      setSelectedColor(color);
+      sendRangeCommand(range[0], range[1], color);
+    } else {
+      setPendingChanges((prev) => ({ ...prev, color }));
+      setSelectedColor(color);
+    }
   };
 
   const handleRangeChange = (event: any, index: number) => {
@@ -65,7 +74,16 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
     newRange[index] = parseInt(event.target.value, 10);
     if (newRange[0] > newRange[1]) newRange[index === 0 ? 1 : 0] = newRange[index];
     setRange(newRange);
-    sendRangeCommand(newRange[0], newRange[1], selectedColor);
+
+    if (immediateMode) {
+      sendRangeCommand(newRange[0], newRange[1], selectedColor);
+    } else {
+      setPendingChanges((prev) => ({ ...prev, range: newRange }));
+    }
+  };
+
+  const applyChanges = () => {
+    sendRangeCommand(pendingChanges.range[0], pendingChanges.range[1], pendingChanges.color);
   };
 
   const sendRangeCommand = async (start: number, end: number, color: string) => {
@@ -104,38 +122,53 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
       config.enable && (
         <div className="ScaderElem">
           <div className="ScaderElem-section-horiz">
-                      <h3>Patterns</h3>
-          <div className="patterns">
-            {patterns.map((pattern, index) => (
-              <button className="ScaderElem-button button-small" key={index} onClick={() => startPattern(pattern)}>{pattern}</button>
-            ))}
-            <button className="ScaderElem-button button-small" onClick={clearPattern}>Clear</button>
-          </div>
+            <h3>Patterns</h3>
+            <div className="patterns">
+              {patterns.map((pattern, index) => (
+                <button className="ScaderElem-button ScaderElem-button-small" key={index} onClick={() => startPattern(pattern)}>{pattern}</button>
+              ))}
+              <button className="ScaderElem-button ScaderElem-button-small" onClick={clearPattern}>Clear</button>
+            </div>
           </div>
 
           <div className="ScaderElem-section-horiz">
-          <h3>Set LED Range</h3>
-          <div className="color-picker" style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <HexColorPicker color={selectedColor} onChange={handleColorChange} />
-          </div>
-          <div className="slider-range" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label>
-                Start: <input className='ScaderElem-input-inline' type="number" min="0" max="1500" value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
-              </label>
-              <label>
-                End: <input className='ScaderElem-input-inline' type="number" min="0" max="1500" value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
-              </label>
+            <h3>Set LED Range</h3>
+            <label>
+              <input
+                type="checkbox"
+                checked={immediateMode}
+                onChange={() => setImmediateMode(!immediateMode)}
+                style={{ width: '20px', height: '20px' }}
+              /> Immediate Mode
+            </label>
+            <div className="color-picker" style={{ textAlign: 'center', marginTop: '20px', marginBottom: '20px' }}>
+              <HexColorPicker color={selectedColor} onChange={handleColorChange} style={{ width: '400px', height: '400px' }} />
             </div>
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-              <label>
-                Start: <input type="range" min="0" max="1500" value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
-              </label>
-              <label>
-                End: <input type="range" min="0" max="1500" value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
-              </label>
+            <div className="slider-range" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: "400px" }}>
+
+              {/* Start */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: "2rem" }}>
+                <label>
+                  Start: <input className='ScaderElem-input-inline' style={{fontSize: "2rem", minWidth: "6rem"}} type="number" min="0" max={maxLedCount} value={range[0]} onChange={(e) => handleRangeChange(e, 0)} />
+                </label>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+                  <input type="range" min="0" max={maxLedCount} value={range[0]} style={{ width: '100%' }} onChange={(e) => handleRangeChange(e, 0)} />
+              </div>
+
+              {/* End */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: "2rem" }}>
+                <label>
+                  End: <input className='ScaderElem-input-inline' style={{fontSize: "2rem", minWidth: "6rem"}} type="number" min="0" max={maxLedCount} value={range[1]} onChange={(e) => handleRangeChange(e, 1)} />
+                </label>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+                <input type="range" min="0" max={maxLedCount} value={range[1]} style={{ width: '100%' }} onChange={(e) => handleRangeChange(e, 1)} />
+              </div>
             </div>
-          </div>
+            {!immediateMode && (
+              <button className="ScaderElem-button ScaderElem-button-small" style={{ marginTop: '20px' }} onClick={applyChanges}>Send</button>
+            )}
           </div>
         </div>
       )

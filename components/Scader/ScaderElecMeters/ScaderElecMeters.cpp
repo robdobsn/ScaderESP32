@@ -89,6 +89,9 @@ void ScaderElecMeters::setup()
         .data5_io_num = -1,
         .data6_io_num = -1,
         .data7_io_num = -1,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+        .data_io_default_level = false,
+#endif
         .max_transfer_sz = 0,
         .flags = 0,
         .isr_cpu_id = ESP_INTR_CPU_AFFINITY_AUTO,

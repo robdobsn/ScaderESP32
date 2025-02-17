@@ -1,8 +1,9 @@
 # RaftCore device types
-set(DEV_TYPE_JSON_FILES "${raftcore_SOURCE_DIR}/devtypes/DeviceTypeRecords.json")
+set(DEV_TYPE_JSON_FILES "devtypes/DeviceTypeRecords.json")
 
 # Raft components
 set(RAFT_COMPONENTS
+    RaftCore@main
     RaftSysMods@main
     RaftI2C@main
     RaftMotorControl@main

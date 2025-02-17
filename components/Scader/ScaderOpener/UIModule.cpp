@@ -88,8 +88,16 @@ void UIModule::setup(RaftJsonIF &config, OpenerStatus* pOpenerParams)
                 .source_clk = UART_SCLK_DEFAULT,
 #endif
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 1)
-                .flags = 0,
+                .flags = {
 #endif
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+                .allow_pd = false,
+                .backup_before_sleep = false,
+#endif
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 1)
+                }
+#endif
+
         };
         esp_err_t err = uart_param_config((uart_port_t)_uartNum, &uart_config);
         if (err != ESP_OK)

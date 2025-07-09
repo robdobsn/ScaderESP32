@@ -223,16 +223,15 @@
             },
             {
                 "topic": "ScaderBTHome",
+                "trigger": "change",
                 "rates": [
                     {
                         "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.01
+                        "protocol": "RICJSON"
                     },
                     {
                         "if": "scaderBTHome",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
+                        "protocol": "RICJSON"
                     }
                 ]
             },

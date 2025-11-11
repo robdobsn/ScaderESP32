@@ -71,6 +71,7 @@ public:
                 .source_clk = UART_SCLK_DEFAULT,
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
                 .flags = {
+                    .allow_pd = 0,
                     .backup_before_sleep = 0,
                 },
 #endif

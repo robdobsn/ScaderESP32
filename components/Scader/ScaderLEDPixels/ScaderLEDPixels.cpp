@@ -211,7 +211,7 @@ void ScaderLEDPixels::addRestAPIEndpoints(RestAPIEndpointManager &endpointManage
     // Control shade
     endpointManager.addEndpoint("ledpix", RestAPIEndpoint::ENDPOINT_CALLBACK, RestAPIEndpoint::ENDPOINT_GET,
                             std::bind(&ScaderLEDPixels::apiControl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-                            "control LED pixels, ledpix/S/clear, ledpix/S/set/<N>/<RGBHex> or ledpix/S/run/<pattern-name> (S is the segment)");
+                            "control LED pixels, ledpix/S/clear, ledpix/S/set/<N>/<RGBHex>, ledpix/S/setledsidx/<clear>/<data> or ledpix/S/run/<pattern-name> (S is the segment)");
     LOG_I(MODULE_PREFIX, "addRestAPIEndpoints scader LEDPixels");
 }
 
@@ -304,6 +304,92 @@ RaftRetCode ScaderLEDPixels::apiControl(const String &reqStr, String &respStr, c
 
         // Show
         _ledPixels.show();
+        rslt = true;
+    }
+    else if (cmd.equalsIgnoreCase("setledsidx"))
+    {
+        // Stop any pattern
+        _ledPixels.stopPattern(segmentIdx, false);
+
+        // Check minimum length (at least clear flag)
+        if (data.length() < 1)
+        {
+            LOG_W(MODULE_PREFIX, "setledsidx: data too short");
+            return Raft::setJsonErrorResult(reqStr.c_str(), respStr, "dataTooShort");
+        }
+
+        // Parse clear flag (first character: 0 or 1)
+        bool clearFirst = (data.charAt(0) == '1');
+        if (clearFirst)
+        {
+            _ledPixels.clear(false);
+        }
+
+        // Determine mode based on data length
+        // RGB mode: 10 chars per LED (4 for index + 6 for RGB)
+        // RGBW mode: 12 chars per LED (4 for index + 8 for RGBW)
+        uint32_t dataLen = data.length() - 1; // Exclude clear flag
+        uint32_t charsPerLED = 0;
+        bool isRGBW = false;
+        
+        if (dataLen % 10 == 0)
+        {
+            charsPerLED = 10;
+            isRGBW = false;
+        }
+        else if (dataLen % 12 == 0)
+        {
+            charsPerLED = 12;
+            isRGBW = true;
+        }
+        else
+        {
+            LOG_W(MODULE_PREFIX, "setledsidx: invalid data length %d (should be multiple of 10 or 12)", dataLen);
+            return Raft::setJsonErrorResult(reqStr.c_str(), respStr, "invalidDataLength");
+        }
+
+        // Parse LED data
+        uint32_t dataPos = 1; // Start after clear flag
+        uint32_t numLEDsSet = 0;
+        uint32_t numLEDsSkipped = 0;
+        
+        while (dataPos + charsPerLED <= data.length())
+        {
+            // Extract index (4 hex chars)
+            String indexStr = data.substring(dataPos, dataPos + 4);
+            uint32_t ledIdx = strtol(indexStr.c_str(), NULL, 16);
+            
+            // Validate index bounds
+            if (ledIdx >= _ledPixels.getNumPixels(segmentIdx))
+            {
+                LOG_W(MODULE_PREFIX, "setledsidx: LED index %d out of bounds (max %d)", 
+                      ledIdx, _ledPixels.getNumPixels(segmentIdx) - 1);
+                numLEDsSkipped++;
+                dataPos += charsPerLED;
+                continue;
+            }
+            
+            // Extract color data
+            String colorStr = data.substring(dataPos + 4, dataPos + 4 + (isRGBW ? 8 : 6));
+            uint8_t r = strtol(colorStr.substring(0, 2).c_str(), NULL, 16);
+            uint8_t g = strtol(colorStr.substring(2, 4).c_str(), NULL, 16);
+            uint8_t b = strtol(colorStr.substring(4, 6).c_str(), NULL, 16);
+            // uint8_t w = isRGBW ? strtol(colorStr.substring(6, 8).c_str(), NULL, 16) : 0;
+            
+            // Set pixel (currently RGB only, W channel ignored for future RGBW support)
+            _ledPixels.setRGB(segmentIdx, ledIdx, r, g, b, false);
+            numLEDsSet++;
+            
+            dataPos += charsPerLED;
+        }
+        
+        // Show once at end
+        _ledPixels.show();
+        
+        // Log result
+        LOG_I(MODULE_PREFIX, "setledsidx: mode=%s clear=%d set=%d skipped=%d",
+              isRGBW ? "RGBW" : "RGB", clearFirst, numLEDsSet, numLEDsSkipped);
+        
         rslt = true;
     }
     else if (cmd.equalsIgnoreCase("setled") || cmd.equalsIgnoreCase("set"))

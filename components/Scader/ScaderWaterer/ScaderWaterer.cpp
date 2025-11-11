@@ -42,7 +42,7 @@ void ScaderWaterer::setup()
         _pumpControl.setup(configGetConfig());
 
         // Setup publisher with callback functions
-        SysManager* pSysManager = getSysManager();
+        SysManagerIF* pSysManager = getSysManager();
         if (pSysManager)
         {
             // Register publish message generator

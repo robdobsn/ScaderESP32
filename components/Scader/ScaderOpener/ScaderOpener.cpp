@@ -59,7 +59,7 @@ void ScaderOpener::setup()
                 _scaderCommon.getUIName().c_str());
 
     // Setup publisher with callback functions
-    SysManager* pSysManager = getSysManager();
+    SysManagerIF* pSysManager = getSysManager();
     if (pSysManager)
     {
         // Register publish message generator

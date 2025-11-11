@@ -103,7 +103,7 @@ void ScaderShades::setup()
     sendBitsToShiftRegister();
 
     // Setup publisher with callback functions
-    SysManager* pSysManager = getSysManager();
+    SysManagerIF* pSysManager = getSysManager();
     if (pSysManager)
     {
         // Register publish message generator

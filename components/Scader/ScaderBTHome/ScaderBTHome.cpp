@@ -39,7 +39,7 @@ void ScaderBTHome::setup()
     }
 
     // System manager and device manager
-    SysManager* pSysManager = getSysManager();
+    SysManagerIF* pSysManager = getSysManager();
     DeviceManager* pDevMan = pSysManager ? pSysManager->getDeviceManager() : nullptr;
 
     // Register for device status updates

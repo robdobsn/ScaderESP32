@@ -16,6 +16,7 @@
 #include "RestAPIEndpointManager.h"
 #include "SysManager.h"
 #include "LEDPatternRainbowSnake.h"
+#include "LEDPatternAutoID.h"
 
 #ifdef USE_FASTLED_LIBRARY
 // #include "FastLED.h"
@@ -68,6 +69,7 @@ void ScaderLEDPixels::setup()
 
     // Add patterns before setup so that inital pattern can be set during setup
     _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::create);
+    _ledPixels.addPattern("autoid", &LEDPatternAutoID::create);
 
     // Setup LEDs
     bool rslt = _ledPixels.setup(modConfig());

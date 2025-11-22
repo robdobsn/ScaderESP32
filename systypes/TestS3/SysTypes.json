@@ -228,6 +228,15 @@
     "ScaderTest": {
         "enable": 1,
         "batteryPC": 100
+    },
+    "ScaderLEDPix": {
+        "strips": [
+            {
+                "pin": 18,
+                "powerPin": 17,
+                "num": 5
+            }
+        ],
+        "brightnessPC": 20
     }
-
 }

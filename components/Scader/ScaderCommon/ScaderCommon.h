@@ -40,8 +40,8 @@ public:
         // If not blank set the UI name as the friendly name for the system
         if (_scaderUIName.length() > 0)
         {
-            String respStr;
-            _base.getSysManager()->setFriendlyName(_scaderUIName.c_str(), false, respStr);
+            _base.getSysManager()->setNamedValue(nullptr, "AutoSetHostname", false);
+            _base.getSysManager()->setNamedString(nullptr, "FriendlyName", _scaderUIName.c_str());
         }
 
         // Set the hostname if not blank
@@ -83,10 +83,11 @@ public:
         }
 
         // Format base JSON
+        bool isValid = false;
         String jsonStr =
                         R"("module":")" + _moduleName +
                         R"(","name":")" + _scaderUIName + 
-                        R"(","version":")" + _base.getSysManager()->getSystemVersion() + 
+                        R"(","version":")" + _base.getSysManager()->getNamedString(nullptr, "SystemVersion", isValid) + 
                         R"(","hostname":")" + _scaderHostname + 
                         R"(","IP":")" + ipAddress + 
                         R"(","MAC":")" + macAddress + 

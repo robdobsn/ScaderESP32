@@ -58,8 +58,15 @@ protected:
 #else
                 .source_clk = UART_SCLK_DEFAULT,
 #endif
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 1)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 5, 1) 
+                .flags = {
+                    .allow_pd = 0,
+                    .backup_before_sleep = 0
+                }
+#else
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 1) 
                 .flags = 0,
+#endif
 #endif
         };
         esp_err_t err = uart_param_config((uart_port_t)_uartNum, &uart_config);

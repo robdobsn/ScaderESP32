@@ -18,6 +18,9 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
   const [range, setRange] = useState([0, maxLedCount]);
   const [immediateMode, setImmediateMode] = useState(true);
   const [pendingChanges, setPendingChanges] = useState({ color: "#ffffff", range: [0, maxLedCount] });
+  const [isRequestPending, setIsRequestPending] = useState(false);
+  const debounceTimerRef = React.useRef<number | null>(null);
+  const latestRequestRef = React.useRef<{ start: number; end: number; color: string } | null>(null);
 
   useEffect(() => {
     scaderManager.onConfigChange((newConfig) => {
@@ -27,6 +30,13 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
       console.log(`ledpix onStateChange`, newState);
     });
     fetchPatterns();
+    
+    // Cleanup debounce timer on unmount
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   const fetchPatterns = async () => {
@@ -60,12 +70,11 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
   };
 
   const handleColorChange = (color: string) => {
+    setSelectedColor(color);
     if (immediateMode) {
-      setSelectedColor(color);
-      sendRangeCommand(range[0], range[1], color);
+      debouncedSendRangeCommand(range[0], range[1], color);
     } else {
       setPendingChanges((prev) => ({ ...prev, color }));
-      setSelectedColor(color);
     }
   };
 
@@ -76,7 +85,7 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
     setRange(newRange);
 
     if (immediateMode) {
-      sendRangeCommand(newRange[0], newRange[1], selectedColor);
+      debouncedSendRangeCommand(newRange[0], newRange[1], selectedColor);
     } else {
       setPendingChanges((prev) => ({ ...prev, range: newRange }));
     }
@@ -84,6 +93,45 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
 
   const applyChanges = () => {
     sendRangeCommand(pendingChanges.range[0], pendingChanges.range[1], pendingChanges.color);
+  };
+
+  const debouncedSendRangeCommand = (start: number, end: number, color: string) => {
+    // Store the latest request parameters
+    latestRequestRef.current = { start, end, color };
+
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set a new debounce timer (100ms delay)
+    debounceTimerRef.current = window.setTimeout(() => {
+      debounceTimerRef.current = null;
+      
+      // If a request is already pending, it will be picked up after completion
+      if (!isRequestPending && latestRequestRef.current) {
+        executeLatestRequest();
+      }
+    }, 100);
+  };
+
+  const executeLatestRequest = async () => {
+    if (!latestRequestRef.current || isRequestPending) return;
+
+    const { start, end, color } = latestRequestRef.current;
+    latestRequestRef.current = null; // Clear the request
+    
+    setIsRequestPending(true);
+    try {
+      await sendRangeCommand(start, end, color);
+    } finally {
+      setIsRequestPending(false);
+      
+      // If another request came in while we were processing, execute it now
+      if (latestRequestRef.current) {
+        executeLatestRequest();
+      }
+    }
   };
 
   const sendRangeCommand = async (start: number, end: number, color: string) => {

@@ -186,11 +186,26 @@
         "strips": [
             {
                 "pin": 33,
-                "num": 1000
+                "num": 1000,
+                "rmtHz": 40000000,
+                "bit0_0Us": 0.3,
+                "bit0_1Us": 0.95,
+                "bit1_0Us": 0.625,
+                "bit1_1Us": 0.625
             },
             {
                 "pin": 32,
-                "num": 1000
+                "num": 1000,
+                "rmtHz": 40000000,
+                "bit0_0Us": 0.3,
+                "bit0_1Us": 0.95,
+                "bit1_0Us": 0.625,
+                "bit1_1Us": 0.625
+            }
+        ],
+        "segments": [
+            {
+                "colorOrder": "RGB"
             }
         ],
         "brightnessPC": 20

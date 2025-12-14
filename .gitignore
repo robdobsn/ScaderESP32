@@ -14,3 +14,4 @@ test/eepromPartitionTest/prewritedata.bin
 test/eepromPartitionTest/readbackdata.bin
 node_modules
 .raftcli_history
+.raftcli_history

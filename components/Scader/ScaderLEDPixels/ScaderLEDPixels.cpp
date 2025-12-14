@@ -18,25 +18,6 @@
 #include "LEDPatternRainbowSnake.h"
 #include "LEDPatternAutoID.h"
 
-#ifdef USE_FASTLED_LIBRARY
-// #include "FastLED.h"
-
-// #define NUM_STRIPS 2
-// #define NUM_LEDS_PER_STRIP 100
-// #define DATA_PIN_1   32
-// #define DATA_PIN_2   33
-// //#define CLK_PIN   4
-// #define LED_TYPE    WS2811
-// #define COLOR_ORDER GRB
-// #define NUM_LEDS    NUM_LEDS_PER_STRIP * NUM_STRIPS
-// CRGB leds[NUM_LEDS];
-
-// #define BRIGHTNESS          96
-// #define FRAMES_PER_SECOND  120
-
-// #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
-#endif
-
 #define DEBUG_LED_PIXEL_SETUP
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,8 +39,6 @@ void ScaderLEDPixels::setup()
     // Common
     _scaderCommon.setup();
 
-#ifdef USE_RAFT_PIXELS_LIBRARY
-
     // Check enabled
     if (!_scaderCommon.isEnabled())
     {
@@ -67,89 +46,22 @@ void ScaderLEDPixels::setup()
         return;
     }
 
-    // Add patterns before setup so that inital pattern can be set during setup
+    // Add patterns before setup so that initial pattern can be set during setup
     _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::create);
     _ledPixels.addPattern("autoid", &LEDPatternAutoID::create);
 
-    // Setup LEDs
+    // Setup LEDs using SimpleRMTLeds driver with LEDPixels wrapper
+    // This will use the configuration from modConfig() and create SimpleRMTLeds strips
     bool rslt = _ledPixels.setup(modConfig());
-
-    // Patterns
-#ifndef RUN_PATTERNS_IN_SYSMOD
-    // _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
-    // _ledPixels.setPattern("RainbowSnake");
-    // _ledPixels2.addPattern("RainbowSnake", &LEDPatternRainbowSnake::build);
-    // _ledPixels2.setPattern("RainbowSnake");
-#endif
 
     // Log
 #ifdef DEBUG_LED_PIXEL_SETUP
-    LOG_I(MODULE_PREFIX, "setup %s numPixels %d", rslt ? "OK" : "FAILED", _ledPixels.getNumPixels());
-
-#endif
-
-#endif
-
-#ifdef USE_FASTLED_LIBRARY
-
-    // Get settings
-    uint8_t defaultBrightness = configGetLong("brightnessPC", 20);
- 
-    // Check enabled
-    if (!_scaderCommon.isEnabled())
-    {
-        LOG_I(MODULE_PREFIX, "setup disabled");
-        return;
-    }
-
-    // Clear the strips
-    _ledPixels.clear();
-
-    // Get string definition arrays
-    std::vector<String> stripInfos;
-    uint32_t totalNumPix = 0;
-    if (configGetArrayElems("strips", stripInfos))
-    {
-        // Create LED info (one for all strips)
-        for (const RaftJson& stripInfo : stripInfos)
-        {
-            totalNumPix += stripInfo.getLong("num", 0);
-        }
-        _ledPixels.resize(totalNumPix);
-
-        // Loop over strips
-        uint32_t curPixPos = 0;
-        for (size_t i = 0; i < stripInfos.size(); i++)
-        {
-            // Get strip info
-            RaftJson stripInfo = stripInfos[i];
-
-            // Extract pin and number of pixels
-            uint8_t pixPin = stripInfo.getLong("pin", 0);
-            uint32_t numPixels = stripInfo.getLong("num", 0);
-
-            // Add to FastLED library
-            if (pixPin == 32)
-                FastLED.addLeds<WS2811, 32, GRB>(_ledPixels.data(), curPixPos, numPixels).setCorrection(TypicalPixelString);
-            else if (pixPin == 33)
-                FastLED.addLeds<WS2811, 33, GRB>(_ledPixels.data(), curPixPos, numPixels).setCorrection(TypicalPixelString);
-            curPixPos += numPixels;
-        }
-
-        // set master brightness control
-        FastLED.setBrightness(defaultBrightness);
-    }
-
-    // Debug
-    LOG_I(MODULE_PREFIX, "setup enabled scaderUIName %s with %d strips total LEDs %d brightness %d", 
-                _scaderCommon.getUIName().c_str(),
-                stripInfos.size(), totalNumPix, defaultBrightness);
-
+    LOG_I(MODULE_PREFIX, "setup %s numPixels %d using SimpleRMTLeds driver", 
+          rslt ? "OK" : "FAILED", _ledPixels.getNumPixels());
 #endif
 
     // HW Now initialised
     _isInitialised = true;
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

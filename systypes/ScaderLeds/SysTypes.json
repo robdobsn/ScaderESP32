@@ -183,6 +183,7 @@
         ]
     },
     "ScaderLEDPix": {
+        "enable": 1,
         "strips": [
             {
                 "pin": 32,

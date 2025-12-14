@@ -21,6 +21,12 @@ export class ScaderManager {
     // Modified configuration
     private _mutableConfig: ScaderConfig = new ScaderConfig();
 
+    // System version info
+    private _systemVersion: string = "";
+
+    // Version change callbacks
+    private _versionChangeCallbacks: Array<(version: string) => void> = [];
+
     // Config change callbacks
     private _configChangeCallbacks: Array<(config: ScaderConfig) => void> = [];
 
@@ -82,6 +88,7 @@ export class ScaderManager {
         console.log(`ScaderManager init - first time`)
 
         await this.getAppSettingsAndCheck();
+        await this.getVersionInfo();
 
         const rslt = await this.connectWebSocket();
 
@@ -269,6 +276,55 @@ export class ScaderManager {
         this._stateChangeCallbacks[moduleName] = callback;
     }
     
+    ////////////////////////////////////////////////////////////////////////////
+    // Get version info from the server
+    ////////////////////////////////////////////////////////////////////////////
+
+    private async getVersionInfo(): Promise<void> {
+        try {
+            const versionResponse = await fetch(this._serverAddressPrefix + this._urlPrefix + "/v");
+            if (versionResponse && versionResponse.ok) {
+                const versionData = await versionResponse.json();
+                console.log(`ScaderManager getVersionInfo response: ${JSON.stringify(versionData)}`);
+                // Try different response formats
+                let version = "";
+                if (versionData.SystemVersion) {
+                    version = versionData.SystemVersion;
+                } else if (versionData.v) {
+                    version = versionData.v;
+                } else if (typeof versionData === "string") {
+                    version = versionData;
+                }
+                if (version) {
+                    console.log(`ScaderManager setting version to: ${version}`);
+                    this._systemVersion = version;
+                    // Notify callbacks
+                    this._versionChangeCallbacks.forEach(callback => callback(version));
+                } else {
+                    console.log(`ScaderManager could not extract version from response`);
+                }
+            } else {
+                console.log(`ScaderManager getVersionInfo response not ok: ${versionResponse?.status}`);
+            }
+        } catch (error) {
+            console.log(`ScaderManager getVersionInfo error: ${error}`);
+        }
+    }
+
+    // Get system version
+    public getSystemVersion(): string {
+        return this._systemVersion;
+    }
+
+    // Register version change callback
+    public onVersionChange(callback: (version: string) => void): void {
+        this._versionChangeCallbacks.push(callback);
+        // If version is already available, call immediately
+        if (this._systemVersion) {
+            callback(this._systemVersion);
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Get the app settings from the server
     ////////////////////////////////////////////////////////////////////////////

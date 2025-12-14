@@ -25,6 +25,15 @@ interface ScaderHeaderProps {
 export const ScaderCommon = (props: ScaderHeaderProps) => {
 
     const [config, setConfig] = React.useState(props.config);
+    const [systemVersion, setSystemVersion] = React.useState(scaderManager.getSystemVersion());
+
+    // Subscribe to version changes
+    React.useEffect(() => {
+        scaderManager.onVersionChange((version) => {
+            console.log(`ScaderCommon received version: ${version}`);
+            setSystemVersion(version);
+        });
+    }, []);
 
     scaderManager.onConfigChange((newConfig) => {
         console.log("ScaderCommon.onConfigChange");
@@ -60,7 +69,10 @@ export const ScaderCommon = (props: ScaderHeaderProps) => {
         <div className="ScaderHeader">
             <div className={headerClassName}>
                 {props.isEditMode ?
-                    <div className="ScaderHeader-title">Edit Mode</div> :
+                    <div className="ScaderHeader-title">
+                        <div>Edit Mode</div>
+                        {systemVersion && <div style={{fontSize: '0.7em', opacity: 0.8}}>{systemVersion}</div>}
+                    </div> :
                     <div className="ScaderHeader-title">{config.ScaderCommon.name ? config.ScaderCommon.name : "Scader"}</div>
                 }
                 {props.isEditMode ?

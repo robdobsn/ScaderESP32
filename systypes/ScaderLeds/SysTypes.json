@@ -26,7 +26,7 @@
     },
     "NetMan": {
         "enable": 1,
-        "wifiSTAEn": 0,
+        "wifiSTAEn": 1,
         "wifiAPEn": 0,
         "ethEn": 1,
         "wifiSSID": "",
@@ -185,22 +185,32 @@
     "ScaderLEDPix": {
         "strips": [
             {
-                "pin": 33,
-                "num": 1000,
-                "rmtHz": 40000000,
-                "bit0_0Us": 0.3,
-                "bit0_1Us": 0.95,
-                "bit1_0Us": 0.625,
-                "bit1_1Us": 0.625
-            },
-            {
                 "pin": 32,
                 "num": 1000,
                 "rmtHz": 40000000,
-                "bit0_0Us": 0.3,
-                "bit0_1Us": 0.95,
-                "bit1_0Us": 0.625,
-                "bit1_1Us": 0.625
+                "bit0_0Us": 0.34,
+                "bit0_1Us": 0.94,
+                "bit1_0Us": 0.65,
+                "bit1_1Us": 0.65,
+                "resetUs": 300,
+                "blockingShow": true,
+                "stopAfterTx": false,
+                "msbFirst": true,
+                "beforeDeinitMs": 50
+            },
+            {
+                "pin": 33,
+                "num": 1000,
+                "rmtHz": 40000000,
+                "bit0_0Us": 0.34,
+                "bit0_1Us": 0.94,
+                "bit1_0Us": 0.65,
+                "bit1_1Us": 0.65,
+                "resetUs": 300,
+                "blockingShow": true,
+                "stopAfterTx": false,
+                "msbFirst": true,
+                "beforeDeinitMs": 50
             }
         ],
         "segments": [

@@ -21,6 +21,11 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
   const [isRequestPending, setIsRequestPending] = useState(false);
   const debounceTimerRef = React.useRef<number | null>(null);
   const latestRequestRef = React.useRef<{ start: number; end: number; color: string } | null>(null);
+  const [finderLedNum, setFinderLedNum] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isFinderRequestPending, setIsFinderRequestPending] = useState(false);
+  const autoRepeatIntervalRef = React.useRef<number | null>(null);
+  const autoRepeatTimeoutRef = React.useRef<number | null>(null);
 
   useEffect(() => {
     scaderManager.onConfigChange((newConfig) => {
@@ -35,6 +40,12 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
     return () => {
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current);
+      }
+      if (autoRepeatTimeoutRef.current !== null) {
+        window.clearTimeout(autoRepeatTimeoutRef.current);
+      }
+      if (autoRepeatIntervalRef.current !== null) {
+        window.clearInterval(autoRepeatIntervalRef.current);
       }
     };
   }, []);
@@ -136,10 +147,124 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
 
   const sendRangeCommand = async (start: number, end: number, color: string) => {
     try {
-      await fetch(`${API_BASE_URL}/clear`, { method: 'GET' });
+      // No need to clear first - setall overwrites all LEDs anyway
       await fetch(`${API_BASE_URL}/setall/${color.replace('#', '')}/${start}/${end}`, { method: 'GET' });
     } catch (error) {
       console.error(`Error sending range command:`, error);
+    }
+  };
+
+  const setLedWhite = async (ledNum: number) => {
+    if (isFinderRequestPending) return; // Don't queue requests
+    
+    setIsFinderRequestPending(true);
+    try {
+      // Clear all LEDs first
+      await fetch(`${API_BASE_URL}/clear`, { method: 'GET' });
+      // Set the single LED to white using correct API: /ledpix/0/set/<lednum>/<rgbhex>
+      await fetch(`${API_BASE_URL}/set/${ledNum}/ffffff`, { method: 'GET' });
+    } catch (error) {
+      console.error(`Error setting LED ${ledNum}:`, error);
+    } finally {
+      setIsFinderRequestPending(false);
+    }
+  };
+
+  const handleFinderChange = (newNum: number) => {
+    if (newNum >= 0 && newNum <= maxLedCount) {
+      setFinderLedNum(newNum);
+      setLedWhite(newNum);
+    }
+  };
+
+  const handleFinderUp = () => {
+    setFinderLedNum(prev => {
+      const newNum = Math.min(prev + 1, maxLedCount);
+      setLedWhite(newNum);
+      return newNum;
+    });
+  };
+
+  const handleFinderDown = () => {
+    setFinderLedNum(prev => {
+      const newNum = Math.max(prev - 1, 0);
+      setLedWhite(newNum);
+      return newNum;
+    });
+  };
+
+  const startAutoRepeat = (direction: 'up' | 'down') => {
+    // Clear any existing auto-repeat
+    stopAutoRepeat();
+    
+    // Initial delay before auto-repeat starts (500ms)
+    autoRepeatTimeoutRef.current = window.setTimeout(() => {
+      // Start repeating every 150ms
+      autoRepeatIntervalRef.current = window.setInterval(() => {
+        if (!isFinderRequestPending) {
+          if (direction === 'up') {
+            handleFinderUp();
+          } else if (direction === 'down') {
+            handleFinderDown();
+          }
+        }
+      }, 150);
+    }, 500);
+  };
+
+  const stopAutoRepeat = () => {
+    if (autoRepeatTimeoutRef.current !== null) {
+      window.clearTimeout(autoRepeatTimeoutRef.current);
+      autoRepeatTimeoutRef.current = null;
+    }
+    if (autoRepeatIntervalRef.current !== null) {
+      window.clearInterval(autoRepeatIntervalRef.current);
+      autoRepeatIntervalRef.current = null;
+    }
+  };
+
+  const animateToLed = async (targetLed: number) => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+
+    try {
+      const animationSteps = 5; // Number of steps in the animation
+      const stepDelay = 100; // ms per step (total 500ms)
+
+      for (let i = animationSteps; i >= 0; i--) {
+        // Clear all LEDs
+        await fetch(`${API_BASE_URL}/clear`, { method: 'GET' });
+        
+        if (i === 0) {
+          // Final step - just the target LED using correct API
+          await fetch(`${API_BASE_URL}/set/${targetLed}/ffffff`, { method: 'GET' });
+        } else {
+          // Light up LEDs on both sides
+          const offset = i;
+          const led1 = Math.max(0, targetLed - offset);
+          const led2 = Math.min(maxLedCount, targetLed + offset);
+          
+          // Set both LEDs if they're different from target
+          if (led1 < targetLed && led2 > targetLed) {
+            // Both LEDs need to be lit - light left one
+            await fetch(`${API_BASE_URL}/set/${led1}/ffffff`, { method: 'GET' });
+            // Light right one
+            await fetch(`${API_BASE_URL}/set/${led2}/ffffff`, { method: 'GET' });
+          } else if (led1 < targetLed) {
+            await fetch(`${API_BASE_URL}/set/${led1}/ffffff`, { method: 'GET' });
+          } else if (led2 > targetLed) {
+            await fetch(`${API_BASE_URL}/set/${led2}/ffffff`, { method: 'GET' });
+          }
+        }
+        
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, stepDelay));
+        }
+      }
+    } catch (error) {
+      console.error('Error during animation:', error);
+    } finally {
+      setIsAnimating(false);
     }
   };
 
@@ -166,9 +291,10 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
   };
 
   const normalModeScreen = () => {
+    if (!config.enable) return null;
+    
     return (
-      config.enable && (
-        <div className="ScaderElem">
+      <div className="ScaderElem">
           <div className="ScaderElem-section-horiz">
             <h3>Patterns</h3>
             <div className="patterns">
@@ -176,6 +302,61 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
                 <button className="ScaderElem-button ScaderElem-button-small" key={index} onClick={() => startPattern(pattern)}>{pattern}</button>
               ))}
               <button className="ScaderElem-button ScaderElem-button-small" onClick={clearPattern}>Clear</button>
+            </div>
+          </div>
+
+          <div className="ScaderElem-section-horiz">
+            <h3>LED Finder</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', marginTop: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: '2rem' }}>
+                <label>
+                  LED #: <input 
+                    className='ScaderElem-input-inline' 
+                    style={{ fontSize: '2rem', minWidth: '6rem' }} 
+                    type="number" 
+                    min="0" 
+                    max={maxLedCount} 
+                    value={finderLedNum} 
+                    onChange={(e) => handleFinderChange(parseInt(e.target.value, 10) || 0)} 
+                  />
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <button 
+                  className="ScaderElem-button" 
+                  style={{ fontSize: '3rem', padding: '20px 40px', minWidth: '150px' }}
+                  onClick={handleFinderDown}
+                  onMouseDown={() => startAutoRepeat('down')}
+                  onMouseUp={stopAutoRepeat}
+                  onMouseLeave={stopAutoRepeat}
+                  onTouchStart={() => startAutoRepeat('down')}
+                  onTouchEnd={stopAutoRepeat}
+                  disabled={finderLedNum <= 0}
+                >
+                  ▼
+                </button>
+                <button 
+                  className="ScaderElem-button" 
+                  style={{ fontSize: '3rem', padding: '20px 40px', minWidth: '150px' }}
+                  onClick={handleFinderUp}
+                  onMouseDown={() => startAutoRepeat('up')}
+                  onMouseUp={stopAutoRepeat}
+                  onMouseLeave={stopAutoRepeat}
+                  onTouchStart={() => startAutoRepeat('up')}
+                  onTouchEnd={stopAutoRepeat}
+                  disabled={finderLedNum >= maxLedCount}
+                >
+                  ▲
+                </button>
+              </div>
+              <button 
+                className="ScaderElem-button ScaderElem-button-small" 
+                style={{ fontSize: '1.5rem', padding: '15px 30px', minWidth: '200px' }}
+                onClick={() => animateToLed(finderLedNum)}
+                disabled={isAnimating}
+              >
+                {isAnimating ? 'Animating...' : 'Animate'}
+              </button>
             </div>
           </div>
 
@@ -219,7 +400,6 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
             )}
           </div>
         </div>
-      )
     );
   };
 

@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include "esp_check.h"
 #include "driver/rmt_encoder.h"
+#include "esp_attr.h"
 
 static const char* MODULE_PREFIX = "SimpleRMTLeds";
 
@@ -21,8 +22,8 @@ typedef struct {
     rmt_symbol_word_t reset_code;
 } rmt_led_strip_encoder_t;
 
-// Encoder callback
-static size_t rmt_encode_led_strip(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
+// Encoder callback - placed in IRAM for fast interrupt response
+static IRAM_ATTR size_t rmt_encode_led_strip(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
                                    const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
@@ -58,7 +59,7 @@ out:
     return encoded_symbols;
 }
 
-static esp_err_t rmt_del_led_strip_encoder(rmt_encoder_t *encoder)
+static IRAM_ATTR esp_err_t rmt_del_led_strip_encoder(rmt_encoder_t *encoder)
 {
     rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
     rmt_del_encoder(led_encoder->bytes_encoder);
@@ -67,7 +68,7 @@ static esp_err_t rmt_del_led_strip_encoder(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
-static esp_err_t rmt_led_strip_encoder_reset(rmt_encoder_t *encoder)
+static IRAM_ATTR esp_err_t rmt_led_strip_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
     rmt_encoder_reset(led_encoder->bytes_encoder);
@@ -173,11 +174,13 @@ bool SimpleRMTLeds::init(int pin, uint32_t numPixels)
     rmt_tx_channel_config_t tx_chan_config = {};
     tx_chan_config.clk_src = RMT_CLK_SRC_DEFAULT;
     tx_chan_config.gpio_num = (gpio_num_t)pin;
-    tx_chan_config.mem_block_symbols = 64;
+    tx_chan_config.mem_block_symbols = 96;  // Max for ESP32-S3 with 2 channels (192 total / 2)
     tx_chan_config.resolution_hz = RMT_LED_STRIP_RESOLUTION_HZ;
     tx_chan_config.trans_queue_depth = 4;
+    tx_chan_config.intr_priority = 3;  // High priority for reliable interrupt-driven refills
     tx_chan_config.flags.invert_out = false;
-    tx_chan_config.flags.with_dma = false;  // No DMA on ESP32
+    // DMA disabled: allows both channels to work simultaneously without GDMA resource conflicts
+    tx_chan_config.flags.with_dma = false;
 
     esp_err_t ret = rmt_new_tx_channel(&tx_chan_config, &_rmtChannel);
     if (ret != ESP_OK) {

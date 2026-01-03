@@ -178,8 +178,12 @@
         ]
     },
     "ScaderMarbleRun": {
-    }
-    ,
+        "enable": 1,
+        "speedInputPin": 36,
+        "runModeInputPin": 19,
+        "defaultSpeedValue": 0,
+        "defaultDurationMins": 10
+    },
     "DevMan": {
         "Buses": {
             "buslist":

@@ -109,6 +109,319 @@ class LEDFrame:
             self.blue = int(''.join(map(str, bit_values[16:24])), 2)
 
 
+class LEDDecoder:
+    """State machine for decoding LED data from channel transitions"""
+    def __init__(self, timing: LEDTiming):
+        self.timing = timing
+        self.state = 'RESET'  # States: RESET, HIGH, LOW
+        self.high_start = None
+        self.high_duration = None
+        self.current_frame = LEDFrame()
+        self.bit_count = 0
+        self.frame_count = 0
+        
+    def process_transition(self, time: float, level: int, duration: float) -> Optional[LEDFrame]:
+        """
+        Process a channel transition and return a complete frame if ready.
+        
+        Args:
+            time: Absolute time of the transition (seconds)
+            level: Signal level (0=low, 1=high)
+            duration: Duration of this pulse (seconds)
+        
+        Returns:
+            LEDFrame if a complete frame is ready, None otherwise
+        """
+        duration_us = duration * 1_000_000
+        
+        # State machine
+        if self.state == 'RESET':
+            if level == 1:
+                # Start of new data
+                self.state = 'HIGH'
+                self.high_start = time
+                self.high_duration = duration_us
+            # Stay in RESET for any low pulse
+            return None
+        
+        elif self.state == 'HIGH':
+            if level == 0:
+                # Check if this is a reset period
+                if duration_us >= self.timing.RES_MIN:
+                    # Reset - discard any partial frame and reset state
+                    self.state = 'RESET'
+                    if len(self.current_frame.bits) > 0:
+                        # Partial frame discarded
+                        self.current_frame = LEDFrame()
+                    return None
+                else:
+                    # Valid low period - we have a complete bit
+                    self.state = 'LOW'
+                    low_duration = duration_us
+                    
+                    # Classify the bit
+                    bit_value, is_valid, error_msg = self._classify_bit(self.high_duration, low_duration)
+                    
+                    bit = BitTiming(
+                        high_time=self.high_duration,
+                        low_time=low_duration,
+                        bit_value=bit_value,
+                        start_time=self.high_start,
+                        is_valid=is_valid,
+                        error_msg=error_msg
+                    )
+                    
+                    # Add bit to current frame
+                    if len(self.current_frame.bits) == 0:
+                        self.current_frame.start_time = self.high_start
+                    
+                    self.current_frame.bits.append(bit)
+                    self.bit_count += 1
+                    
+                    # Check if frame is complete
+                    if self.current_frame.is_complete():
+                        self.current_frame.decode_colors()
+                        completed_frame = self.current_frame
+                        self.current_frame = LEDFrame()
+                        self.frame_count += 1
+                        return completed_frame
+            # else: level==1 means we got another high without a low - error, but stay in HIGH
+            return None
+        
+        elif self.state == 'LOW':
+            if level == 1:
+                # Next bit starts
+                self.state = 'HIGH'
+                self.high_start = time
+                self.high_duration = duration_us
+            # else: level==0 means we got another low without a high - shouldn't happen
+            return None
+        
+        return None
+    
+    def _classify_bit(self, high_us: float, low_us: float) -> Tuple[int, bool, str]:
+        """Classify a bit as 0 or 1 based on timing"""
+        epsilon = 1e-9
+        
+        # Check if high time is closer to T0H or T1H
+        dist_to_0 = abs(high_us - self.timing.T0H_NOM)
+        dist_to_1 = abs(high_us - self.timing.T1H_NOM)
+        
+        if dist_to_0 < dist_to_1:
+            # Bit 0
+            bit_value = 0
+            errors = []
+            if not (self.timing.T0H_MIN - epsilon <= high_us <= self.timing.T0H_MAX + epsilon):
+                errors.append(f"T0H out of range: {high_us:.6f}us")
+            if not (self.timing.T0L_MIN - epsilon <= low_us <= self.timing.T0L_MAX + epsilon):
+                errors.append(f"T0L out of range: {low_us:.6f}us")
+            return bit_value, len(errors) == 0, "; ".join(errors)
+        else:
+            # Bit 1
+            bit_value = 1
+            errors = []
+            if not (self.timing.T1H_MIN - epsilon <= high_us <= self.timing.T1H_MAX + epsilon):
+                errors.append(f"T1H out of range: {high_us:.6f}us")
+            if not (self.timing.T1L_MIN - epsilon <= low_us <= self.timing.T1L_MAX + epsilon):
+                errors.append(f"T1L out of range: {low_us:.6f}us")
+            return bit_value, len(errors) == 0, "; ".join(errors)
+
+
+class AutoIDStateMachine:
+    """State machine to verify AutoID sequence pattern
+    
+    States:
+    - START: Initial state, counting sync frames (expecting all ON/OFF alternation)
+    - SEQUENCE: Processing sequential LED frames (0, 1, 2, ...)
+    - SYNC: Processing sync frame (all ON or all OFF)
+    - ERROR: Terminal error state
+    
+    Expected pattern:
+    - Start with 3 sync events (all ON/OFF alternation)
+    - Then 10 sequential LEDs followed by a sync, repeating
+    - LED indices increment continuously across chain transitions
+    """
+    
+    def __init__(self, num_leds_chain0: int = 1000, num_leds_chain1: int = 1000):
+        self.state = 'START'
+        self.num_leds_chain0 = num_leds_chain0
+        self.num_leds_chain1 = num_leds_chain1
+        
+        # START state counters
+        self.start_sync_count = 0
+        self.start_expecting_off = False  # False = expecting ON, True = expecting OFF
+        
+        # SEQUENCE state counters
+        self.current_led_index = 0  # Expected LED index (0-999 chain0, 0-999 chain1)
+        self.leds_since_sync = 0  # Count LEDs since last sync
+        
+        # SYNC state
+        self.sync_expecting_off = False  # False = expecting ON, True = expecting OFF
+        
+        # Error tracking
+        self.error_messages: List[str] = []
+        self.segment_count = 0
+        
+    def process_segment(self, segment: List[LEDFrame], seg_time: float) -> None:
+        """Process a segment and update state machine
+        
+        Args:
+            segment: List of LED frames in this segment
+            seg_time: Start time of segment in seconds
+        """
+        self.segment_count += 1
+        
+        if self.state == 'ERROR':
+            return  # No further processing once in error state
+        
+        # Classify the segment
+        seg_type = self._classify_segment(segment)
+        
+        # Log what we're feeding to the state machine
+        print(f"  SM Feed: Seg {self.segment_count} at {seg_time:.3f}s -> Type: {seg_type:10s} (State: {self.state})")
+        
+        if seg_type == 'UNKNOWN':
+            self._record_error(f"Segment {self.segment_count} at {seg_time:.3f}s: Unknown segment type (not ALL_OFF, ALL_ON, or ONE_LED)")
+            self.state = 'ERROR'
+            return
+        
+        # Process based on current state
+        if self.state == 'START':
+            self._process_start_state(seg_type, seg_time)
+        elif self.state == 'SEQUENCE':
+            self._process_sequence_state(seg_type, segment, seg_time)
+        elif self.state == 'SYNC':
+            self._process_sync_state(seg_type, seg_time)
+    
+    def _classify_segment(self, segment: List[LEDFrame]) -> str:
+        """Classify segment as ALL_OFF, ALL_ON, ONE_LED, or UNKNOWN"""
+        if not segment:
+            return 'UNKNOWN'
+        
+        # Check for all OFF
+        all_off = all(f.red == 0 and f.green == 0 and f.blue == 0 for f in segment)
+        if all_off:
+            return 'ALL_OFF'
+        
+        # Check for all ON (any uniform non-zero color)
+        first_color = (segment[0].red, segment[0].green, segment[0].blue)
+        if first_color != (0, 0, 0):
+            all_same = all((f.red, f.green, f.blue) == first_color for f in segment)
+            if all_same:
+                return 'ALL_ON'
+        
+        # Check for exactly one LED ON
+        lit_leds = [i for i, f in enumerate(segment) if f.red > 0 or f.green > 0 or f.blue > 0]
+        if len(lit_leds) == 1:
+            return 'ONE_LED'
+        
+        return 'UNKNOWN'
+    
+    def _process_start_state(self, seg_type: str, seg_time: float):
+        """Process segment in START state - expecting sync frames (ON, OFF, ON, OFF, ON, OFF)"""
+        if not self.start_expecting_off:
+            # Looking for ALL_ON
+            if seg_type == 'ALL_ON':
+                self.start_expecting_off = True
+                self.start_sync_count += 1
+            # Ignore anything else (like initial ALL_OFF clear)
+        else:
+            # Looking for ALL_OFF
+            if seg_type == 'ALL_OFF':
+                self.start_expecting_off = False
+                self.start_sync_count += 1
+            else:
+                # Got something unexpected, reset
+                self.start_expecting_off = False
+                self.start_sync_count = 0
+        
+        # After 3 complete sync pairs (6 segments: ON, OFF, ON, OFF, ON, OFF), transition to SEQUENCE
+        if self.start_sync_count >= 6:
+            self.state = 'SEQUENCE'
+            self.current_led_index = 0
+            self.leds_since_sync = 0
+            self.sync_expecting_off = False  # Next sync starts with ON
+    
+    def _process_sequence_state(self, seg_type: str, segment: List[LEDFrame], seg_time: float):
+        """Process segment in SEQUENCE state - expecting sequential LED frames"""
+        if seg_type != 'ONE_LED':
+            # Must be a sync frame
+            if seg_type in ['ALL_OFF', 'ALL_ON']:
+                # After every 10 LEDs, we expect a sync
+                if self.leds_since_sync != 10:
+                    self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected sync after 10 LEDs but got {self.leds_since_sync}")
+                    self.state = 'ERROR'
+                    return
+                # Transition to SYNC state
+                self.state = 'SYNC'
+                self._process_sync_state(seg_type, seg_time)
+            else:
+                self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected ONE_LED or sync but got {seg_type}")
+                self.state = 'ERROR'
+            return
+        
+        # Verify the LED index matches expectation
+        lit_leds = [i for i, f in enumerate(segment) if f.red > 0 or f.green > 0 or f.blue > 0]
+        if len(lit_leds) != 1:
+            self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Internal error - ONE_LED classification but {len(lit_leds)} LEDs lit")
+            self.state = 'ERROR'
+            return
+        
+        actual_position = lit_leds[0]
+        expected_position = self.current_led_index % (self.num_leds_chain0 + self.num_leds_chain1)
+        
+        # Adjust expected position for chain layout
+        if self.current_led_index < self.num_leds_chain0:
+            expected_position = self.current_led_index
+        else:
+            expected_position = self.current_led_index - self.num_leds_chain0
+        
+        if actual_position != expected_position:
+            self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: LED position mismatch - expected {expected_position} but got {actual_position} (global index {self.current_led_index})")
+            self.state = 'ERROR'
+            return
+        
+        self.current_led_index += 1
+        self.leds_since_sync += 1
+    
+    def _process_sync_state(self, seg_type: str, seg_time: float):
+        """Process segment in SYNC state - expecting ALL_ON then ALL_OFF"""
+        if not self.sync_expecting_off:
+            # Looking for ALL_ON
+            if seg_type == 'ALL_ON':
+                self.sync_expecting_off = True
+            else:
+                # Unexpected input - this is an error in SYNC state
+                self._record_error(f"SYNC seg {self.segment_count} at {seg_time:.3f}s: Expected ALL_ON but got {seg_type}")
+                self.state = 'ERROR'
+        else:
+            # Looking for ALL_OFF
+            if seg_type == 'ALL_OFF':
+                # Complete sync pair (ON+OFF), return to SEQUENCE
+                self.state = 'SEQUENCE'
+                self.leds_since_sync = 0
+                self.sync_expecting_off = False
+            else:
+                # Unexpected input - this is an error in SYNC state
+                self._record_error(f"SYNC seg {self.segment_count} at {seg_time:.3f}s: Expected ALL_OFF but got {seg_type}")
+                self.state = 'ERROR'
+    
+    def _record_error(self, message: str):
+        """Record an error message"""
+        self.error_messages.append(message)
+    
+    def get_status(self) -> Dict:
+        """Get current state machine status"""
+        return {
+            'state': self.state,
+            'start_sync_count': self.start_sync_count,
+            'current_led_index': self.current_led_index,
+            'leds_since_sync': self.leds_since_sync,
+            'segments_processed': self.segment_count,
+            'errors': self.error_messages.copy()
+        }
+
+
 @dataclass
 class Statistics:
     """Timing statistics with incremental computation"""
@@ -210,6 +523,74 @@ class LEDTimingAnalyzer:
             print(f'\r  Progress: [{bar}] {percent:.1f}% ({mb_processed:.1f}/{mb_total:.1f} MB, {lines_m:.1f}M lines)', 
                   end='', flush=True)
     
+    def test_decoder(self, channel: int = 0):
+        """Test the state machine decoder and verify color values"""
+        print("\n" + "="*80)
+        print("TESTING DECODER - Verifying all LEDs have valid colors")
+        print("="*80)
+        print(f"\nExpected colors: #000000, #282828 (40,40,40), #ffffff (255,255,255)")
+        print(f"Any other color indicates a decoding problem\n")
+        
+        decoder = LEDDecoder(self.timing)
+        data_iterator = self.parse_csv_streaming()
+        
+        prev_point = next(data_iterator, None)
+        if prev_point is None:
+            print("No data found")
+            return
+        
+        prev_time, prev_ch0, prev_ch1 = prev_point
+        prev_level = prev_ch0 if channel == 0 else prev_ch1
+        pulse_start_time = prev_time
+        
+        frame_count = 0
+        invalid_colors = []
+        
+        for current_point in data_iterator:
+            time, ch0, ch1 = current_point
+            current_level = ch0 if channel == 0 else ch1
+            
+            # Only process when the channel of interest changes
+            if current_level != prev_level:
+                duration = time - pulse_start_time
+                
+                # Feed the transition to the decoder
+                frame = decoder.process_transition(pulse_start_time, prev_level, duration)
+                
+                if frame:
+                    frame_count += 1
+                    
+                    # Check if color is valid (only #000000, #282828, or #ffffff expected)
+                    color_hex = f"#{frame.red:02x}{frame.green:02x}{frame.blue:02x}"
+                    
+                    if not ((frame.red == 0 and frame.green == 0 and frame.blue == 0) or  # #000000
+                            (frame.red == 40 and frame.green == 40 and frame.blue == 40) or  # #282828
+                            (frame.red == 255 and frame.green == 255 and frame.blue == 255)):  # #ffffff
+                        if len(invalid_colors) < 20:
+                            invalid_colors.append((frame_count, frame.red, frame.green, frame.blue, color_hex, frame.start_time))
+                    
+                    if frame_count % 1000 == 0:
+                        print(f'\r  Decoded {frame_count} frames...', end='', flush=True)
+                
+                # Start new pulse
+                pulse_start_time = time
+                prev_level = current_level
+        
+        print(f'\r  Decoded {frame_count} frames total')
+        print(f"\n{'='*80}")
+        
+        if invalid_colors:
+            print(f"⚠ PROBLEM DETECTED: Found {len(invalid_colors)} frames with invalid colors")
+            print(f"\nShowing first {min(len(invalid_colors), 20)} invalid colors:\n")
+            for frame_num, r, g, b, hex_color, start_time in invalid_colors:
+                print(f"  Frame {frame_num} at t={start_time:.6f}s: R={r:3d} G={g:3d} B={b:3d} ({hex_color})")
+            if len(invalid_colors) == 20:
+                print(f"  ... (stopped collecting after 20)")
+        else:
+            print("✓ All frames have valid colors!")
+            print("  Decoder is working correctly")
+        
+        print(f"{'='*80}\n")
     def parse_csv_streaming(self) -> Iterator[Tuple[float, int, int]]:
         """Parse CSV file incrementally, yielding data points one at a time"""
         self.file_size = os.path.getsize(self.csv_file)
@@ -248,8 +629,11 @@ class LEDTimingAnalyzer:
     
     def process_pulses_streaming(self, channel: int = 0) -> Iterator[Tuple[float, float, int]]:
         """
-        Extract pulses from compressed CSV data incrementally
-        Yields (start_time, duration, level) tuples
+        Extract pulses from compressed CSV data incrementally for a specific channel
+        Yields (start_time, duration, level) tuples ONLY when the specified channel changes
+        
+        CRITICAL: The CSV format is compressed - it only emits rows when ANY channel changes.
+        We must track the previous level for our channel and only yield when it transitions.
         """
         data_iterator = self.parse_csv_streaming()
         
@@ -257,187 +641,30 @@ class LEDTimingAnalyzer:
         if prev_point is None:
             return
         
+        # Initialize with the first point's level for our channel
+        time, ch0, ch1 = prev_point
+        prev_level = ch0 if channel == 0 else ch1
+        prev_time = time
+        
         pulse_count = 0
         
         for current_point in data_iterator:
-            time, ch0, ch1 = prev_point
-            next_time = current_point[0]
-            
-            level = ch0 if channel == 0 else ch1
-            duration = next_time - time
+            time, ch0, ch1 = current_point
+            current_level = ch0 if channel == 0 else ch1
             
             pulse_count += 1
             if pulse_count % 100000 == 0:
                 self.show_progress()
             
-            yield (time, duration, level)
-            
-            prev_point = current_point
+            # Only yield when the specified channel actually changes
+            if current_level != prev_level:
+                duration = time - prev_time
+                yield (prev_time, duration, prev_level)
+                prev_level = current_level
+                prev_time = time
         
         self.show_progress(force=True)
         print()  # New line after progress bar
-    
-    def decode_bits_streaming(self) -> Iterator[BitTiming]:
-        """
-        Decode LED bits from pulses incrementally
-        Yields BitTiming objects one at a time
-        """
-        pulse_iterator = self.process_pulses_streaming(channel=0)
-        
-        bit_count = 0
-        prev_pulse = None
-        
-        for pulse in pulse_iterator:
-            start_time, duration, level = pulse
-            
-            if prev_pulse is None:
-                prev_pulse = pulse
-                continue
-            
-            prev_start, prev_duration, prev_level = prev_pulse
-            
-            # Look for high-low sequence
-            if prev_level == 1 and level == 0:
-                # Convert to microseconds
-                high_us = prev_duration * 1_000_000
-                low_us = duration * 1_000_000
-                
-                # Determine if it's a 0 or 1 bit based on timing
-                bit_value, is_valid, error_msg = self.classify_bit(high_us, low_us)
-                
-                # Check for end-of-segment transition (extended low period before reset)
-                # This can occur at any bit position, not just the last bit of a frame
-                is_transition = False
-                if not is_valid:
-                    # Check if this is a T0L or T1L error with extended low period
-                    # (typical transition pattern: ~2.08-2.14µs instead of ~1.0µs)
-                    timing = self.timing
-                    epsilon = 1e-9
-                    
-                    # Transition signature: low period extended beyond normal range but below reset threshold
-                    # and within the expected transition timing range (~2.0-2.2µs)
-                    if bit_value == 0:
-                        # Check if low time is extended beyond T0L_MAX (but less than reset threshold)
-                        if (low_us > timing.T0L_MAX + epsilon and 
-                            low_us < timing.RES_MIN and
-                            1.8 <= low_us <= 2.5):  # Transition timing signature
-                            is_transition = True
-                            self.end_of_segment_transitions.add(low_us)
-                            self.transition_count += 1
-                    else:
-                        # Check if low time is extended beyond T1L_MAX (but less than reset threshold)
-                        if (low_us > timing.T1L_MAX + epsilon and 
-                            low_us < timing.RES_MIN and
-                            1.8 <= low_us <= 2.5):  # Transition timing signature
-                            is_transition = True
-                            self.end_of_segment_transitions.add(low_us)
-                            self.transition_count += 1
-                
-                bit = BitTiming(
-                    high_time=high_us,
-                    low_time=low_us,
-                    bit_value=bit_value,
-                    start_time=prev_start,
-                    is_valid=is_valid if not is_transition else True,  # Don't mark transition as error
-                    error_msg=error_msg if not is_transition else ""
-                )
-                
-                # Update statistics
-                if bit_value == 0:
-                    self.bit0_high_stats.add(high_us)
-                    # Don't include transition timing in normal statistics
-                    if not is_transition:
-                        self.bit0_low_stats.add(low_us)
-                else:
-                    self.bit1_high_stats.add(high_us)
-                    if not is_transition:
-                        self.bit1_low_stats.add(low_us)
-                
-                # Only count as error if it's not a transition
-                if not is_valid and not is_transition:
-                    self.total_errors += 1
-                    self.timing_errors.append({
-                        'time': prev_start,
-                        'high_us': high_us,
-                        'low_us': low_us,
-                        'bit_value': bit_value,
-                        'error': error_msg
-                    })
-                
-                bit_count += 1
-                yield bit
-                
-                # Skip the next pulse since we've consumed it as the low part
-                prev_pulse = None
-            else:
-                prev_pulse = pulse
-    
-    def classify_bit(self, high_us: float, low_us: float) -> Tuple[int, bool, str]:
-        """
-        Classify a bit as 0 or 1 based on timing
-        Returns (bit_value, is_valid, error_message)
-        """
-        timing = self.timing
-        epsilon = 1e-9  # Small tolerance for floating point comparison
-        
-        # Check if high time is closer to T0H or T1H
-        dist_to_0 = abs(high_us - timing.T0H_NOM)
-        dist_to_1 = abs(high_us - timing.T1H_NOM)
-        
-        if dist_to_0 < dist_to_1:
-            # Likely a 0 bit
-            bit_value = 0
-            errors = []
-            
-            if not (timing.T0H_MIN - epsilon <= high_us <= timing.T0H_MAX + epsilon):
-                errors.append(f"T0H out of range: {high_us:.6f}us (expected {timing.T0H_MIN:.4f}-{timing.T0H_MAX:.4f})")
-            
-            if not (timing.T0L_MIN - epsilon <= low_us <= timing.T0L_MAX + epsilon):
-                errors.append(f"T0L out of range: {low_us:.6f}us (expected {timing.T0L_MIN:.4f}-{timing.T0L_MAX:.4f})")
-            
-            is_valid = len(errors) == 0
-            error_msg = "; ".join(errors) if errors else ""
-            
-        else:
-            # Likely a 1 bit
-            bit_value = 1
-            errors = []
-            
-            if not (timing.T1H_MIN - epsilon <= high_us <= timing.T1H_MAX + epsilon):
-                errors.append(f"T1H out of range: {high_us:.3f}us (expected {timing.T1H_MIN:.4f}-{timing.T1H_MAX:.4f})")
-            
-            if not (timing.T1L_MIN - epsilon <= low_us <= timing.T1L_MAX + epsilon):
-                errors.append(f"T1L out of range: {low_us:.3f}us (expected {timing.T1L_MIN:.4f}-{timing.T1L_MAX:.4f})")
-            
-            is_valid = len(errors) == 0
-            error_msg = "; ".join(errors) if errors else ""
-        
-        return bit_value, is_valid, error_msg
-    
-    def group_into_frames_streaming(self) -> Iterator[LEDFrame]:
-        """Group bits into 24-bit LED frames incrementally"""
-        bit_iterator = self.decode_bits_streaming()
-        
-        current_frame = LEDFrame()
-        frame_count = 0
-        
-        for bit in bit_iterator:
-            current_frame.bits.append(bit)
-            
-            if len(current_frame.bits) == 1:
-                current_frame.start_time = bit.start_time
-            
-            if current_frame.is_complete():
-                current_frame.decode_colors()
-                frame_count += 1
-                
-                if frame_count % 1000 == 0:
-                    print(f'\r  Decoded {frame_count} frames...', end='', flush=True)
-                
-                yield current_frame
-                current_frame = LEDFrame()
-        
-        print()  # New line
     
     def detect_reset_periods_streaming(self):
         """Detect reset/latch periods (greater than 50us low) while processing"""
@@ -459,80 +686,150 @@ class LEDTimingAnalyzer:
         return self.reset_periods
     
     def analyze_autoid_sequence_streaming(self):
-        """Analyze the AutoID sequence while streaming frames"""
+        """Analyze the AutoID sequence using state machine while streaming frames"""
         print("\n" + "="*80)
         print("AUTOID SEQUENCE ANALYSIS")
         print("="*80)
         
-        frame_iterator = self.group_into_frames_streaming()
+        # Create decoder state machine for processing frames
+        decoder = LEDDecoder(self.timing)
+        
+        # Create state machine for pattern verification
+        state_machine = AutoIDStateMachine(self.num_leds_chain0, self.num_leds_chain1)
         
         current_segment = []
         reset_idx = 0
         total_frames = 0
         first_frame_time = None
         last_frame_time = None
+        segment_start_time = None
         
-        print("\n  Analyzing segments...")
+        print("\n  Processing frames and verifying pattern...")
         
-        for frame in frame_iterator:
-            total_frames += 1
+        # Process pulses through the decoder state machine
+        for start_time, duration, level in self.process_pulses_streaming(channel=0):
+            # Feed transitions to decoder (duration is in seconds)
+            frame = decoder.process_transition(start_time, level, duration)
             
-            if first_frame_time is None:
-                first_frame_time = frame.start_time
-            last_frame_time = frame.start_time
-            
-            # Check if there's a reset before this frame
-            while reset_idx < len(self.reset_periods) and self.reset_periods[reset_idx][0] < frame.start_time:
-                if current_segment:
-                    self.segments.append(current_segment)
-                    
-                    # Analyze segment if it's one of the first few
-                    if len(self.segments) <= 20:
-                        self._analyze_segment(len(self.segments), current_segment)
-                    
-                    current_segment = []
-                reset_idx += 1
-            
-            current_segment.append(frame)
-        
-        if current_segment:
-            self.segments.append(current_segment)
-            if len(self.segments) <= 20:
-                self._analyze_segment(len(self.segments), current_segment)
-        
-        # Summary
-        print(f"\n{'='*80}")
-        print(f"Total segments recorded: {len(self.segments)}")
-        print(f"Total LED frames: {total_frames}")
-        if first_frame_time and last_frame_time:
-            print(f"Recording duration: {last_frame_time - first_frame_time:.2f} seconds")
-    
-    def _analyze_segment(self, seg_idx: int, segment: List[LEDFrame]):
-        """Analyze a single segment"""
-        print(f"\n--- Segment {seg_idx} ({len(segment)} LEDs) ---")
-        
-        # Check if all LEDs are on (sync)
-        all_on = all(f.red == 255 and f.green == 255 and f.blue == 255 for f in segment)
-        all_off = all(f.red == 0 and f.green == 0 and f.blue == 0 for f in segment)
-        
-        if all_on:
-            duration = segment[-1].start_time - segment[0].start_time
-            print(f"  → SYNC: All LEDs ON (duration: {duration*1000:.1f}ms)")
-        elif all_off:
-            print(f"  → SYNC: All LEDs OFF")
-        else:
-            # Find lit LEDs
-            lit_leds = [(i, f) for i, f in enumerate(segment) if f.red > 0 or f.green > 0 or f.blue > 0]
-            
-            if lit_leds:
-                lit_indices = [i for i, _ in lit_leds]
-                print(f"  → PATTERN: {len(lit_leds)} LED(s) lit at indices {lit_indices[:10]}{'...' if len(lit_indices) > 10 else ''}")
+            if frame is not None:
+                total_frames += 1
                 
-                # Show color pattern
-                for i, frame in lit_leds[:5]:  # Show first 5
-                    print(f"     LED {i}: R={frame.red:3d} G={frame.green:3d} B={frame.blue:3d}")
-            else:
-                print(f"  → All LEDs OFF")
+                if first_frame_time is None:
+                    first_frame_time = frame.start_time
+                    segment_start_time = frame.start_time
+                last_frame_time = frame.start_time
+                
+                # Update timing statistics from the frame
+                for bit in frame.bits:
+                    if bit.bit_value == 0:
+                        self.bit0_high_stats.add(bit.high_time)
+                        self.bit0_low_stats.add(bit.low_time)
+                    else:
+                        self.bit1_high_stats.add(bit.high_time)
+                        self.bit1_low_stats.add(bit.low_time)
+                    
+                    if not bit.is_valid:
+                        self.total_errors += 1
+                        self.timing_errors.append({
+                            'time': bit.start_time,
+                            'high_us': bit.high_time,
+                            'low_us': bit.low_time,
+                            'bit_value': bit.bit_value,
+                            'error': bit.error_msg
+                        })
+                
+                # Check if there's a reset before this frame
+                while reset_idx < len(self.reset_periods) and self.reset_periods[reset_idx][0] < frame.start_time:
+                    if current_segment:
+                        # Process complete segment with state machine
+                        state_machine.process_segment(current_segment, segment_start_time)
+                        
+                        # Show first few segments for debugging
+                        if state_machine.segment_count <= 20:
+                            self._display_segment(state_machine.segment_count, current_segment, segment_start_time)
+                        
+                        current_segment = []
+                        segment_start_time = frame.start_time
+                    reset_idx += 1
+                
+                current_segment.append(frame)
+                
+                # Progress indication
+                if total_frames % 5000 == 0:
+                    print(f'\r  Processed {total_frames} frames, {state_machine.segment_count} segments...', end='', flush=True)
+        
+        # Process final segment
+        if current_segment:
+            state_machine.process_segment(current_segment, segment_start_time)
+            if state_machine.segment_count <= 20:
+                self._display_segment(state_machine.segment_count, current_segment, segment_start_time)
+        
+        print()  # New line after progress
+        
+        # Display state machine results
+        self._display_autoid_results(state_machine, total_frames, first_frame_time, last_frame_time)
+    
+    def _display_segment(self, seg_num: int, segment: List[LEDFrame], seg_time: float):
+        """Display segment information for debugging"""
+        print(f"\n--- Segment {seg_num} at {seg_time:.3f}s ({len(segment)} LEDs) ---")
+        
+        # Classify segment
+        all_off = all(f.red == 0 and f.green == 0 and f.blue == 0 for f in segment)
+        if all_off:
+            print(f"  → ALL OFF")
+            return
+        
+        first_color = (segment[0].red, segment[0].green, segment[0].blue)
+        all_same = all((f.red, f.green, f.blue) == first_color for f in segment)
+        if all_same and first_color != (0, 0, 0):
+            print(f"  → ALL ON: RGB({first_color[0]},{first_color[1]},{first_color[2]})")
+            return
+        
+        # Check for single LED
+        lit_leds = [(i, f) for i, f in enumerate(segment) if f.red > 0 or f.green > 0 or f.blue > 0]
+        if len(lit_leds) == 1:
+            i, frame = lit_leds[0]
+            print(f"  → ONE LED at position {i}: RGB({frame.red},{frame.green},{frame.blue})")
+        else:
+            print(f"  → MULTIPLE LEDS: {len(lit_leds)} LEDs lit")
+            for i, frame in lit_leds[:5]:
+                print(f"     LED {i}: RGB({frame.red},{frame.green},{frame.blue})")
+    
+    def _display_autoid_results(self, state_machine: AutoIDStateMachine, total_frames: int, 
+                                first_frame_time: Optional[float], last_frame_time: Optional[float]):
+        """Display AutoID pattern verification results"""
+        status = state_machine.get_status()
+        
+        print(f"\n{'='*80}")
+        print(f"AUTOID PATTERN VERIFICATION RESULTS")
+        print(f"{'='*80}")
+        
+        print(f"\nTotal frames decoded: {total_frames}")
+        print(f"Total segments processed: {status['segments_processed']}")
+        
+        if first_frame_time and last_frame_time:
+            duration = last_frame_time - first_frame_time
+            print(f"Recording duration: {duration:.2f} seconds")
+        
+        print(f"\nState Machine Status:")
+        print(f"  Final state: {status['state']}")
+        print(f"  Start sync count: {status['start_sync_count']}")
+        print(f"  Current LED index: {status['current_led_index']}")
+        print(f"  LEDs since last sync: {status['leds_since_sync']}")
+        
+        if status['errors']:
+            print(f"\n{'!'*80}")
+            print(f"ERRORS DETECTED: {len(status['errors'])}")
+            print(f"{'!'*80}")
+            for i, error in enumerate(status['errors'][:20], 1):
+                print(f"{i}. {error}")
+            if len(status['errors']) > 20:
+                print(f"\n... and {len(status['errors']) - 20} more errors")
+        else:
+            print(f"\n{'='*80}")
+            print(f"✓ PATTERN VALIDATION SUCCESSFUL")
+            print(f"{'='*80}")
+            print(f"AutoID sequence is correct!")
     
     def print_timing_statistics(self):
         """Print timing statistics"""
@@ -722,6 +1019,12 @@ Available chip types: {', '.join(CHIP_TIMINGS.keys())}
         help='Process only this duration in seconds (alternative to --end-time)'
     )
     
+    parser.add_argument(
+        '--test-decoder',
+        action='store_true',
+        help='Test the state machine decoder and verify it only produces valid colors (#000000, #282828, #ffffff)'
+    )
+    
     # Timing override arguments
     parser.add_argument(
         '--t0h',
@@ -818,7 +1121,14 @@ Available chip types: {', '.join(CHIP_TIMINGS.keys())}
         reset=args.reset
     )
     
-    analyzer.analyze()
+    if args.test_decoder:
+        # Test mode: verify state machine only produces valid colors
+        print("\n=== Testing State Machine Decoder ===")
+        print(f"Expected colors: #000000 (off), #282828 (RGB 40,40,40), #ffffff (white)")
+        print(f"Processing channel 0...\n")
+        analyzer.test_decoder(channel=0)
+    else:
+        analyzer.analyze()
 
 
 if __name__ == '__main__':

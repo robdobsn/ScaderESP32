@@ -52,13 +52,12 @@ void ScaderLEDPixels::setup()
     _ledPixels.addPattern("autoid", &LEDPatternAutoID::create);
     _ledPixels.addPattern("fire", &LEDPatternFire::create);
 
-    // Setup LEDs using SimpleRMTLeds driver with LEDPixels wrapper
-    // This will use the configuration from modConfig() and create SimpleRMTLeds strips
+    // Setup LEDs
     bool rslt = _ledPixels.setup(modConfig());
 
     // Log
 #ifdef DEBUG_LED_PIXEL_SETUP
-    LOG_I(MODULE_PREFIX, "setup %s numPixels %d using SimpleRMTLeds driver", 
+    LOG_I(MODULE_PREFIX, "setup %s numPixels %d", 
           rslt ? "OK" : "FAILED", _ledPixels.getNumPixels());
 #endif
 

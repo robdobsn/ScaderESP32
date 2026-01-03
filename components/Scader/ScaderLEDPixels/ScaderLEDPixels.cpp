@@ -17,6 +17,7 @@
 #include "SysManager.h"
 #include "LEDPatternRainbowSnake.h"
 #include "LEDPatternAutoID.h"
+#include "LEDPatternFire.h"
 
 #define DEBUG_LED_PIXEL_SETUP
 
@@ -49,6 +50,7 @@ void ScaderLEDPixels::setup()
     // Add patterns before setup so that initial pattern can be set during setup
     _ledPixels.addPattern("RainbowSnake", &LEDPatternRainbowSnake::create);
     _ledPixels.addPattern("autoid", &LEDPatternAutoID::create);
+    _ledPixels.addPattern("fire", &LEDPatternFire::create);
 
     // Setup LEDs using SimpleRMTLeds driver with LEDPixels wrapper
     // This will use the configuration from modConfig() and create SimpleRMTLeds strips

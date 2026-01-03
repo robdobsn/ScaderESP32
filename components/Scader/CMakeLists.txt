@@ -13,9 +13,9 @@ set(SCADER_SRCS
   "ScaderOpener/ScaderOpener.cpp"
   "ScaderOpener/OpenerStatus.cpp"
   "ScaderLEDPixels/ScaderLEDPixels.cpp"
-  "ScaderLEDPixels/SimpleRMTLeds.cpp"
-  "ScaderLEDPixels/SimpleRMTLedsWrapper.cpp"
-  "ScaderLEDPixels/ScaderLEDPixelsCustom.cpp"
+  # "ScaderLEDPixels/SimpleRMTLeds.cpp"
+  # "ScaderLEDPixels/SimpleRMTLedsWrapper.cpp"
+  # "ScaderLEDPixels/ScaderLEDPixelsCustom.cpp"
   "ScaderOpener/DoorOpener.cpp"
   "ScaderOpener/UIModule.cpp"
   "ScaderPulseCounter/ScaderPulseCounter.cpp"
@@ -51,8 +51,6 @@ set(SCADER_INCLUDE_DIRS
 
 # Set requirements
 set(SCADER_REQUIRES RaftCore hardware)
-
-message(STATUS "ScaderLEDPixels: Using SimpleRMTLeds driver with LEDPixels wrapper")
 
 idf_component_register(
   SRCS ${SCADER_SRCS}

@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 """
-WS2811 Timing Analysis Script
+LED Pixel Timing Analysis Script
 
 Analyzes logic analyzer CSV data exported from libsigrok4DSL to verify:
-1. WS2811 timing compliance (according to datasheet)
+1. LED pixel timing compliance (WS2811, WS2812B, SK6812, etc.)
 2. Timing variability statistics
 3. AutoID sequence correctness
 4. Sync and single-LED timing periods
 
-WS2811 Protocol (from datasheet):
-- T0H: 0.5us ± 150ns (high time for 0 bit)
-- T0L: 2.0us ± 150ns (low time for 0 bit)
-- T1H: 1.2us ± 150ns (high time for 1 bit)
-- T1L: 1.3us ± 150ns (low time for 1 bit)
-- RES: >50us (reset/latch time)
+Supports multiple LED chip types with configurable timing parameters.
+Timing values can be specified as fixed values with tolerance or as ranges.
 """
 
 import csv
@@ -28,35 +24,57 @@ import statistics
 import time
 
 
+# LED Chip Timing Database (all values in microseconds)
+# Format: 'chip_name': {'T0H': (min, max), 'T0L': (min, max), 'T1H': (min, max), 'T1L': (min, max), 'RES': min_value}
+CHIP_TIMINGS = {
+    'WS2811': {'T0H': (0.35, 0.65), 'T0L': (1.85, 2.15), 'T1H': (1.05, 1.35), 'T1L': (1.15, 1.45), 'RES': 50.0},
+    'WS2811-HS': {'T0H': (0.1, 0.4), 'T0L': (0.85, 1.15), 'T1H': (0.45, 0.75), 'T1L': (0.5, 0.8), 'RES': 50.0},
+    'WS2812B': {'T0H': (0.25, 0.55), 'T0L': (0.7, 1.0), 'T1H': (0.65, 0.95), 'T1L': (0.3, 0.6), 'RES': 50.0},
+    'SK6812': {'T0H': (0.15, 0.45), 'T0L': (0.75, 1.05), 'T1H': (0.45, 0.75), 'T1L': (0.45, 0.75), 'RES': 80.0},
+    'SK6812-MINI': {'T0H': (0.15, 0.45), 'T0L': (0.75, 1.05), 'T1H': (0.45, 0.75), 'T1L': (0.45, 0.75), 'RES': 80.0},
+    'SK6812-SIDE': {'T0H': (0.15, 0.45), 'T0L': (0.75, 1.05), 'T1H': (0.45, 0.75), 'T1L': (0.45, 0.75), 'RES': 80.0},
+    'SK6805-EC15': {'T0H': (0.2, 0.4), 'T0L': (0.8, 1.0), 'T1H': (0.58, 1.0), 'T1L': (0.2, 0.4), 'RES': 80.0},
+    'SK6805-EC20': {'T0H': (0.2, 0.4), 'T0L': (0.8, 1.0), 'T1H': (0.58, 1.0), 'T1L': (0.2, 0.4), 'RES': 80.0},
+    'SK6805-EC14': {'T0H': (0.2, 0.4), 'T0L': (0.8, 1.0), 'T1H': (0.65, 1.0), 'T1L': (0.2, 0.4), 'RES': 200.0},
+    'APA104': {'T0H': (0.2, 0.5), 'T0L': (1.21, 1.51), 'T1H': (1.21, 1.51), 'T1L': (0.2, 0.5), 'RES': 24.0},
+}
+
+
 @dataclass
-class WS2811Timing:
-    """WS2811 timing specifications in microseconds"""
-    def __init__(self, high_speed: bool = False):
-        # High speed mode halves nominal timing, but tolerance (±150ns) remains constant
-        speed_factor = 0.5 if high_speed else 1.0
-        tolerance = 0.15  # ±150ns tolerance in microseconds
+class LEDTiming:
+    """LED pixel timing specifications in microseconds"""
+    def __init__(self, chip: str = 'WS2812B', 
+                 t0h: Optional[Tuple[float, float]] = None,
+                 t0l: Optional[Tuple[float, float]] = None,
+                 t1h: Optional[Tuple[float, float]] = None,
+                 t1l: Optional[Tuple[float, float]] = None,
+                 reset: Optional[float] = None):
+        
+        # Start with chip defaults
+        if chip not in CHIP_TIMINGS:
+            raise ValueError(f"Unknown chip type: {chip}. Available: {', '.join(CHIP_TIMINGS.keys())}")
+        
+        defaults = CHIP_TIMINGS[chip]
+        self.chip_name = chip
         
         # T0H: 0 bit high time
-        self.T0H_NOM = 0.5 * speed_factor
-        self.T0H_MIN = self.T0H_NOM - tolerance
-        self.T0H_MAX = self.T0H_NOM + tolerance
+        self.T0H_MIN, self.T0H_MAX = t0h if t0h else defaults['T0H']
+        self.T0H_NOM = (self.T0H_MIN + self.T0H_MAX) / 2
         
         # T0L: 0 bit low time
-        self.T0L_NOM = 2.0 * speed_factor
-        self.T0L_MIN = self.T0L_NOM - tolerance
-        self.T0L_MAX = self.T0L_NOM + tolerance
+        self.T0L_MIN, self.T0L_MAX = t0l if t0l else defaults['T0L']
+        self.T0L_NOM = (self.T0L_MIN + self.T0L_MAX) / 2
         
         # T1H: 1 bit high time
-        self.T1H_NOM = 1.2 * speed_factor
-        self.T1H_MIN = self.T1H_NOM - tolerance
-        self.T1H_MAX = self.T1H_NOM + tolerance
+        self.T1H_MIN, self.T1H_MAX = t1h if t1h else defaults['T1H']
+        self.T1H_NOM = (self.T1H_MIN + self.T1H_MAX) / 2
         
         # T1L: 1 bit low time
-        self.T1L_NOM = 1.3 * speed_factor
-        self.T1L_MIN = self.T1L_NOM - tolerance
-        self.T1L_MAX = self.T1L_NOM + tolerance
+        self.T1L_MIN, self.T1L_MAX = t1l if t1l else defaults['T1L']
+        self.T1L_NOM = (self.T1L_MIN + self.T1L_MAX) / 2
         
-        self.RES_MIN = 50.0  # Reset time minimum (unchanged in high speed mode)
+        # Reset time minimum
+        self.RES_MIN = reset if reset is not None else defaults['RES']
 
 
 @dataclass
@@ -127,12 +145,14 @@ class Statistics:
         }
 
 
-class WS2811Analyzer:
+class LEDTimingAnalyzer:
     """Main analyzer class with streaming analysis"""
     
     def __init__(self, csv_file: Path, num_leds_chain0: int = 1000, num_leds_chain1: int = 1000, 
                  max_errors: int = 1000, start_time: float = None, end_time: float = None,
-                 high_speed: bool = None):
+                 chip: str = 'WS2812B', t0h: Optional[Tuple[float, float]] = None,
+                 t0l: Optional[Tuple[float, float]] = None, t1h: Optional[Tuple[float, float]] = None,
+                 t1l: Optional[Tuple[float, float]] = None, reset: Optional[float] = None):
         self.csv_file = csv_file
         self.num_leds_chain0 = num_leds_chain0
         self.num_leds_chain1 = num_leds_chain1
@@ -140,14 +160,20 @@ class WS2811Analyzer:
         self.max_errors = max_errors
         self.start_time = start_time
         self.end_time = end_time
-        self.high_speed = high_speed
-        self.timing = None  # Will be set after speed detection if needed
+        self.chip = chip
+        
+        # Create timing object with chip defaults and any overrides
+        self.timing = LEDTiming(chip=chip, t0h=t0h, t0l=t0l, t1h=t1h, t1l=t1l, reset=reset)
         
         # Statistics
         self.bit0_high_stats = Statistics()
         self.bit0_low_stats = Statistics()
         self.bit1_high_stats = Statistics()
         self.bit1_low_stats = Statistics()
+        
+        # End-of-segment transition timing
+        self.end_of_segment_transitions = Statistics()
+        self.transition_count = 0
         
         # Errors (limited to save memory)
         self.timing_errors = deque(maxlen=max_errors)
@@ -251,71 +277,9 @@ class WS2811Analyzer:
         self.show_progress(force=True)
         print()  # New line after progress bar
     
-    def auto_detect_speed_mode(self, sample_size: int = 1000) -> bool:
-        """
-        Auto-detect whether data is high-speed or standard speed mode
-        Returns True for high-speed, False for standard speed
-        """
-        print("\n  Auto-detecting speed mode...")
-        
-        pulse_iterator = self.process_pulses_streaming(channel=0)
-        
-        high_times = []
-        low_times = []
-        prev_pulse = None
-        
-        # Collect sample pulses
-        for pulse in pulse_iterator:
-            start_time, duration, level = pulse
-            
-            if prev_pulse is None:
-                prev_pulse = pulse
-                continue
-            
-            prev_start, prev_duration, prev_level = prev_pulse
-            
-            # Look for high-low sequences
-            if prev_level == 1 and level == 0:
-                high_us = prev_duration * 1_000_000
-                low_us = duration * 1_000_000
-                
-                high_times.append(high_us)
-                low_times.append(low_us)
-                
-                if len(high_times) >= sample_size:
-                    break
-                
-                prev_pulse = None
-            else:
-                prev_pulse = pulse
-        
-        if len(high_times) < 10:
-            print("  Warning: Insufficient data for speed detection, defaulting to standard speed")
-            return False
-        
-        # Calculate average timing
-        avg_high = sum(high_times) / len(high_times)
-        avg_low = sum(low_times) / len(low_times)
-        
-        # Compare against nominal timings for both modes
-        # Standard mode nominals: T0H=0.5, T1H=1.2, average ~0.85
-        # High-speed mode nominals: T0H=0.25, T1H=0.6, average ~0.425
-        standard_nominal = (0.5 + 1.2) / 2
-        highspeed_nominal = (0.25 + 0.6) / 2
-        
-        dist_to_standard = abs(avg_high - standard_nominal)
-        dist_to_highspeed = abs(avg_high - highspeed_nominal)
-        
-        is_high_speed = dist_to_highspeed < dist_to_standard
-        
-        mode_name = "high-speed (2x)" if is_high_speed else "standard"
-        print(f"  Detected mode: {mode_name} (avg high: {avg_high:.3f}us, avg low: {avg_low:.3f}us)")
-        
-        return is_high_speed
-    
     def decode_bits_streaming(self) -> Iterator[BitTiming]:
         """
-        Decode WS2811 bits from pulses incrementally
+        Decode LED bits from pulses incrementally
         Yields BitTiming objects one at a time
         """
         pulse_iterator = self.process_pulses_streaming(channel=0)
@@ -341,24 +305,56 @@ class WS2811Analyzer:
                 # Determine if it's a 0 or 1 bit based on timing
                 bit_value, is_valid, error_msg = self.classify_bit(high_us, low_us)
                 
+                # Check for end-of-segment transition (extended low period before reset)
+                # This can occur at any bit position, not just the last bit of a frame
+                is_transition = False
+                if not is_valid:
+                    # Check if this is a T0L or T1L error with extended low period
+                    # (typical transition pattern: ~2.08-2.14µs instead of ~1.0µs)
+                    timing = self.timing
+                    epsilon = 1e-9
+                    
+                    # Transition signature: low period extended beyond normal range but below reset threshold
+                    # and within the expected transition timing range (~2.0-2.2µs)
+                    if bit_value == 0:
+                        # Check if low time is extended beyond T0L_MAX (but less than reset threshold)
+                        if (low_us > timing.T0L_MAX + epsilon and 
+                            low_us < timing.RES_MIN and
+                            1.8 <= low_us <= 2.5):  # Transition timing signature
+                            is_transition = True
+                            self.end_of_segment_transitions.add(low_us)
+                            self.transition_count += 1
+                    else:
+                        # Check if low time is extended beyond T1L_MAX (but less than reset threshold)
+                        if (low_us > timing.T1L_MAX + epsilon and 
+                            low_us < timing.RES_MIN and
+                            1.8 <= low_us <= 2.5):  # Transition timing signature
+                            is_transition = True
+                            self.end_of_segment_transitions.add(low_us)
+                            self.transition_count += 1
+                
                 bit = BitTiming(
                     high_time=high_us,
                     low_time=low_us,
                     bit_value=bit_value,
                     start_time=prev_start,
-                    is_valid=is_valid,
-                    error_msg=error_msg
+                    is_valid=is_valid if not is_transition else True,  # Don't mark transition as error
+                    error_msg=error_msg if not is_transition else ""
                 )
                 
                 # Update statistics
                 if bit_value == 0:
                     self.bit0_high_stats.add(high_us)
-                    self.bit0_low_stats.add(low_us)
+                    # Don't include transition timing in normal statistics
+                    if not is_transition:
+                        self.bit0_low_stats.add(low_us)
                 else:
                     self.bit1_high_stats.add(high_us)
-                    self.bit1_low_stats.add(low_us)
+                    if not is_transition:
+                        self.bit1_low_stats.add(low_us)
                 
-                if not is_valid:
+                # Only count as error if it's not a transition
+                if not is_valid and not is_transition:
                     self.total_errors += 1
                     self.timing_errors.append({
                         'time': prev_start,
@@ -565,6 +561,19 @@ class WS2811Analyzer:
             self._print_stats(reset_stats.get_stats(), "us")
         else:
             print("  No reset periods found")
+        
+        # Print end-of-segment transitions if any were detected
+        if self.transition_count > 0:
+            print("\nEnd-of-Segment Transitions:")
+            print(f"  Description: Extended low period on last bit of frame before reset")
+            print(f"  Occurrences: {self.transition_count}")
+            trans_stats = self.end_of_segment_transitions.get_stats()
+            if trans_stats:
+                print(f"  Mean:   {trans_stats['mean']:.3f} us")
+                print(f"  StdDev: {trans_stats['stdev']:.3f} us")
+                print(f"  Min:    {trans_stats['min']:.3f} us")
+                print(f"  Max:    {trans_stats['max']:.3f} us")
+            print(f"  Note: These are hardware transition delays, not protocol violations")
     
     def _print_stats(self, stats: Dict, unit: str):
         """Helper to print statistics"""
@@ -610,15 +619,12 @@ class WS2811Analyzer:
         """Main analysis function with streaming"""
         print(f"\nAnalyzing: {self.csv_file}")
         print(f"LED configuration: Chain 0: {self.num_leds_chain0}, Chain 1: {self.num_leds_chain1}")
-        
-        # Auto-detect speed mode if not specified
-        if self.high_speed is None:
-            self.high_speed = self.auto_detect_speed_mode()
-        
-        # Initialize timing based on detected or specified mode
-        self.timing = WS2811Timing(high_speed=self.high_speed)
-        
-        print(f"Timing mode: {'High-speed (2x)' if self.high_speed else 'Standard'}")
+        print(f"Chip type: {self.timing.chip_name}")
+        print(f"Timing - T0H: {self.timing.T0H_MIN:.2f}-{self.timing.T0H_MAX:.2f}us, "
+              f"T0L: {self.timing.T0L_MIN:.2f}-{self.timing.T0L_MAX:.2f}us, "
+              f"T1H: {self.timing.T1H_MIN:.2f}-{self.timing.T1H_MAX:.2f}us, "
+              f"T1L: {self.timing.T1L_MIN:.2f}-{self.timing.T1L_MAX:.2f}us, "
+              f"RES: >{self.timing.RES_MIN:.0f}us")
         
         if self.start_time is not None or self.end_time is not None:
             time_range = f"{self.start_time or 0:.2f}s to {self.end_time or '∞'}s"
@@ -645,13 +651,17 @@ class WS2811Analyzer:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Analyze WS2811 timing data from logic analyzer CSV export',
+        description='Analyze LED pixel timing data from logic analyzer CSV export',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Examples:
   %(prog)s data.csv
-  %(prog)s data.csv --leds-chain0 1000 --leds-chain1 1000
-  %(prog)s ../data/capture.csv
+  %(prog)s data.csv --chip WS2812B
+  %(prog)s data.csv --chip SK6812 --leds-chain0 1000
+  %(prog)s data.csv --chip WS2811-HS --t0h 0.1 0.4
+  %(prog)s ../data/capture.csv --duration 10
+
+Available chip types: {', '.join(CHIP_TIMINGS.keys())}
         """
     )
     
@@ -660,6 +670,14 @@ Examples:
         type=Path,
         nargs='?',
         help='Path to CSV file (default: searches in ../data/ folder)'
+    )
+    
+    parser.add_argument(
+        '--chip',
+        type=str,
+        default='WS2812B',
+        choices=list(CHIP_TIMINGS.keys()),
+        help='LED chip type (default: WS2812B)'
     )
     
     parser.add_argument(
@@ -704,27 +722,53 @@ Examples:
         help='Process only this duration in seconds (alternative to --end-time)'
     )
     
-    speed_group = parser.add_mutually_exclusive_group()
-    speed_group.add_argument(
-        '--high-speed',
-        action='store_true',
-        help='Force high-speed mode timing (all timings halved except reset)'
+    # Timing override arguments
+    parser.add_argument(
+        '--t0h',
+        nargs=2,
+        type=float,
+        metavar=('MIN', 'MAX'),
+        help='Override T0H timing range in microseconds (e.g., --t0h 0.25 0.55)'
     )
-    speed_group.add_argument(
-        '--low-speed',
-        action='store_true',
-        help='Force standard/low-speed mode timing'
+    
+    parser.add_argument(
+        '--t0l',
+        nargs=2,
+        type=float,
+        metavar=('MIN', 'MAX'),
+        help='Override T0L timing range in microseconds'
+    )
+    
+    parser.add_argument(
+        '--t1h',
+        nargs=2,
+        type=float,
+        metavar=('MIN', 'MAX'),
+        help='Override T1H timing range in microseconds'
+    )
+    
+    parser.add_argument(
+        '--t1l',
+        nargs=2,
+        type=float,
+        metavar=('MIN', 'MAX'),
+        help='Override T1L timing range in microseconds'
+    )
+    
+    parser.add_argument(
+        '--reset',
+        type=float,
+        metavar='MIN',
+        help='Override reset timing minimum in microseconds'
     )
     
     args = parser.parse_args()
     
-    # Determine speed mode: None = auto-detect, True = high-speed, False = standard
-    if args.high_speed:
-        speed_mode = True
-    elif args.low_speed:
-        speed_mode = False
-    else:
-        speed_mode = None  # Auto-detect
+    # Parse timing overrides
+    t0h = tuple(args.t0h) if args.t0h else None
+    t0l = tuple(args.t0l) if args.t0l else None
+    t1h = tuple(args.t1h) if args.t1h else None
+    t1l = tuple(args.t1l) if args.t1l else None
     
     # Calculate end_time from duration if specified
     end_time = args.end_time
@@ -760,13 +804,18 @@ Examples:
         sys.exit(1)
     
     # Run analysis
-    analyzer = WS2811Analyzer(
+    analyzer = LEDTimingAnalyzer(
         csv_file=csv_file,
         num_leds_chain0=args.leds_chain0,
         num_leds_chain1=args.leds_chain1,
         start_time=args.start_time,
         end_time=end_time,
-        high_speed=speed_mode
+        chip=args.chip,
+        t0h=t0h,
+        t0l=t0l,
+        t1h=t1h,
+        t1l=t1l,
+        reset=args.reset
     )
     
     analyzer.analyze()

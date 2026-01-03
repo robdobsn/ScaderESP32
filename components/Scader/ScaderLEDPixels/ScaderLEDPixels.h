@@ -13,7 +13,7 @@
 #include "RaftSysMod.h"
 #include "ScaderCommon.h"
 #include "RaftUtils.h"
-#include "ScaderLEDPixelsCustom.h"
+#include "LEDPixels.h"
 
 class APISourceInfo;
 
@@ -50,8 +50,8 @@ private:
     // Initialized flag
     bool _isInitialised = false;
 
-    // LED pixels - custom implementation using SimpleRMTLeds driver
-    ScaderLEDPixelsCustom _ledPixels;
+    // LED pixels
+    LEDPixels _ledPixels;
 
 #ifdef RUN_PATTERNS_IN_SYSMOD
     // Patterns

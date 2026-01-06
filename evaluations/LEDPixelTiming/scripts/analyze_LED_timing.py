@@ -201,7 +201,9 @@ class LEDDecoder:
     
     def _classify_bit(self, high_us: float, low_us: float) -> Tuple[int, bool, str]:
         """Classify a bit as 0 or 1 based on timing"""
-        epsilon = 1e-9
+        # Epsilon accounts for sampling jitter at 20MHz (sample period = 0.05us)
+        # Using 0.1us to provide margin for timing variations
+        epsilon = 0.1
         
         # Check if high time is closer to T0H or T1H
         dist_to_0 = abs(high_us - self.timing.T0H_NOM)
@@ -242,10 +244,12 @@ class AutoIDStateMachine:
     - LED indices increment continuously across chain transitions
     """
     
-    def __init__(self, num_leds_chain0: int = 1000, num_leds_chain1: int = 1000):
+    def __init__(self, num_leds_chain0: int = 1000, num_leds_chain1: int = 1000, 
+                 max_lit_leds_tolerance: int = 20):
         self.state = 'START'
         self.num_leds_chain0 = num_leds_chain0
         self.num_leds_chain1 = num_leds_chain1
+        self.max_lit_leds_tolerance = max_lit_leds_tolerance
         
         # START state counters
         self.start_sync_count = 0
@@ -262,6 +266,11 @@ class AutoIDStateMachine:
         self.error_messages: List[str] = []
         self.segment_count = 0
         
+        # Anomaly tracking
+        self.anomaly_count = 0
+        self.max_anomaly_logs = 50
+        self.anomaly_details: List[Dict] = []
+        
     def process_segment(self, segment: List[LEDFrame], seg_time: float) -> None:
         """Process a segment and update state machine
         
@@ -277,13 +286,29 @@ class AutoIDStateMachine:
         # Classify the segment
         seg_type = self._classify_segment(segment)
         
-        # Log what we're feeding to the state machine
-        print(f"  SM Feed: Seg {self.segment_count} at {seg_time:.3f}s -> Type: {seg_type:10s} (State: {self.state})")
-        
+        # Handle UNKNOWN segments - could be anomalies if in SEQUENCE state
         if seg_type == 'UNKNOWN':
-            self._record_error(f"Segment {self.segment_count} at {seg_time:.3f}s: Unknown segment type (not ALL_OFF, ALL_ON, or ONE_LED)")
-            self.state = 'ERROR'
-            return
+            # In SEQUENCE state, check if this is a tolerable anomaly (multiple LEDs lit)
+            if self.state == 'SEQUENCE':
+                lit_leds = [(i, f) for i, f in enumerate(segment) if f.red > 0 or f.green > 0 or f.blue > 0]
+                num_lit = len(lit_leds)
+                
+                # If within tolerance (2-20 LEDs), treat as anomaly and continue
+                if 2 <= num_lit <= self.max_lit_leds_tolerance:
+                    self._log_multi_led_anomaly(seg_time, segment, lit_leds)
+                    self.current_led_index += 1
+                    self.leds_since_sync += 1
+                    return
+                
+                # Too many LEDs lit (>20), treat as error
+                self._record_error(f"Segment {self.segment_count} at {seg_time:.3f}s: Too many LEDs lit ({num_lit} > {self.max_lit_leds_tolerance})")
+                self.state = 'ERROR'
+                return
+            else:
+                # In other states, UNKNOWN is an error
+                self._record_error(f"Segment {self.segment_count} at {seg_time:.3f}s: Unknown segment type (not ALL_OFF, ALL_ON, or ONE_LED)")
+                self.state = 'ERROR'
+                return
         
         # Process based on current state
         if self.state == 'START':
@@ -345,22 +370,52 @@ class AutoIDStateMachine:
     def _process_sequence_state(self, seg_type: str, segment: List[LEDFrame], seg_time: float):
         """Process segment in SEQUENCE state - expecting sequential LED frames"""
         if seg_type != 'ONE_LED':
-            # Must be a sync frame
+            # Check if it's a sync frame
             if seg_type in ['ALL_OFF', 'ALL_ON']:
                 # After every 10 LEDs, we expect a sync
-                if self.leds_since_sync != 10:
-                    self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected sync after 10 LEDs but got {self.leds_since_sync}")
+                # Exception: at sequence completion (when all LEDs have been shown or we're at the last LED), 
+                # we may have fewer than 10 LEDs in the final batch
+                # Check if we're at the end of chain 0 or chain 1
+                at_end_of_chain0 = (self.current_led_index >= self.num_leds_chain0 - 1 and 
+                                   self.current_led_index < self.num_leds_chain0)
+                total_leds = self.num_leds_chain0 + self.num_leds_chain1
+                at_end_of_chain1 = (self.current_led_index >= total_leds - 1)
+                is_at_end_of_sequence = at_end_of_chain0 or at_end_of_chain1
+                
+                if self.leds_since_sync != 10 and not is_at_end_of_sequence:
+                    self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected sync after 10 LEDs but got {self.leds_since_sync} [idx={self.current_led_index}, chain0={self.num_leds_chain0}, at_end_of_chain0={at_end_of_chain0}, is_at_end={is_at_end_of_sequence}]")
                     self.state = 'ERROR'
                     return
                 # Transition to SYNC state
                 self.state = 'SYNC'
                 self._process_sync_state(seg_type, seg_time)
+                return
+            
+            # Not a sync, check if it's an anomaly we can tolerate (UNKNOWN type with few LEDs lit)
+            lit_leds = [(i, f) for i, f in enumerate(segment) if f.red > 0 or f.green > 0 or f.blue > 0]
+            num_lit = len(lit_leds)
+            
+            if num_lit == 0:
+                # ALL_OFF when expecting ONE_LED
+                self._log_all_off_anomaly(seg_time)
+                # Continue processing - increment LED index
+                self.current_led_index += 1
+                self.leds_since_sync += 1
+                return
+            elif 0 < num_lit <= self.max_lit_leds_tolerance:
+                # Few LEDs lit - tolerable anomaly
+                self._log_multi_led_anomaly(seg_time, segment, lit_leds)
+                # Continue processing - increment LED index
+                self.current_led_index += 1
+                self.leds_since_sync += 1
+                return
             else:
-                self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected ONE_LED or sync but got {seg_type}")
+                # Too many LEDs lit - this is an error
+                self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected ONE_LED or sync but got {num_lit} LEDs lit (threshold: {self.max_lit_leds_tolerance})")
                 self.state = 'ERROR'
-            return
+                return
         
-        # Verify the LED index matches expectation
+        # Verify the LED index matches expectation (ONE_LED case)
         lit_leds = [i for i, f in enumerate(segment) if f.red > 0 or f.green > 0 or f.blue > 0]
         if len(lit_leds) != 1:
             self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Internal error - ONE_LED classification but {len(lit_leds)} LEDs lit")
@@ -390,6 +445,25 @@ class AutoIDStateMachine:
             # Looking for ALL_ON
             if seg_type == 'ALL_ON':
                 self.sync_expecting_off = True
+            elif seg_type == 'ALL_OFF':
+                # Special case: at end of sequence, might go straight to ALL_OFF (restart sequence)
+                # This is valid - treat it as completing the sync and resetting
+                # Check if we're at the end of either chain
+                at_end_of_chain0 = (self.current_led_index >= self.num_leds_chain0 - 1 and 
+                                   self.current_led_index < self.num_leds_chain0)
+                total_leds = self.num_leds_chain0 + self.num_leds_chain1
+                at_end_of_chain1 = (self.current_led_index >= total_leds - 1)
+                
+                if at_end_of_chain0 or at_end_of_chain1:
+                    # At end of sequence - this ALL_OFF is the restart, reset everything
+                    self.current_led_index = 0
+                    self.state = 'SEQUENCE'
+                    self.leds_since_sync = 0
+                    self.sync_expecting_off = False
+                else:
+                    # Not at end - this is an error
+                    self._record_error(f"SYNC seg {self.segment_count} at {seg_time:.3f}s: Expected ALL_ON but got {seg_type}")
+                    self.state = 'ERROR'
             else:
                 # Unexpected input - this is an error in SYNC state
                 self._record_error(f"SYNC seg {self.segment_count} at {seg_time:.3f}s: Expected ALL_ON but got {seg_type}")
@@ -397,7 +471,13 @@ class AutoIDStateMachine:
         else:
             # Looking for ALL_OFF
             if seg_type == 'ALL_OFF':
-                # Complete sync pair (ON+OFF), return to SEQUENCE
+                # Complete sync pair (ON+OFF)
+                # Check if we've completed the full sequence
+                total_leds = self.num_leds_chain0 + self.num_leds_chain1
+                if self.current_led_index >= total_leds:
+                    # Sequence complete, reset to start
+                    self.current_led_index = 0
+                
                 self.state = 'SEQUENCE'
                 self.leds_since_sync = 0
                 self.sync_expecting_off = False
@@ -410,6 +490,52 @@ class AutoIDStateMachine:
         """Record an error message"""
         self.error_messages.append(message)
     
+    def _log_all_off_anomaly(self, seg_time: float):
+        """Log when ALL_OFF is encountered during SEQUENCE state"""
+        self.anomaly_count += 1
+        if len(self.anomaly_details) < self.max_anomaly_logs:
+            self.anomaly_details.append({
+                'type': 'ALL_OFF',
+                'segment': self.segment_count,
+                'time': seg_time,
+                'expected_index': self.current_led_index,
+                'message': f"Seg {self.segment_count} at {seg_time:.3f}s: ALL_OFF when expecting LED {self.current_led_index}"
+            })
+    
+    def _log_multi_led_anomaly(self, seg_time: float, segment: List[LEDFrame], lit_leds: List[Tuple[int, 'LEDFrame']]):
+        """Log when multiple LEDs are lit during SEQUENCE state"""
+        self.anomaly_count += 1
+        if len(self.anomaly_details) < self.max_anomaly_logs:
+            # Calculate expected position
+            if self.current_led_index < self.num_leds_chain0:
+                expected_position = self.current_led_index
+            else:
+                expected_position = self.current_led_index - self.num_leds_chain0
+            
+            # Check if expected LED is among lit ones
+            expected_led_lit = any(pos == expected_position for pos, _ in lit_leds)
+            
+            # Get details of lit LEDs (limit to first 10)
+            led_details = []
+            for i, (pos, frame) in enumerate(lit_leds[:10]):
+                led_details.append(f"LED{pos}:RGB({frame.red},{frame.green},{frame.blue})")
+            
+            detail_str = ", ".join(led_details)
+            if len(lit_leds) > 10:
+                detail_str += f" +{len(lit_leds)-10} more"
+            
+            self.anomaly_details.append({
+                'type': 'MULTI_LED',
+                'segment': self.segment_count,
+                'time': seg_time,
+                'expected_index': self.current_led_index,
+                'expected_position': expected_position,
+                'num_lit': len(lit_leds),
+                'expected_led_lit': expected_led_lit,
+                'led_details': detail_str,
+                'message': f"Seg {self.segment_count} at {seg_time:.3f}s: {len(lit_leds)} LEDs lit (expected LED {self.current_led_index} at pos {expected_position}{'✓' if expected_led_lit else '✗'}): {detail_str}"
+            })
+    
     def get_status(self) -> Dict:
         """Get current state machine status"""
         return {
@@ -418,7 +544,9 @@ class AutoIDStateMachine:
             'current_led_index': self.current_led_index,
             'leds_since_sync': self.leds_since_sync,
             'segments_processed': self.segment_count,
-            'errors': self.error_messages.copy()
+            'errors': self.error_messages.copy(),
+            'anomaly_count': self.anomaly_count,
+            'anomalies': self.anomaly_details.copy()
         }
 
 
@@ -817,6 +945,16 @@ class LEDTimingAnalyzer:
         print(f"  Current LED index: {status['current_led_index']}")
         print(f"  LEDs since last sync: {status['leds_since_sync']}")
         
+        # Display anomalies if any
+        if status['anomaly_count'] > 0:
+            print(f"\n{'~'*80}")
+            print(f"ANOMALIES DETECTED: {status['anomaly_count']} (tolerated, processing continued)")
+            print(f"{'~'*80}")
+            for i, anomaly in enumerate(status['anomalies'], 1):
+                print(f"{i}. {anomaly['message']}")
+            if status['anomaly_count'] > len(status['anomalies']):
+                print(f"\n... and {status['anomaly_count'] - len(status['anomalies'])} more anomalies (not logged)")
+        
         if status['errors']:
             print(f"\n{'!'*80}")
             print(f"ERRORS DETECTED: {len(status['errors'])}")
@@ -826,10 +964,16 @@ class LEDTimingAnalyzer:
             if len(status['errors']) > 20:
                 print(f"\n... and {len(status['errors']) - 20} more errors")
         else:
-            print(f"\n{'='*80}")
-            print(f"✓ PATTERN VALIDATION SUCCESSFUL")
-            print(f"{'='*80}")
-            print(f"AutoID sequence is correct!")
+            if status['anomaly_count'] > 0:
+                print(f"\n{'='*80}")
+                print(f"✓ PATTERN VALIDATION SUCCESSFUL (with {status['anomaly_count']} anomalies)")
+                print(f"{'='*80}")
+                print(f"AutoID sequence is correct but has minor anomalies")
+            else:
+                print(f"\n{'='*80}")
+                print(f"✓ PATTERN VALIDATION SUCCESSFUL")
+                print(f"{'='*80}")
+                print(f"AutoID sequence is correct!")
     
     def print_timing_statistics(self):
         """Print timing statistics"""

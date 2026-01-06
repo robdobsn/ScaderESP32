@@ -76,8 +76,8 @@ public:
         _lastUpdateMs = millis();
 
         // Determine actual end index
-        _actualEndIdx = (_endLedIdx == 0 || _endLedIdx > _pixels.getNumPixels())
-                        ? _pixels.getNumPixels()
+        _actualEndIdx = (_endLedIdx == 0 || _endLedIdx >= _pixels.getNumPixels())
+                        ? (_pixels.getNumPixels() > 0 ? _pixels.getNumPixels() - 1 : 0)
                         : _endLedIdx;
 
 #ifdef DEBUG_LEDPATTERN_AUTOID
@@ -196,7 +196,7 @@ private:
         _ledsLitSinceSync++;
 
         // Check if we've completed all LEDs
-        if (_curLedIdx >= _actualEndIdx)
+        if (_curLedIdx > _actualEndIdx)
         {
 #ifdef DEBUG_LEDPATTERN_AUTOID
             LOG_I(MODULE_PREFIX, "Sequence complete, restarting");
@@ -266,7 +266,7 @@ private:
     void showCurrentLed()
     {
         _pixels.clear();
-        if (_curLedIdx < _actualEndIdx)
+        if (_curLedIdx <= _actualEndIdx)
         {
             _pixels.setRGB(_curLedIdx, _ledBrightness, _ledBrightness, _ledBrightness, false);
 #ifdef DEBUG_LEDPATTERN_AUTOID
@@ -278,7 +278,7 @@ private:
 
     void setAllLeds(uint32_t r, uint32_t g, uint32_t b)
     {
-        for (uint32_t i = _startLedIdx; i < _actualEndIdx; i++)
+        for (uint32_t i = _startLedIdx; i <= _actualEndIdx; i++)
         {
             _pixels.setRGB(i, r, g, b, false);
         }

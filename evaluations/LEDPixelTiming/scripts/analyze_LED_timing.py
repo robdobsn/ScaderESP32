@@ -27,8 +27,8 @@ import time
 # LED Chip Timing Database (all values in microseconds)
 # Format: 'chip_name': {'T0H': (min, max), 'T0L': (min, max), 'T1H': (min, max), 'T1L': (min, max), 'RES': min_value}
 CHIP_TIMINGS = {
-    'WS2811': {'T0H': (0.35, 0.65), 'T0L': (1.85, 2.15), 'T1H': (1.05, 1.35), 'T1L': (1.15, 1.45), 'RES': 50.0},
-    'WS2811-HS': {'T0H': (0.1, 0.4), 'T0L': (0.85, 1.15), 'T1H': (0.45, 0.75), 'T1L': (0.5, 0.8), 'RES': 50.0},
+    'WS2811_400': {'T0H': (0.35, 0.65), 'T0L': (1.85, 2.15), 'T1H': (1.05, 1.35), 'T1L': (1.15, 1.45), 'RES': 50.0},
+    'WS2811': {'T0H': (0.1, 0.4), 'T0L': (0.85, 1.15), 'T1H': (0.45, 0.75), 'T1L': (0.5, 0.8), 'RES': 50.0},
     'WS2812B': {'T0H': (0.25, 0.55), 'T0L': (0.7, 1.0), 'T1H': (0.65, 0.95), 'T1L': (0.3, 0.6), 'RES': 50.0},
     'SK6812': {'T0H': (0.15, 0.45), 'T0L': (0.75, 1.05), 'T1H': (0.45, 0.75), 'T1L': (0.45, 0.75), 'RES': 80.0},
     'SK6812-MINI': {'T0H': (0.15, 0.45), 'T0L': (0.75, 1.05), 'T1H': (0.45, 0.75), 'T1L': (0.45, 0.75), 'RES': 80.0},
@@ -373,17 +373,18 @@ class AutoIDStateMachine:
             # Check if it's a sync frame
             if seg_type in ['ALL_OFF', 'ALL_ON']:
                 # After every 10 LEDs, we expect a sync
-                # Exception: at sequence completion (when all LEDs have been shown or we're at the last LED), 
-                # we may have fewer than 10 LEDs in the final batch
-                # Check if we're at the end of chain 0 or chain 1
-                at_end_of_chain0 = (self.current_led_index >= self.num_leds_chain0 - 1 and 
-                                   self.current_led_index < self.num_leds_chain0)
+                # Exception: at chain boundaries, we may have a sync that doesn't align with  
+                # the 10-LED pattern. This can happen when:
+                # 1. The total LEDs in a chain is not a multiple of 10
+                # 2. The pattern ends or clears before showing all LEDs
+                # Check if we're at or approaching a chain boundary
+                near_chain0_boundary = (self.current_led_index >= self.num_leds_chain0 - 1)
                 total_leds = self.num_leds_chain0 + self.num_leds_chain1
-                at_end_of_chain1 = (self.current_led_index >= total_leds - 1)
-                is_at_end_of_sequence = at_end_of_chain0 or at_end_of_chain1
+                near_chain1_boundary = (self.current_led_index >= total_leds - 1)
+                at_or_near_chain_boundary = near_chain0_boundary or near_chain1_boundary
                 
-                if self.leds_since_sync != 10 and not is_at_end_of_sequence:
-                    self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected sync after 10 LEDs but got {self.leds_since_sync} [idx={self.current_led_index}, chain0={self.num_leds_chain0}, at_end_of_chain0={at_end_of_chain0}, is_at_end={is_at_end_of_sequence}]")
+                if self.leds_since_sync != 10 and not at_or_near_chain_boundary:
+                    self._record_error(f"SEQUENCE seg {self.segment_count} at {seg_time:.3f}s: Expected sync after 10 LEDs but got {self.leds_since_sync} [idx={self.current_led_index}, chain0={self.num_leds_chain0}, near_chain0_boundary={near_chain0_boundary}, near_chain1_boundary={near_chain1_boundary}]")
                     self.state = 'ERROR'
                     return
                 # Transition to SYNC state
@@ -442,26 +443,31 @@ class AutoIDStateMachine:
     def _process_sync_state(self, seg_type: str, seg_time: float):
         """Process segment in SYNC state - expecting ALL_ON then ALL_OFF"""
         if not self.sync_expecting_off:
-            # Looking for ALL_ON
+            # Looking for ALL_ON (or ALL_OFF at chain boundaries)
             if seg_type == 'ALL_ON':
                 self.sync_expecting_off = True
             elif seg_type == 'ALL_OFF':
-                # Special case: at end of sequence, might go straight to ALL_OFF (restart sequence)
-                # This is valid - treat it as completing the sync and resetting
-                # Check if we're at the end of either chain
-                at_end_of_chain0 = (self.current_led_index >= self.num_leds_chain0 - 1 and 
-                                   self.current_led_index < self.num_leds_chain0)
+                # Special case: at chain boundaries or end of full sequence, 
+                # might go straight to ALL_OFF (clearing/restart)
+                # Check if we're at or near a chain boundary
+                near_chain0_boundary = (self.current_led_index >= self.num_leds_chain0 - 1)
                 total_leds = self.num_leds_chain0 + self.num_leds_chain1
-                at_end_of_chain1 = (self.current_led_index >= total_leds - 1)
+                near_end_of_full_sequence = (self.current_led_index >= total_leds - 1)
                 
-                if at_end_of_chain0 or at_end_of_chain1:
-                    # At end of sequence - this ALL_OFF is the restart, reset everything
+                if near_end_of_full_sequence:
+                    # At end of full sequence - reset to start
                     self.current_led_index = 0
                     self.state = 'SEQUENCE'
                     self.leds_since_sync = 0
                     self.sync_expecting_off = False
+                elif near_chain0_boundary:
+                    # At end of chain 0 - this is just clearing, continue to chain 1
+                    # Treat this as completing the sync
+                    self.state = 'SEQUENCE'
+                    self.leds_since_sync = 0
+                    self.sync_expecting_off = False
                 else:
-                    # Not at end - this is an error
+                    # Not at a special boundary - this is an error
                     self._record_error(f"SYNC seg {self.segment_count} at {seg_time:.3f}s: Expected ALL_ON but got {seg_type}")
                     self.state = 'ERROR'
             else:
@@ -623,6 +629,7 @@ class LEDTimingAnalyzer:
         # Segments and patterns
         self.segments = []
         self.reset_periods = []
+        self.last_pulse_time = None  # Track the last pulse time from first pass
         
         # Progress tracking
         self.file_size = 0
@@ -798,10 +805,12 @@ class LEDTimingAnalyzer:
         """Detect reset/latch periods (greater than 50us low) while processing"""
         timing = self.timing
         reset_count = 0
+        last_pulse_time = None
         
         print("\n  Detecting reset periods...")
         for start_time, duration, level in self.process_pulses_streaming(channel=0):
             duration_us = duration * 1_000_000
+            last_pulse_time = start_time
             
             if level == 0 and duration_us >= timing.RES_MIN:
                 self.reset_periods.append((start_time, duration_us))
@@ -809,6 +818,9 @@ class LEDTimingAnalyzer:
                 
                 if reset_count % 10 == 0:
                     print(f'\r  Found {reset_count} reset periods...', end='', flush=True)
+        
+        # Store the last pulse time so we can stop before the last segment
+        self.last_pulse_time = last_pulse_time
         
         print(f'\r  Found {len(self.reset_periods)} reset periods total')
         return self.reset_periods
@@ -832,7 +844,15 @@ class LEDTimingAnalyzer:
         last_frame_time = None
         segment_start_time = None
         
-        print("\n  Processing frames and verifying pattern...")
+        # Determine the cutoff time - stop before the last segment
+        # This avoids processing incomplete data at the end of the file
+        cutoff_time = None
+        if len(self.reset_periods) > 0:
+            # Use the time of the last reset period as the cutoff
+            cutoff_time = self.reset_periods[-1][0]
+            print(f"\n  Processing frames up to last complete segment (t={cutoff_time:.3f}s)...")
+        else:
+            print("\n  Processing frames and verifying pattern...")
         
         # Process pulses through the decoder state machine
         for start_time, duration, level in self.process_pulses_streaming(channel=0):
@@ -840,6 +860,10 @@ class LEDTimingAnalyzer:
             frame = decoder.process_transition(start_time, level, duration)
             
             if frame is not None:
+                # Stop processing frames after the cutoff time to avoid incomplete segments
+                if cutoff_time is not None and frame.start_time >= cutoff_time:
+                    break
+                
                 total_frames += 1
                 
                 if first_frame_time is None:
@@ -886,7 +910,8 @@ class LEDTimingAnalyzer:
                 if total_frames % 5000 == 0:
                     print(f'\r  Processed {total_frames} frames, {state_machine.segment_count} segments...', end='', flush=True)
         
-        # Process final segment
+        # Process any remaining segment (if we stopped before cutoff and have data)
+        # Note: By stopping at the cutoff time (last reset), we avoid incomplete segments
         if current_segment:
             state_machine.process_segment(current_segment, segment_start_time)
             if state_machine.segment_count <= 20:
@@ -1099,7 +1124,7 @@ Examples:
   %(prog)s data.csv
   %(prog)s data.csv --chip WS2812B
   %(prog)s data.csv --chip SK6812 --leds-chain0 1000
-  %(prog)s data.csv --chip WS2811-HS --t0h 0.1 0.4
+  %(prog)s data.csv --chip WS2811 --t0h 0.1 0.4
   %(prog)s ../data/capture.csv --duration 10
 
 Available chip types: {', '.join(CHIP_TIMINGS.keys())}

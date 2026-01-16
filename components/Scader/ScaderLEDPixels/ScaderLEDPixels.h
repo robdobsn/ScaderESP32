@@ -8,20 +8,12 @@
 
 #pragma once
 
-#define USE_RAFT_PIXELS_LIBRARY
-// #define USE_FASTLED_LIBRARY
 // #define RUN_PATTERNS_IN_SYSMOD
 
 #include "RaftSysMod.h"
 #include "ScaderCommon.h"
 #include "RaftUtils.h"
-
-#ifdef USE_RAFT_PIXELS_LIBRARY
 #include "LEDPixels.h"
-#endif
-#ifdef USE_FASTLED_LIBRARY
-#include "FastLED.h"
-#endif
 
 class APISourceInfo;
 
@@ -55,18 +47,11 @@ private:
     // Common
     ScaderCommon _scaderCommon;
 
-    // Tnitalised flag
+    // Initialized flag
     bool _isInitialised = false;
 
-#ifdef USE_RAFT_PIXELS_LIBRARY
     // LED pixels
     LEDPixels _ledPixels;
-#endif
-
-#ifdef USE_FASTLED_LIBRARY
-    // WS2812 strips
-    std::vector<CRGB> _ledPixels;
-#endif
 
 #ifdef RUN_PATTERNS_IN_SYSMOD
     // Patterns

@@ -1,59 +1,56 @@
-# # Set location of base FastLED directory.
-# get_filename_component(FASTLED_DIR ${BUILD_DIR}/_deps/fastled-src/src ABSOLUTE)
-# message(STATUS "---------------------------- FASTLED_DIR: ${FASTLED_DIR}")
+# Set source files
+set(SCADER_SRCS
+  "ScaderCommon/ScaderCommon.cpp"
+  "ScaderRelays/ScaderRelays.cpp"
+  "ScaderRelays/SPIDimmer.cpp"
+  "ScaderShades/ScaderShades.cpp"
+  "ScaderLocks/ScaderLocks.cpp"
+  "ScaderLocks/DoorStrike.cpp"
+  "ScaderElecMeters/ScaderElecMeters.cpp"
+  "ScaderRFID/ScaderRFID.cpp"
+  "ScaderRFID/RFIDModuleBase.cpp"
+  "ScaderRFID/RFIDModule_EccelA1SPI.cpp"
+  "ScaderOpener/ScaderOpener.cpp"
+  "ScaderOpener/OpenerStatus.cpp"
+  "ScaderLEDPixels/ScaderLEDPixels.cpp"
+  "ScaderOpener/DoorOpener.cpp"
+  "ScaderOpener/UIModule.cpp"
+  "ScaderPulseCounter/ScaderPulseCounter.cpp"
+  "ScaderBTHome/ScaderBTHome.cpp"
+  "ScaderMarbleRun/ScaderMarbleRun.cpp"
+  # "ScaderCat/ScaderCat.cpp"
+  # "TinyPICO/TinyPICO.cpp"
+  # "HWElemINA219/HWElemINA219.cpp"
+  # "ScaderWaterer/ScaderWaterer.cpp"
+  # "ScaderWaterer/MoistureSensors.cpp"
+  # "ScaderWaterer/PumpControl.cpp"
+)
 
-# set(FASTLED_SOURCE_FILES
-#     ${FASTLED_DIR}/bitswap.cpp
-# )
+# Set include directories
+set(SCADER_INCLUDE_DIRS
+  "ScaderCommon"
+  "ScaderRelays"
+  "ScaderShades"
+  "ScaderLocks"
+  "ScaderElecMeters"
+  "ScaderRFID"
+  "ScaderOpener"
+  "ScaderPulseCounter"
+  "ScaderLEDPixels"
+  "ScaderBTHome"
+  "ScaderMarbleRun"
+  "ScaderTest"
+  # "ScaderCat"
+  # "TinyPICO"
+  # "HWElemINA219"
+  # "ScaderWaterer"
+)
+
+# Set requirements
+set(SCADER_REQUIRES RaftCore hardware)
 
 idf_component_register(
-                SRCS 
-                  "ScaderCommon/ScaderCommon.cpp"
-                  "ScaderRelays/ScaderRelays.cpp"
-                  "ScaderRelays/SPIDimmer.cpp"
-                  "ScaderShades/ScaderShades.cpp"
-                  "ScaderLocks/ScaderLocks.cpp"
-                  "ScaderLocks/DoorStrike.cpp"
-                  "ScaderElecMeters/ScaderElecMeters.cpp"
-                  "ScaderRFID/ScaderRFID.cpp"
-                  "ScaderRFID/RFIDModuleBase.cpp"
-                  "ScaderRFID/RFIDModule_EccelA1SPI.cpp"
-                  "ScaderOpener/ScaderOpener.cpp"
-                  "ScaderOpener/OpenerStatus.cpp"
-                  "ScaderLEDPixels/ScaderLEDPixels.cpp"
-                  "ScaderOpener/DoorOpener.cpp"
-                  "ScaderOpener/UIModule.cpp"
-                  "ScaderPulseCounter/ScaderPulseCounter.cpp"
-                  "ScaderBTHome/ScaderBTHome.cpp"
-                  "ScaderMarbleRun/ScaderMarbleRun.cpp"
-                  # "ScaderCat/ScaderCat.cpp"
-                  # "TinyPICO/TinyPICO.cpp"
-                  # "HWElemINA219/HWElemINA219.cpp"
-                  # ${FASTLED_SOURCE_FILES}
-                  # "ScaderWaterer/ScaderWaterer.cpp"
-                  # "ScaderWaterer/MoistureSensors.cpp"
-                  # "ScaderWaterer/PumpControl.cpp"
-                INCLUDE_DIRS
-                  "ScaderCommon"
-                  "ScaderRelays"
-                  "ScaderShades"
-                  "ScaderLocks"
-                  "ScaderElecMeters"
-                  "ScaderRFID"
-                  "ScaderOpener"
-                  "ScaderPulseCounter"
-                  # "ScaderCat"
-                  "ScaderLEDPixels"
-                  "ScaderBTHome"
-                  "ScaderMarbleRun"
-                  # "TinyPICO"
-                  # "HWElemINA219"
-                  # ${FASTLED_DIR}
-                  # "FastLED"
-                  # "ScaderWaterer"
-                  "ScaderTest"
-                REQUIRES
-                  RaftCore
-                  # FastLED-idf
-                  hardware
-                )
+  SRCS ${SCADER_SRCS}
+  INCLUDE_DIRS ${SCADER_INCLUDE_DIRS}
+  REQUIRES ${SCADER_REQUIRES}
+)

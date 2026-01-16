@@ -3,7 +3,7 @@ IP_ADDR=${2:-}
 echo "Flashing ${BUILDCONF} FSImage to ${IP_ADDR}"
 if [[ $IP_ADDR =~ ^[[:digit:]] ]]
   then
-    TARGET_DIR="./build/${BUILDCONF}/build_raft_artifacts/FSImage"
+    TARGET_DIR="./build/${BUILDCONF}/raft/FSImage"
     UPLOAD_URL="http://${IP_ADDR}/api/fileupload/"
     for file in "$TARGET_DIR"/*; do
     # Skip if the file has the .built extension

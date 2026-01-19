@@ -98,7 +98,7 @@ public:
     bool doCommand(int shadeIdx, String &cmdStr, String &durationStr);
 
     // Check if the shade is moving
-    bool isBusy(int shadeIdx) const;
+    bool isMoving(int shadeIdx) const;
 
 protected:
 

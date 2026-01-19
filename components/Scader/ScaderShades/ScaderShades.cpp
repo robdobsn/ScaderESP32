@@ -222,7 +222,7 @@ bool ScaderShades::sendBitsToShiftRegister()
 // isBusy
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ScaderShades::isBusy(int shadeIdx) const
+bool ScaderShades::isMoving(int shadeIdx) const
 {
     // Check validity
     if (shadeIdx < 0 || shadeIdx >= DEFAULT_MAX_ELEMS)
@@ -419,7 +419,7 @@ String ScaderShades::getStatusJSON() const
     {
         if (i > 0)
             elemStatus += ",";
-        elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(isBusy(i) ? "1" : "0") + "}";
+        elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(isMoving(i) ? "1" : "0") + "}";
     }
 
     // Add base JSON

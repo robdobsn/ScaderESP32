@@ -62,6 +62,10 @@ private:
     // Last time inputs checked
     static constexpr uint32_t INPUT_CHECK_MS = 200;
     uint32_t _lastInputCheckMs = 0;
+
+    // Run duration timer
+    uint32_t _runStartMs = 0;
+    uint32_t _runDurationMs = 0;
     
     // Get motor device
     RaftDevice* getMotorDevice() const;

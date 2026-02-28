@@ -22,7 +22,6 @@ public:
     virtual ~MoistureSensors();
     void setup(const RaftJsonIF& config);
     void loop();
-    bool isBusy();
     uint32_t getCount() {
         return NUM_MOISTURE_SENSORS;
     }

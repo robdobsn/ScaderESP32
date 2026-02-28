@@ -44,8 +44,8 @@ void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
 
     // Register for device data notifications from the angle sensor
     if (pDevMan)
-        pDevMan->registerForDeviceData("I2CA_0x36@0", 
-                [this](uint32_t deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
+        pDevMan->registerForDeviceData("AS5600", 
+                [this](DeviceTypeIndexType deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
 
                     // Decode device data
                     poll_AS5600 deviceData;
@@ -80,7 +80,7 @@ void MotorMechanism::setup(DeviceManager* pDevMan, RaftJsonIF& config)
     // Register for device data notifications from the force sensor
     if (pDevMan)
         pDevMan->registerForDeviceData("HX711", 
-                [this](uint32_t deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
+                [this](DeviceTypeIndexType deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
 
                     // Decode device data
                     poll_HX711 deviceData;

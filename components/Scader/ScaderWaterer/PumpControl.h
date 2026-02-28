@@ -21,7 +21,6 @@ public:
     virtual ~PumpControl();
     void setup(RaftJsonIF& config);
     void loop();
-    bool isBusy();
     void deinit();
     void setFlow(uint32_t pumpIdx, float flowRate, float durationSecs);
 

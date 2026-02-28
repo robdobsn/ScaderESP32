@@ -93,7 +93,7 @@ public:
 
         // Get the decode function
         DeviceTypeRecord deviceTypeRecord;
-        deviceTypeRecords.getDeviceInfo(getPublishDeviceType(), deviceTypeRecord, _deviceTypeIdx);
+        deviceTypeRecords.getDeviceInfo(getConfiguredDeviceType(), deviceTypeRecord, _deviceTypeIdx);
         _pDecodeFn = deviceTypeRecord.pollResultDecodeFn;
 
         // Set initialised
@@ -168,7 +168,7 @@ public:
 
         // Set the device type record
         devTypeRec = DeviceTypeRecordDynamic(
-            getPublishDeviceType().c_str(),
+            getConfiguredDeviceType().c_str(),
             "",
             "",
             "",
@@ -214,7 +214,7 @@ public:
         formDeviceDataResponse(data);
 
         // Return JSON
-        return "{\"0\":{\"x\":\"" + Raft::getHexStr(data.data(), data.size()) + "\",\"_t\":\"" + getPublishDeviceType() + "\"}}";
+        return "{\"0\":{\"x\":\"" + Raft::getHexStr(data.data(), data.size()) + "\",\"_t\":\"" + getConfiguredDeviceType() + "\"}}";
     }
 
     /// @brief Get device debug info JSON
@@ -264,7 +264,7 @@ private:
     uint32_t _deviceDataChangeCBMinTime = 0;
     const void* _deviceDataChangeCBInfo = nullptr;
     uint32_t _deviceDataChangeCBLastTime = 0;
-    uint32_t _deviceTypeIdx = 0;
+    DeviceTypeIndexType _deviceTypeIdx = 0;
 
     // Debug
     uint32_t _debugLastMs = 0;

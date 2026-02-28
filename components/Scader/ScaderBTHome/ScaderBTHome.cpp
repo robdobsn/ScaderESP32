@@ -10,7 +10,7 @@
 #include "RaftCore.h"
 #include "ScaderBTHome.h"
 
-// #define DEBUG_SCADER_BTHOME
+#define DEBUG_SCADER_BTHOME
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -46,19 +46,19 @@ void ScaderBTHome::setup()
     if (pDevMan)
     {
         pDevMan->registerForDeviceStatusChange(
-            [this](RaftDevice& device, bool isOnline, bool isNew) {
+            [this](RaftDevice& device, const BusAddrStatus& addrStatus) {
                 // Debug
 #ifdef DEBUG_SCADER_BTHOME
                 LOG_I(MODULE_PREFIX, "deviceStatusChangeCB %s %s %s", 
-                        device.getDeviceName().c_str(), isOnline ? "Online" : "Offline", isNew ? "New" : "");
+                        device.getDeviceID().toString().c_str(), BusAddrStatus::getOnlineStateStr(addrStatus.onlineState), addrStatus.isNewlyIdentified ? "New" : "");
 #endif
 
                 // Register for device data notifications if required
-                if (isNew)
+                if (addrStatus.isNewlyIdentified)
                 {
                     // Get the decode function
                     DeviceTypeRecord deviceTypeRecord;
-                    uint32_t deviceTypeIdx = 0;
+                    DeviceTypeIndexType deviceTypeIdx = 0;
                     String deviceTypeName = "BLEBTHome";
                     deviceTypeRecords.getDeviceInfo(deviceTypeName, deviceTypeRecord, deviceTypeIdx);
                     _pDecodeFn = deviceTypeRecord.pollResultDecodeFn;
@@ -95,12 +95,12 @@ void ScaderBTHome::setup()
     {
         // Register publish message generator
         pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
-            [this](const char* messageName, CommsChannelMsg& msg) {
+            [this](uint16_t topicIndex, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
                 return true;
             },
-            [this](const char* messageName, std::vector<uint8_t>& stateHash) {
+            [this](uint16_t topicIndex, std::vector<uint8_t>& stateHash) {
                 return getStatusHash(stateHash);
             }
         );

@@ -129,7 +129,7 @@ private:
         // Get motor device
         if (!_pDevMan)
             return nullptr;
-        RaftDevice* pMotor = _pDevMan->getDevice("Motor");
+        RaftDevice* pMotor = _pDevMan->getDevice("MotorControl");
         if (!pMotor)
             return nullptr;
         return pMotor;

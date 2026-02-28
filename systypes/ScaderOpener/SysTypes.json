@@ -208,7 +208,7 @@
             {
                 "enable": 1,
                 "class": "MotorControl",
-                "name": "Motor",
+                "name": "MotorControl",
                 "bus": "SERA",
                 "motion": {
                     "geom": "XYZ",

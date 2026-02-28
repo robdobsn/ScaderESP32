@@ -204,7 +204,7 @@
             {
                 "enable": 1,
                 "class": "MotorControl",
-                "name": "Motor",
+                "name": "MotorControl",
                 "bus": "SERA",
                 "motion": {
                     "geom": "XYZ",
@@ -230,7 +230,7 @@
                             "unitsPerRot": 360,
                             "stepsPerRot": 768,
                             "maxSpeed": 100,
-                            "maxAcc": 50
+                            "maxAcc": 100
                         },
                         "driver": {
                             "driver": "TMC2209",

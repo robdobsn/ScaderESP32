@@ -25,9 +25,6 @@ public:
     {
         return new ScaderCat(pModuleName, sysConfig);
     }
-    
-    // Check if the shade is moving
-    bool isBusy(int shadeIdx);
 
 protected:
 

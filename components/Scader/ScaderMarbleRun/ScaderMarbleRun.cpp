@@ -80,6 +80,13 @@ void ScaderMarbleRun::loop()
     if (!_isInitialised)
         return;
 
+    // Check if run duration has elapsed
+    if (_runDurationMs > 0 && Raft::isTimeout(millis(), _runStartMs, _runDurationMs))
+    {
+        LOG_I(MODULE_PREFIX, "loop run duration elapsed - stopping");
+        setMotorSpeed(0);
+    }
+
     // Check if time to read inputs
     if (Raft::isTimeout(millis(), _lastInputCheckMs, INPUT_CHECK_MS))
     {
@@ -193,7 +200,7 @@ RaftDevice* ScaderMarbleRun::getMotorDevice() const
     auto pDevMan = getSysManager()->getDeviceManager();
     if (!pDevMan)
         return nullptr;
-    RaftDevice* pMotor = pDevMan->getDevice("Motor");
+    RaftDevice* pMotor = pDevMan->getDevice("MotorControl");
     if (!pMotor)
         return nullptr;
     return pMotor;
@@ -258,21 +265,29 @@ void ScaderMarbleRun::setMotorSpeed(double speedValue, double durationMins)
         return;
     if (speedValue <= 0)
     {
-        // Send command
-        String stopCmd = R"({"cmd":"motion","stop":1})";
+        // Send stop command
+        String stopCmd = R"({"cmd":"stop"})";
         pMotor->sendCmdJSON(stopCmd.c_str());
-        // Debug
+        _runDurationMs = 0;
         LOG_I(MODULE_PREFIX, "api Stop %s", stopCmd.c_str());
         return;
     }
 
-    // Get motor device
-    double extendFactor = speedValue / 100.0;
-    String moveCmd = R"({"cmd":"motion","stop":1,"clearQ":1,"rel":1,"nosplit":1,"feedrate":__SPEED__,"pos":[{"a":0,"p":__POS__}]})";
-    moveCmd.replace("__POS__", String(12000 * durationMins * extendFactor));
-    moveCmd.replace("__SPEED__", String(speedValue*2));
-    // Send command
+    // Use velocity mode - velocity in units/sec
+    double velocity = speedValue * 2;
+    String moveCmd = R"({"cmd":"motion","mode":"vel","vel":[)" + String(velocity) + R"(]})";
     pMotor->sendCmdJSON(moveCmd.c_str());
-    // Debug
-    LOG_I(MODULE_PREFIX, "api Run %s", moveCmd.c_str());
+
+    // Set up duration timer if specified
+    if (durationMins > 0)
+    {
+        _runDurationMs = (uint32_t)(durationMins * 60000);
+        _runStartMs = millis();
+    }
+    else
+    {
+        _runDurationMs = 0;
+    }
+
+    LOG_I(MODULE_PREFIX, "api Run %s durationMins %.1f", moveCmd.c_str(), durationMins);
 }

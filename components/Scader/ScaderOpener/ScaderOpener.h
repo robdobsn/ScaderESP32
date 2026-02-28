@@ -26,9 +26,6 @@ public:
     {
         return new ScaderOpener(pModuleName, sysConfig);
     }
-    
-    // // Check if moving
-    // bool isBusy();
 
 protected:
 

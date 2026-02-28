@@ -108,7 +108,7 @@ void ScaderShades::setup()
     {
         // Register publish message generator
         pSysManager->registerDataSource("Publish", _scaderCommon.getModuleName().c_str(), 
-            [this](const char* messageName, CommsChannelMsg& msg) {
+            [this](uint16_t topicIdx, CommsChannelMsg& msg) {
                 String statusStr = getStatusJSON();
                 msg.setFromBuffer((uint8_t*)statusStr.c_str(), statusStr.length());
                 return true;
@@ -219,10 +219,10 @@ bool ScaderShades::sendBitsToShiftRegister()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// isBusy
+// isShadeMoving
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ScaderShades::isBusy(int shadeIdx) const
+bool ScaderShades::isShadeMoving(int shadeIdx) const
 {
     // Check validity
     if (shadeIdx < 0 || shadeIdx >= DEFAULT_MAX_ELEMS)
@@ -419,7 +419,7 @@ String ScaderShades::getStatusJSON() const
     {
         if (i > 0)
             elemStatus += ",";
-        elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(isBusy(i) ? "1" : "0") + "}";
+        elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(isShadeMoving(i) ? "1" : "0") + "}";
     }
 
     // Add base JSON

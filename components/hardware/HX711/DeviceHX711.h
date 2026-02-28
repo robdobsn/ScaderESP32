@@ -120,7 +120,7 @@ public:
 
         // Get the decode function
         DeviceTypeRecord deviceTypeRecord;
-        deviceTypeRecords.getDeviceInfo(getPublishDeviceType(), deviceTypeRecord, _deviceTypeIdx);
+        deviceTypeRecords.getDeviceInfo(_deviceTypeIdx, deviceTypeRecord);
         _pDecodeFn = deviceTypeRecord.pollResultDecodeFn;
 
         // Set initialised
@@ -194,7 +194,7 @@ public:
         formDeviceDataResponse(data);
 
         // Return JSON
-        return "{\"0\":{\"x\":\"" + Raft::getHexStr(data.data(), data.size()) + "\",\"_t\":\"" + getPublishDeviceType() + "\"}}";
+        return "{\"0\":{\"x\":\"" + Raft::getHexStr(data.data(), data.size()) + "\",\"_t\":\"" + getConfiguredDeviceType() + "\"}}";
     }
 
     /// @brief Get device debug info JSON

@@ -1,0 +1,200 @@
+Analyzing: evaluations/LEDPixelTiming/data/260103-103333-Teensy40-FastLED-autoid-1000+1000-5m-50MHz.csv
+LED configuration: Chain 0: 1000, Chain 1: 1000
+Chip type: WS2811-HS
+Timing - T0H: 0.10-0.40us, T0L: 0.85-1.15us, T1H: 0.45-0.75us, T1L: 0.50-0.80us, RES: >50us
+
+================================================================================
+
+Pass 1: Detecting reset periods
+
+  Detecting reset periods...
+  Progress: [███████████████████████████████████████░] 97.8% (4645.6/4750.2 MB, 109.7M lines)
+  Found 1143 reset periods total
+
+Pass 2: Decoding bits and analyzing sequence
+
+================================================================================
+
+AUTOID SEQUENCE ANALYSIS
+
+================================================================================
+
+  Analyzing segments...
+  Decoded 1000 frames...
+--- Segment 1 (1000 LEDs) ---
+  → PATTERN: 1000 LED(s) lit at indices [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]...
+     LED 0: R= 69 G=100 B= 94
+     LED 1: R= 69 G=100 B= 94
+     LED 2: R= 69 G=100 B= 94
+     LED 3: R= 69 G=100 B= 94
+     LED 4: R= 69 G=100 B= 94
+  Decoded 2000 frames...
+--- Segment 2 (1000 LEDs) ---
+  → SYNC: All LEDs OFF
+  Decoded 3000 frames...
+--- Segment 3 (1000 LEDs) ---
+  → PATTERN: 1000 LED(s) lit at indices [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]...
+     LED 0: R= 69 G=100 B= 94
+     LED 1: R= 69 G=100 B= 94
+     LED 2: R= 69 G=100 B= 94
+     LED 3: R= 69 G=100 B= 94
+     LED 4: R= 69 G=100 B= 94
+  Decoded 4000 frames...
+--- Segment 4 (1000 LEDs) ---
+  → SYNC: All LEDs OFF
+  Decoded 5000 frames...
+--- Segment 5 (1000 LEDs) ---
+  → PATTERN: 1000 LED(s) lit at indices [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]...
+     LED 0: R= 69 G=100 B= 94
+     LED 1: R= 69 G=100 B= 94
+     LED 2: R= 69 G=100 B= 94
+     LED 3: R= 69 G=100 B= 94
+     LED 4: R= 69 G=100 B= 94
+  Decoded 6000 frames...░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.4% (20.4/4750.2 MB, 0.5M lines)
+--- Segment 6 (1000 LEDs) ---
+  → SYNC: All LEDs OFF
+  Decoded 7000 frames...
+--- Segment 7 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [0]
+     LED 0: R= 69 G=100 B= 94
+  Decoded 8000 frames...
+--- Segment 8 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [1]
+     LED 1: R= 69 G=100 B= 94
+  Decoded 9000 frames...
+--- Segment 9 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [2]
+     LED 2: R= 69 G=100 B= 94
+  Decoded 10000 frames...
+--- Segment 10 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [3]
+     LED 3: R= 69 G=100 B= 94
+  Decoded 11000 frames...░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.9% (40.8/4750.2 MB, 1.0M lines)
+--- Segment 11 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [4]
+     LED 4: R= 69 G=100 B= 94
+  Decoded 12000 frames...
+--- Segment 12 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [5]
+     LED 5: R= 69 G=100 B= 94
+  Decoded 13000 frames...
+--- Segment 13 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [6]
+     LED 6: R= 69 G=100 B= 94
+  Decoded 14000 frames...
+--- Segment 14 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [7]
+     LED 7: R= 69 G=100 B= 94
+  Decoded 15000 frames...
+--- Segment 15 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [8]
+     LED 8: R= 69 G=100 B= 94
+  Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1.3% (61.2/4750.2 MB, 1.5M lines)
+--- Segment 16 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [9]
+     LED 9: R= 69 G=100 B= 94
+  Decoded 17000 frames...
+--- Segment 17 (1000 LEDs) ---
+  → PATTERN: 1000 LED(s) lit at indices [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]...
+     LED 0: R= 69 G=100 B= 94
+     LED 1: R= 69 G=100 B= 94
+     LED 2: R= 69 G=100 B= 94
+     LED 3: R= 69 G=100 B= 94
+     LED 4: R= 69 G=100 B= 94
+  Decoded 18000 frames...
+--- Segment 18 (1000 LEDs) ---
+  → SYNC: All LEDs OFF
+  Decoded 19000 frames...
+--- Segment 19 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [10]
+     LED 10: R= 69 G=100 B= 94
+  Decoded 20000 frames...
+--- Segment 20 (1000 LEDs) ---
+  → PATTERN: 1 LED(s) lit at indices [11]
+     LED 11: R= 69 G=100 B= 94
+  Progress: [███████████████████████████████████████░] 97.8% (4645.6/4750.2 MB, 109.7M lines)
+
+
+================================================================================
+Total segments recorded: 1143
+Total LED frames: 1142999
+Recording duration: 299.51 seconds
+
+================================================================================
+TIMING STATISTICS
+================================================================================
+
+Bit 0 Timing (High):
+  Count:  26354556
+  Mean:   0.339 us
+  Median: 0.340 us
+  StdDev: 0.005 us
+  Min:    0.320 us
+  Max:    0.360 us
+
+Bit 0 Timing (Low):
+  Count:  26353413
+  Mean:   0.956 us
+  Median: 0.960 us
+  StdDev: 0.008 us
+  Min:    0.020 us
+  Max:    0.960 us
+
+Bit 1 Timing (High):
+  Count:  1077441
+  Mean:   0.660 us
+  Median: 0.660 us
+  StdDev: 0.005 us
+  Min:    0.640 us
+  Max:    1.020 us
+
+Bit 1 Timing (Low):
+  Count:  1077441
+  Mean:   0.634 us
+  Median: 0.640 us
+  StdDev: 0.009 us
+  Min:    0.620 us
+  Max:    0.960 us
+
+Reset Periods:
+  Count:  1143
+  Mean:   200166.305 us
+  Median: 200000.720 us
+  StdDev: 4088.211 us
+  Min:    199992.500 us
+  Max:    320215.160 us
+
+End-of-Segment Transitions:
+  Description: Extended low period on last bit of frame before reset
+  Occurrences: 1143
+  Mean:   2.091 us
+  StdDev: 0.013 us
+  Min:    2.060 us
+  Max:    2.140 us
+  Note: These are hardware transition delays, not protocol violations
+
+================================================================================
+TIMING ERRORS
+================================================================================
+
+Found 4 timing errors total
+Showing first 4 errors:
+
+Error 1 at t=59.393089s:
+  High: 0.340us, Low: 0.020us
+  Bit value: 0, Error: T0L out of range: 0.020000us (expected 0.8500-1.1500)
+Error 2 at t=59.393090s:
+  High: 1.020us, Low: 0.960us
+  Bit value: 1, Error: T1H out of range: 1.020us (expected 0.4500-0.7500); T1L out of range: 0.960us (expected 0.5000-0.8000)
+Error 3 at t=173.926988s:
+  High: 0.680us, Low: 0.960us
+  Bit value: 1, Error: T1L out of range: 0.960us (expected 0.5000-0.8000)
+Error 4 at t=266.985789s:
+  High: 0.340us, Low: 0.020us
+  Bit value: 0, Error: T0L out of range: 0.020000us (expected 0.8500-1.1500)
+
+Error rate: 0.000% (4/27431997 bits)
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================

@@ -1,0 +1,63 @@
+# Common sdkconfig.defaults - shared across all SysTypes
+# SysType-specific sdkconfig.defaults files override these settings
+
+# Default log level
+CONFIG_LOG_DEFAULT_LEVEL_DEBUG=n
+
+# Serial Baud-Rate
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
+
+# UART option to avoid dropping chars
+CONFIG_UART_ISR_IN_IRAM=y
+
+# Flash size
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Partition Table
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="build/raft/partitions.csv"
+
+# Common ESP-related
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=20000
+
+# FreeRTOS
+CONFIG_FREERTOS_HZ=1000
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
+CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID=y
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+
+# Event Loop Library
+CONFIG_ESP_EVENT_POST_FROM_ISR=y
+CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR=y
+
+# Bluetooth (disabled by default; systypes that need it override with =y and sub-options)
+CONFIG_BT_ENABLED=n
+
+# LWIP
+CONFIG_LWIP_SO_RCVBUF=y
+CONFIG_LWIP_SO_LINGER=y
+CONFIG_LWIP_L2_TO_L3_COPY=y
+CONFIG_LWIP_MAX_SOCKETS=24
+CONFIG_LWIP_MAX_ACTIVE_TCP=32
+CONFIG_LWIP_MAX_LISTENING_TCP=8
+CONFIG_LWIP_TCP_MSL=10000
+
+# WiFi options - to reduce iRAM usage
+CONFIG_ESP_WIFI_IRAM_OPT=n
+CONFIG_ESP_WIFI_RX_IRAM_OPT=n
+
+# Ethernet (disabled by default; systypes that need it override with =y and sub-options)
+# Note: ETH_USE_SPI_ETHERNET defaults to y and 'select's ETH_ENABLED, so must be explicitly disabled
+CONFIG_ETH_ENABLED=n
+CONFIG_ETH_USE_SPI_ETHERNET=n
+
+# mDNS
+CONFIG_MDNS_PREDEF_NETIF_STA=y
+
+# Build type
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y
+
+# Disable HTTPS certificate bundle to save ~133KB
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=n

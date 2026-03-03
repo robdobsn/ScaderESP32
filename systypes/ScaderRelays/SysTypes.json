@@ -1,29 +1,5 @@
 {
     "SystemName": "ScaderRelays",
-    "Manufacturer": "Rob Dobson",
-    "CmdsAtStart": "",
-    "WebUI": "",
-    "SysManager": {
-        "monitorPeriodMs": 30000,
-        "reportList": [
-            "NetMan",
-            "BLEMan",
-            "Scader",
-            "SysMan",
-            "StatsCB",
-            "ESPOTAUpdate"
-        ],
-        "slowSysModMs": 100,
-        "pauseWiFiforBLE": 1,
-        "rebootAfterNHours": 24,
-        "rebootIfDiscMins": 10
-    },
-    "ProtExchg": {
-        "RICSerial": {
-            "FrameBound": "0xE7",
-            "CtrlEscape": "0xD7"
-        }
-    },
     "NetMan": {
         "enable": 1,
         "wifiSTAEn": 0,
@@ -46,10 +22,6 @@
         "NTPServer": "pool.ntp.org",
         "timezone": "UTC",
         "logLevel": "D"
-    },
-    "ESPOTAUpdate": {
-        "enable": 1,
-        "OTADirect": 1
     },
     "MQTTMan": {
         "enable": 1,
@@ -88,81 +60,6 @@
                 "qos": 1
             }
         ]
-    },
-    "WebServer": {
-        "enable": 1,
-        "webServerPort": 80,
-        "stdRespHeaders": [
-            "Access-Control-Allow-Origin: *"
-        ],
-        "apiPrefix": "api/",
-        "fileServer": 1,
-        "numConnSlots": 12,
-        "websockets": [
-            {
-                "pfix": "ws",
-                "pcol": "RICSerial",
-                "maxConn": 4,
-                "txQueueMax": 20,
-                "pingMs": 30000
-            },
-            {
-                "pfix": "scader",
-                "pcol": "RICJSON",
-                "maxConn": 4,
-                "txQueueMax": 20,
-                "pingMs": 30000,
-                "content": "text"
-            }
-        ],
-        "logLevel": "D",
-        "sendMax": 5000,
-        "taskCore": 0,
-        "taskStack": 5000,
-        "taskPriority": 9
-    },
-    "LogManager": {
-        "enable": 1,
-        "logDests": [
-            {
-                "enable": true,
-                "type": "Papertrail",
-                "host": "logs2.papertrailapp.com",
-                "port": 48992
-            }
-        ]
-    },
-    "SerialConsole": {
-        "enable": 1,
-        "uartNum": 0,
-        "rxBuf": 5000,
-        "txBuf": 1500,
-        "crlfOnTx": 1,
-        "protocol": "RICSerial",
-        "logLevel": "D"
-    },
-    "CommandSerial": {
-        "enable": 0,
-        "logLevel": "D",
-        "ports": []
-    },
-    "CommandSocket": {
-        "enable": 0,
-        "socketPort": 24,
-        "protocol": "RICSerial",
-        "logLevel": "D"
-    },
-    "FileManager": {
-        "enable": 1,
-        "LocalFsDefault": "littlefs",
-        "LocalFSFormatIfCorrupt": 1,
-        "CacheFileSysInfo": 0,
-        "SDEnabled": 0,
-        "DefaultSD": 1,
-        "SDMOSI": 15,
-        "SDMISO": 4,
-        "SDCLK": 14,
-        "SDCS": 13
     },
     "BLEMan": {
         "enable": 1,
@@ -244,7 +141,7 @@
                         "rateHz": 0.1
                     }
                 ]
-            }            
+            }
         ]
     },
     "ScaderRelays": {
@@ -285,8 +182,7 @@
     },
     "DevMan": {
         "Buses": {
-            "buslist":
-            [
+            "buslist": [
                 {
                     "name": "BusBLE",
                     "type": "BusBLE"

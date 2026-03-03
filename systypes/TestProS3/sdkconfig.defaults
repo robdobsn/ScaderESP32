@@ -1,0 +1,11 @@
+# TestProS3-specific overrides (Common sdkconfig.defaults provides the base)
+
+# Serial Console - USB Serial JTAG (ESP32-S3)
+CONFIG_ESP_PHY_ENABLE_USB=y
+CONFIG_ESP_CONSOLE_USB_CDC=n
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=n
+
+# Heap debugging - detect corruption at point of occurrence (enable for debugging)
+# CONFIG_HEAP_POISONING_COMPREHENSIVE=y
+# CONFIG_HEAP_TASK_TRACKING=y

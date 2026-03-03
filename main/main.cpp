@@ -11,6 +11,8 @@
 #include "RegisterSysMods.h"
 #include "RegisterWebServer.h"
 #include "DetectHardware.h"
+#include "esp_heap_caps.h"
+#include "esp_log.h"
 // Scader components
 #include "ScaderRelays.h"
 #include "ScaderShades.h"
@@ -88,9 +90,25 @@ extern "C" void app_main(void)
 #endif
 
     // Loop forever
+    // #define DEBUG_HEAP_PERIODIC_CHECK
+#ifdef DEBUG_HEAP_PERIODIC_CHECK
+    uint32_t lastHeapCheckMs = 0;
+#endif
     while (1)
     {
         // Loop the RaftCoreApp
         raftCoreApp.loop();
+
+#ifdef DEBUG_HEAP_PERIODIC_CHECK
+        // Periodic heap integrity check (every 5 seconds)
+        if ((uint32_t)(millis() - lastHeapCheckMs) > 5000)
+        {
+            lastHeapCheckMs = millis();
+            if (!heap_caps_check_integrity_all(true))
+            {
+                ESP_LOGE("HEAP", "Heap corruption detected in main loop!");
+            }
+        }
+#endif
     }
 }

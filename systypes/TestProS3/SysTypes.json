@@ -1,0 +1,43 @@
+{
+    "SystemName": "ScaderOpener",
+    "Publish": {
+        "enable": 1,
+        "pubList": [
+            {
+                "topic": "ScaderOpener",
+                "rates": [
+                    {
+                        "if": "scaderOut",
+                        "protocol": "RICJSON",
+                        "rateHz": 0.1
+                    }
+                ]
+            }
+        ]
+    },
+    "DevMan": {
+        "Buses": {
+            "buslist": [
+                {
+                    "name": "I2CA",
+                    "type": "I2C",
+                    "sdaPin": 8,
+                    "sclPin": 9,
+                    "i2cFreq": 100000,
+                    "loopYieldMs": 20
+                }
+            ]
+        },
+        "Devices": [
+        ]
+    },
+    "ScaderOpener": {
+        "DoorRemainOpenTimeSecs": 45,
+        "DoorTimeToOpenSecs": 20,
+        "DoorOpenAngleDegs": 0,
+        "DoorClosedAngleDegs": 0,
+        "MotorOnTimeAfterMoveSecs": 5,
+        "MaxMotorCurrentAmps": 0.4,
+        "ForceThresholdN": 5
+    }
+}

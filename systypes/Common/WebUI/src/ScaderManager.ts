@@ -161,12 +161,15 @@ export class ScaderManager {
                 console.log(`ScaderManager init websocket opened to ${webSocketURL}`);
 
                 // Send subscription request messages after a short delay
-                setTimeout(() => {
+                setTimeout(async () => {
 
-                    // Subscribe to scader messages
+                    // Get available publish topics from the device
+                    const availableTopics = await this.getAvailablePubTopics();
+
+                    // Subscribe to scader messages that have registered pub sources
                     for (const [key] of Object.entries(this._scaderConfig)) {
                         const subscribeName = key;
-                        if (subscribeName !== "ScaderCommon") {
+                        if (subscribeName !== "ScaderCommon" && availableTopics.has(subscribeName)) {
                             console.log(`ScaderManager init subscribing to ${subscribeName}`);
                             if (this._websocket) {
                                 this._websocket.send(JSON.stringify({
@@ -323,6 +326,33 @@ export class ScaderManager {
         if (this._systemVersion) {
             callback(this._systemVersion);
         }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Get available publish topics from the device
+    ////////////////////////////////////////////////////////////////////////////
+
+    private async getAvailablePubTopics(): Promise<Set<string>> {
+        const topics = new Set<string>();
+        try {
+            const response = await fetch(this._serverAddressPrefix + this._urlPrefix + "/pubtopics");
+            if (response && response.ok) {
+                const data = await response.json();
+                if (data.topics && Array.isArray(data.topics)) {
+                    for (const topic of data.topics) {
+                        if (topic.name) {
+                            topics.add(topic.name);
+                        }
+                    }
+                }
+                console.log(`ScaderManager getAvailablePubTopics ${JSON.stringify([...topics])}`);
+            } else {
+                console.warn(`ScaderManager getAvailablePubTopics response not ok`);
+            }
+        } catch (error) {
+            console.warn(`ScaderManager getAvailablePubTopics error ${error}`);
+        }
+        return topics;
     }
 
     ////////////////////////////////////////////////////////////////////////////

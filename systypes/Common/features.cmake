@@ -14,6 +14,15 @@ set(RAFT_COMPONENTS
 set(FS_TYPE "littlefs")
 set(FS_IMAGE_PATH "../Common/FSImage")
 
+# Disable SPIFFS (use LittleFS instead)
+set(RAFT_FILESYSTEM_SPIFFS_DISABLED 1)
+
+# Disable FAT/SD card support
+set(RAFT_FILESYSTEM_FATSD_DISABLED 1)
+
+# Disable ethernet support
+set(RAFT_ETHERNET_DISABLED 1)
+
 # Web UI
 set(UI_SOURCE_PATH "../Common/WebUI")
 # Uncomment the following line if you do not want to gzip the web UI

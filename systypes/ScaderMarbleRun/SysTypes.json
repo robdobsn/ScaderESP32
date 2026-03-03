@@ -1,8 +1,5 @@
 {
     "SystemName": "ScaderMarbleRun",
-    "Manufacturer": "Rob Dobson",
-    "CmdsAtStart": "",
-    "WebUI": "",
     "SysManager": {
         "monitorPeriodMs": 10000,
         "reportList": [
@@ -17,39 +14,6 @@
         "pauseWiFiforBLE": 1,
         "rebootAfterNHours": 24,
         "rebootIfDiscMins": 10
-    },
-    "ProtExchg": {
-        "RICSerial": {
-            "FrameBound": "0xE7",
-            "CtrlEscape": "0xD7"
-        }
-    },
-    "NetMan": {
-        "enable": 1,
-        "wifiSTAEn": 1,
-        "wifiAPEn": 0,
-        "ethEn": 0,
-        "wifiSSID": "",
-        "wifiPW": "",
-        "wifiSTAScanThreshold": "OPEN",
-        "wifiAPSSID": "",
-        "wifiAPPW": "",
-        "wifiAPChannel": 1,
-        "wifiAPMaxConn": 4,
-        "wifiAPAuthMode": "WPA2_PSK",
-        "ethLanChip": "LAN87XX",
-        "ethPowerPin": 12,
-        "ethMDCPin": 23,
-        "ethMDIOPin": 18,
-        "ethPhyAddr": 0,
-        "ethPhyRstPin": -1,
-        "NTPServer": "pool.ntp.org",
-        "timezone": "UTC",
-        "logLevel": "D"
-    },
-    "ESPOTAUpdate": {
-        "enable": 1,
-        "OTADirect": 1
     },
     "MQTTMan": {
         "enable": 0,
@@ -83,38 +47,6 @@
             }
         ]
     },
-    "WebServer": {
-        "enable": 1,
-        "webServerPort": 80,
-        "stdRespHeaders": [
-            "Access-Control-Allow-Origin: *"
-        ],
-        "apiPrefix": "api/",
-        "fileServer": 1,
-        "numConnSlots": 12,
-        "websockets": [
-            {
-                "pfix": "ws",
-                "pcol": "RICSerial",
-                "maxConn": 4,
-                "txQueueMax": 20,
-                "pingMs": 30000
-            },
-            {
-                "pfix": "scader",
-                "pcol": "RICJSON",
-                "maxConn": 4,
-                "txQueueMax": 20,
-                "pingMs": 30000,
-                "content": "text"
-            }
-        ],
-        "logLevel": "D",
-        "sendMax": 5000,
-        "taskCore": 0,
-        "taskStack": 5000,
-        "taskPriority": 9
-    },
     "LogManager": {
         "enable": 0,
         "logDests": [
@@ -126,57 +58,6 @@
             }
         ]
     },
-    "SerialConsole": {
-        "enable": 1,
-        "uartNum": 0,
-        "rxBuf": 5000,
-        "txBuf": 1500,
-        "crlfOnTx": 1,
-        "protocol": "RICSerial",
-        "logLevel": "D"
-    },
-    "CommandSerial": {
-        "enable": 0,
-        "logLevel": "D",
-        "ports": []
-    },
-    "CommandSocket": {
-        "enable": 0,
-        "socketPort": 24,
-        "protocol": "RICSerial",
-        "logLevel": "D"
-    },
-    "FileManager": {
-        "enable": 1,
-        "LocalFsDefault": "littlefs",
-        "LocalFSFormatIfCorrupt": 1,
-        "CacheFileSysInfo": 0,
-        "SDEnabled": 0,
-        "DefaultSD": 1,
-        "SDMOSI": 15,
-        "SDMISO": 4,
-        "SDCLK": 14,
-        "SDCS": 13
-    },
-    "BLEMan": {
-        "enable": 0,
-        "central": 1,
-        "peripheral": 0,
-        "scanIntervalMs": 200,
-        "scanWindowMs": 150,
-        "scanPassive": 1,
-        "scanNoDup": 0,
-        "scanLimited": 0,
-        "scanBTHome": 1,
-        "busConnName": "BusBLE",
-        "logLevel": "D",
-        "nimLogLev": "E"
-    },
-    "Publish": {
-        "enable": 1,
-        "pubList": [
-        ]
-    },
     "ScaderMarbleRun": {
         "enable": 1,
         "speedInputPin": 36,
@@ -186,8 +67,7 @@
     },
     "DevMan": {
         "Buses": {
-            "buslist":
-            [
+            "buslist": [
                 {
                     "name": "SERA",
                     "type": "serial",
@@ -198,9 +78,8 @@
                     "minAfterSendMs": 5
                 }
             ]
-        },        
-        "Devices":
-        [
+        },
+        "Devices": [
             {
                 "enable": 1,
                 "class": "MotorControl",
@@ -229,8 +108,8 @@
                         "params": {
                             "unitsPerRot": 360,
                             "stepsPerRot": 768,
-                            "maxSpeed": 100,
-                            "maxAcc": 100
+                            "maxSpeedUps": 100,
+                            "maxAccUps2": 400
                         },
                         "driver": {
                             "driver": "TMC2209",
@@ -254,5 +133,5 @@
                 ]
             }
         ]
-    }    
+    }
 }

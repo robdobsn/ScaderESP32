@@ -34,7 +34,9 @@ export default function ScaderLEDPix(props: ScaderScreenProps) {
     scaderManager.onStateChange(scaderName, (newState) => {
       console.log(`ledpix onStateChange`, newState);
     });
-    fetchPatterns();
+    if (config?.enable) {
+      fetchPatterns();
+    }
     
     // Cleanup debounce timer on unmount
     return () => {

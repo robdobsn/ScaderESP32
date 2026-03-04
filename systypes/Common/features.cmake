@@ -14,14 +14,8 @@ set(RAFT_COMPONENTS
 set(FS_TYPE "littlefs")
 set(FS_IMAGE_PATH "../Common/FSImage")
 
-# Disable SPIFFS (use LittleFS instead)
-set(RAFT_FILESYSTEM_SPIFFS_DISABLED 1)
-
-# Disable FAT/SD card support
-set(RAFT_FILESYSTEM_FATSD_DISABLED 1)
-
-# Disable ethernet support
-set(RAFT_ETHERNET_DISABLED 1)
+# SD card support (enable per SysType if needed)
+set(RAFT_ENABLE_SD OFF)
 
 # Web UI
 set(UI_SOURCE_PATH "../Common/WebUI")
@@ -30,6 +24,7 @@ set(UI_SOURCE_PATH "../Common/WebUI")
 # Uncomment the following line to include a source map for the web UI - this will increase the size of the web UI
 # set(WEB_UI_GEN_FLAGS ${WEB_UI_GEN_FLAGS} --incmap)
 
+# Uncomment to debug
 # add_compile_definitions(DEBUG_USING_GLOBAL_VALUES)
 # add_compile_definitions(DEBUG_NETWORK_EVENTS_DETAIL)
 # add_compile_definitions(DEBUG_LIST_SYSMODS)

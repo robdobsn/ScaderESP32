@@ -67,6 +67,24 @@
                 "inbound": 0,
                 "path": "scader/out",
                 "qos": 1
+            },
+            {
+                "name": "scaderGas",
+                "inbound": 0,
+                "path": "scader/gas",
+                "qos": 1
+            },
+            {
+                "name": "scaderElec",
+                "inbound": 0,
+                "path": "scader/elec",
+                "qos": 1
+            },
+            {
+                "name": "scaderBTHome",
+                "inbound": 0,
+                "path": "scader/bthome",
+                "qos": 1
             }
         ]
     },
@@ -161,7 +179,6 @@
         "nimLogLev": "E"
     },
     "Publish": {
-        "enable": 1,
-        "pubList": []
+        "enable": 1
     }
 }

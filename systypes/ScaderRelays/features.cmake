@@ -11,4 +11,5 @@ add_compile_definitions(HW_ETH_PHY_LAN87XX)
 # add_compile_definitions(DEBUG_NETWORK_EVENTS_DETAIL)
 # add_compile_definitions(DEBUG_LIST_SYSMODS)
 
-set(NETWORK_MDNS_DISABLED ON)
+add_compile_definitions(DEBUG_HOSTNAME_SETTING)
+add_compile_definitions(DEBUG_NETWORK_EVENTS)

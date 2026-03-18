@@ -1,5 +1,4 @@
 {
-    "SystemName": "ScaderOpener",
     "MQTTMan": {
         "enable": 1,
         "brokerHostname": "benbecula",

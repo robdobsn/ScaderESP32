@@ -1,5 +1,4 @@
 {
-    "SystemName": "ScaderLeds",
     "NetMan": {
         "enable": 1,
         "wifiSTAEn": 1,

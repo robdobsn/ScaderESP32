@@ -1,5 +1,4 @@
 {
-    "SystemName": "ScaderLocks",
     "MQTTMan": {
         "enable": 1,
         "brokerHostname": "benbecula",

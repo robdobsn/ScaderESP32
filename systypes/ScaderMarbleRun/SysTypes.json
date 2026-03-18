@@ -1,5 +1,4 @@
 {
-    "SystemName": "ScaderMarbleRun",
     "ScaderMarbleRun": {
         "enable": 1,
         "speedInputPin": 36,

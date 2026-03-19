@@ -51,7 +51,7 @@
         "OTADirect": 1
     },
     "MQTTMan": {
-        "enable": 0,
+        "enable": 1,
         "brokerHostname": "benbecula",
         "brokerPort": 1883,
         "clientID": "Scader",

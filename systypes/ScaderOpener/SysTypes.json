@@ -1,39 +1,4 @@
 {
-    "MQTTMan": {
-        "enable": 1,
-        "brokerHostname": "benbecula",
-        "brokerPort": 1883,
-        "clientID": "Scader",
-        "topics": [
-            {
-                "name": "scaderIn",
-                "inbound": 1,
-                "path": "scader/in",
-                "qos": 1
-            },
-            {
-                "name": "scaderOut",
-                "inbound": 0,
-                "path": "scader/out",
-                "qos": 1
-            }
-        ]
-    },
-    "Publish": {
-        "enable": 1,
-        "pubList": [
-            {
-                "topic": "ScaderOpener",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            }
-        ]
-    },
     "DevMan": {
         "Buses": {
             "buslist": [

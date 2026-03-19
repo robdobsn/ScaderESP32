@@ -1,24 +1,4 @@
 {
-    "MQTTMan": {
-        "enable": 1,
-        "brokerHostname": "benbecula",
-        "brokerPort": 1883,
-        "clientID": "Scader",
-        "topics": [
-            {
-                "name": "scaderIn",
-                "inbound": 1,
-                "path": "scader/in",
-                "qos": 1
-            },
-            {
-                "name": "scaderOut",
-                "inbound": 0,
-                "path": "scader/out",
-                "qos": 1
-            }
-        ]
-    },
     "BLEMan": {
         "enable": 0,
         "central": 1,
@@ -39,21 +19,6 @@
         "uuidCmdRespResponse": "aa76677e-9cfd-4626-a510-0d305be57c8f",
         "logLevel": "D",
         "nimLogLev": "E"
-    },
-    "Publish": {
-        "enable": 1,
-        "pubList": [
-            {
-                "topic": "ScaderLocks",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            }
-        ]
     },
     "ScaderCat": {
         "LIGHT_CTRL": 23,

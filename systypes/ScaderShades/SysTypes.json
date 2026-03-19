@@ -22,26 +22,6 @@
         "timezone": "UTC",
         "logLevel": "D"
     },
-    "MQTTMan": {
-        "enable": 1,
-        "brokerHostname": "benbecula",
-        "brokerPort": 1883,
-        "clientID": "Scader",
-        "topics": [
-            {
-                "name": "scaderIn",
-                "inbound": 1,
-                "path": "scader/in",
-                "qos": 1
-            },
-            {
-                "name": "scaderOut",
-                "inbound": 0,
-                "path": "scader/out",
-                "qos": 1
-            }
-        ]
-    },
     "CommandSerial": {
         "enable": 1,
         "logLevel": "D",
@@ -127,6 +107,7 @@
         ]
     },
     "ScaderLocks": {
+        "enable": 1,
         "maxElems": 2,
         "doors": [
             {

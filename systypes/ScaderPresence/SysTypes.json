@@ -49,21 +49,6 @@
         "logLevel": "D",
         "nimLogLev": "E"
     },
-    "Publish": {
-        "enable": 1,
-        "pubList": [
-            {
-                "topic": "devjson",
-                "rates": [
-                    {
-                        "if": "scaderOut",
-                        "protocol": "RICJSON",
-                        "rateHz": 0.1
-                    }
-                ]
-            }
-        ]
-    },
     "DevMan": {
         "Buses": {
             "buslist": [

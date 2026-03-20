@@ -54,7 +54,6 @@
         "enable": 1,
         "brokerHostname": "benbecula",
         "brokerPort": 1883,
-        "clientID": "Scader",
         "topics": [
             {
                 "name": "scaderIn",
@@ -66,7 +65,19 @@
                 "name": "scaderOut",
                 "inbound": 0,
                 "path": "scader/out",
-                "qos": 1
+                "qos": 1,
+                "pubSources": [
+                    {
+                        "pubTopic": "ScaderShades",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change"
+                    },
+                    {
+                        "pubTopic": "ScaderLocks",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change"
+                    }
+                ]
             },
             {
                 "name": "scaderGas",

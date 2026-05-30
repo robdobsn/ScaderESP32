@@ -11,6 +11,7 @@
 #include "RaftCore.h"
 #include "PlatformUtils.h"
 #include "NetworkSystem.h"
+#include "esp_timer.h"
 
 // #define DEBUG_SCADER_COMMON_SETUP
 

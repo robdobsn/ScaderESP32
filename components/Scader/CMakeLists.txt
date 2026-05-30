@@ -47,7 +47,15 @@ set(SCADER_INCLUDE_DIRS
 )
 
 # Set requirements
-set(SCADER_REQUIRES RaftCore hardware)
+set(SCADER_REQUIRES
+  RaftCore
+  hardware
+  esp_timer
+  esp_driver_gpio
+  esp_driver_uart
+  esp_driver_spi
+  esp_driver_ledc
+)
 
 idf_component_register(
   SRCS ${SCADER_SRCS}

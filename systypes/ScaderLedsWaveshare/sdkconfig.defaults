@@ -8,7 +8,11 @@ CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=n
 CONFIG_LWIP_TCP_SND_BUF_DEFAULT=16384
 CONFIG_LWIP_TCP_WND_DEFAULT=16384
 
-# Ethernet - W5500 via SPI (no EMAC)
+# Ethernet - W5500 via SPI (no EMAC). Common defaults disable Ethernet, so
+# re-enable the framework here; the W5500 chip driver comes from the
+# espressif/w5500 component (gated by RAFT_ENABLE_ETH_W5500 in features.cmake).
+CONFIG_ETH_ENABLED=y
+CONFIG_ETH_USE_SPI_ETHERNET=y
 CONFIG_ETH_USE_ESP32_EMAC=n
 CONFIG_ETH_USE_OPENETH=n
 

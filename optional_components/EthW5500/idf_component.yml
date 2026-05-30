@@ -1,0 +1,9 @@
+## Carrier manifest that pulls in the espressif/w5500 SPI Ethernet driver.
+##
+## This component is only added to the build for SysTypes that enable W5500
+## (via `list(APPEND OPTIONAL_COMPONENTS .../optional_components/EthW5500)` in
+## their features.cmake). Because the dependency lives here — not in RaftCore's
+## manifest — the W5500 driver is downloaded and compiled ONLY for W5500
+## SysTypes, giving zero build/firmware-size impact on every other build.
+dependencies:
+  espressif/w5500: ">=1.0.1"

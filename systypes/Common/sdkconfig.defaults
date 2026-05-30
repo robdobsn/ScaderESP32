@@ -1,9 +1,6 @@
 # Common sdkconfig.defaults - shared across all SysTypes
 # SysType-specific sdkconfig.defaults files override these settings
 
-# Default log level
-CONFIG_LOG_DEFAULT_LEVEL_DEBUG=n
-
 # Serial Baud-Rate
 CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
 
@@ -61,3 +58,20 @@ CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y
 
 # Disable HTTPS certificate bundle to save ~133KB
 CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=n
+
+# C++: no exceptions or RTTI (size)
+CONFIG_COMPILER_CXX_EXCEPTIONS=n
+CONFIG_COMPILER_CXX_RTTI=n
+
+# Default log level WARN; keep INFO available at runtime via esp_log_level_set()
+CONFIG_LOG_DEFAULT_LEVEL_WARN=y
+CONFIG_LOG_MAXIMUM_LEVEL_INFO=y
+
+# Bootloader size optimization
+CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE=y
+
+# Disable unused subsystems
+CONFIG_ESP_WIFI_ENABLE_WPA3_SAE=n
+CONFIG_MBEDTLS_TLS_CLIENT_ONLY=y
+CONFIG_MBEDTLS_DES_C=n
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=y

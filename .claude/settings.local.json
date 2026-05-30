@@ -6,9 +6,31 @@
       "WebFetch(domain:api.github.com)",
       "WebSearch",
       "Bash(source ~/.bashrc)",
-      "Bash(idf.py build:*)"
+      "Bash(idf.py build:*)",
+      "Bash(cd /home/rob/rdev/ScaderESP32; echo \"=== any managed_components already present? ===\"; find . -type d -name \"managed_components\" 2>/dev/null; ls managed_components/ 2>/dev/null; echo \"=== dependencies.lock eth refs ===\"; grep -i \"eth\\\\|w5500\" dependencies.lock 2>/dev/null | head; echo \"=== gc-sections in IDF build ===\"; grep -rn \"gc-sections\\\\|function-sections\" /home/rob/esp/esp-idf-v6.0.1/components/esp_system/ld 2>/dev/null | head; grep -rn \"gc-sections\" /home/rob/esp/esp-idf-v6.0.1/tools/cmake/*.cmake 2>/dev/null | head)",
+      "Read(//home/rob/esp/esp-idf-v6.0.1/components/esp_system/ld/**)",
+      "Read(//home/rob/esp/esp-idf-v6.0.1/tools/cmake/**)",
+      "Bash(grep -rn \"gc-sections\\\\|function-sections\\\\|data-sections\" /home/rob/esp/esp-idf-v6.0.1/tools/cmake/build.cmake /home/rob/esp/esp-idf-v6.0.1/tools/cmake/project.cmake /home/rob/esp/esp-idf-v6.0.1/components/esp_system/CMakeLists.txt 2>/dev/null | head; echo \"=== search project_include ===\"; grep -rln \"gc-sections\" /home/rob/esp/esp-idf-v6.0.1/tools/cmake/ /home/rob/esp/esp-idf-v6.0.1/components/*/project_include.cmake 2>/dev/null | head)",
+      "Read(//home/rob/esp/esp-idf-v6.0.1/components/esp_system/**)",
+      "Read(//home/rob/esp/esp-idf-v6.0.1/components/**)",
+      "Bash(raft build *)",
+      "Read(//tmp/**)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(cd /home/rob/rdev/ScaderESP32; raft build -s ScaderRelays -c --no-docker -e /home/rob/esp/esp-idf-v6.0.1 > /tmp/relays_build2.log 2>&1; echo \"EXIT=$?\")",
+      "Bash(echo \"WAVE_EXIT=$?\")",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('build/ScaderLedsWaveshare/project_description.json'\\)\\);bc=d.get\\('build_component_info',{}\\);print\\('w5500' , [k for k in bc if 'w5500' in k]\\); rc=bc.get\\('RaftCore',{}\\); print\\('RaftCore reqs:', rc.get\\('reqs'\\), rc.get\\('priv_reqs'\\)\\)\")",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('build/ScaderLedsWaveshare/project_description.json'\\)\\);rc=d['build_component_info'].get\\('RaftCore',{}\\);print\\('reqs:',rc.get\\('reqs'\\)\\)\")",
+      "Bash(sed -n '48,68p' raftdevlibs/RaftCore/CMakeLists.txt)",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('build/ScaderLedsWaveshare/project_description.json'\\)\\);rc=d['build_component_info'].get\\('RaftCore',{}\\);print\\('RESOLVED RaftCore reqs:',rc.get\\('reqs'\\)\\)\")",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('build/ScaderLedsWaveshare/project_description.json'\\)\\);print\\(d['build_component_info'].get\\('RaftCore',{}\\).get\\('reqs'\\)\\)\")",
+      "Bash(echo \"RELAYS_EXIT=$?\")",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('build/ScaderRelays/project_description.json'\\)\\);print\\(d['build_component_info'].get\\('RaftCore',{}\\).get\\('reqs'\\)\\)\")",
+      "Bash(git -C raftdevlibs/RaftCore diff --stat)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/tmp"
+    ]
   }
 }

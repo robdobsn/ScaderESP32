@@ -16,5 +16,13 @@ CONFIG_BT_NIMBLE_LOG_LEVEL_WARNING=y
 CONFIG_ETH_ENABLED=y
 CONFIG_ETH_USE_ESP32_EMAC=y
 CONFIG_ETH_DMA_BUFFER_SIZE=512
-CONFIG_ETH_DMA_RX_BUFFER_NUM=10
-CONFIG_ETH_DMA_TX_BUFFER_NUM=10
+# RX/TX DMA buffer counts trimmed from 10/10 to recover ~5KB internal DMA RAM
+# (light traffic on this relay/web/MQTT box). Raise RX again if packet drops appear.
+CONFIG_ETH_DMA_RX_BUFFER_NUM=6
+CONFIG_ETH_DMA_TX_BUFFER_NUM=4
+
+# lwIP PCB/socket tables trimmed from Common defaults (32/24/8) to recover a few KB
+# of heap — a relay + WebServer + MQTT device needs far fewer concurrent TCP PCBs.
+CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_LWIP_MAX_ACTIVE_TCP=16
+CONFIG_LWIP_MAX_LISTENING_TCP=4

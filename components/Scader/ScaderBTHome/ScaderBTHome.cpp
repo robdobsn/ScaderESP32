@@ -71,8 +71,9 @@ void ScaderBTHome::setup()
                     // Register for device data notification with the device
                     device.registerForDeviceData(
                         [this](uint16_t deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
-                            // Add to queue
+                            // Add to queue and bump the received counter (drives change detection)
                             _bthomeUpdateQueue.put(BTHomeUpdate{data, millis()});
+                            _updatesEnqueued++;
 
                             // Debug
 #ifdef DEBUG_SCADER_BTHOME
@@ -127,78 +128,62 @@ void ScaderBTHome::loop()
 
 String ScaderBTHome::getStatusJSON() const
 {
-    // Check for any updates
+    // Drain all pending updates into the elems array. getStatusJSON is the
+    // publish message generator, so each publish flushes the whole queue (the
+    // change-detection hash, based on _updatesEnqueued, fires once per new
+    // update so queued readings are published promptly rather than backing up).
+    String elems;
+    uint32_t numElems = 0;
     BTHomeUpdate bthomeUpdate;
-    if (_bthomeUpdateQueue.get(bthomeUpdate))
+    while (_bthomeUpdateQueue.get(bthomeUpdate))
     {
-        // Debug
-#ifdef DEBUG_SCADER_BTHOME
-        LOG_I(MODULE_PREFIX, "getStatusJSON %d", bthomeUpdate.msgData.size());
-#endif
-
         // Decode data
         poll_BLEBTHome deviceData;
-        if (_pDecodeFn)
-        {
-            // Decode
-            uint32_t recsDecoded = _pDecodeFn(bthomeUpdate.msgData.data(), bthomeUpdate.msgData.size(), 
-                        &deviceData, sizeof(deviceData), 1, _decodeState);
+        if (!_pDecodeFn)
+            continue;
+        uint32_t recsDecoded = _pDecodeFn(bthomeUpdate.msgData.data(), bthomeUpdate.msgData.size(),
+                    &deviceData, sizeof(deviceData), 1, _decodeState);
 
 #ifdef DEBUG_SCADER_BTHOME
-            String hexStr = Raft::getHexStr(bthomeUpdate.msgData);
-            LOG_I(MODULE_PREFIX, "getStatusJSON %s tsMs %d decoded recs %d ID %d MAC %llx %d %d %d %f %f", 
-                    hexStr.c_str(), (unsigned int)bthomeUpdate.timestampMs,
-                    recsDecoded,
-                    deviceData.ID,
-                    deviceData.MAC, 
-                    deviceData.motion, 
-                    deviceData.battery, 
-                    deviceData.temp, 
-                    deviceData.light);
+        String hexStr = Raft::getHexStr(bthomeUpdate.msgData);
+        LOG_I(MODULE_PREFIX, "getStatusJSON %s tsMs %d decoded recs %d ID %d MAC %llx %d %d %d %f %f",
+                hexStr.c_str(), (unsigned int)bthomeUpdate.timestampMs,
+                recsDecoded,
+                deviceData.ID,
+                deviceData.MAC,
+                deviceData.motion,
+                deviceData.battery,
+                deviceData.temp,
+                deviceData.light);
 #endif
 
-            if (recsDecoded > 0)
-            {
-                // MAC address
-                String macAddr = Raft::formatMACAddr(((uint8_t*)&deviceData.MAC), ":", true);
+        if (recsDecoded == 0)
+            continue;
 
-                // Form JSON
-                String jsonStr;
-                jsonStr += "{\"timeMs\":" + String(bthomeUpdate.timestampMs) + ",";
-                jsonStr += "\"mac\":\"" + macAddr + "\",";
-                jsonStr += "\"motion\":" + String(deviceData.motion);
-                if (deviceData.battery != 255)
-                    jsonStr += ",\"batt\":" + String(deviceData.battery);
-                if (deviceData.temp < 200.0)
-                    jsonStr += ",\"temp\":" + String(deviceData.temp);
-                if (deviceData.light < 10000000.0)
-                    jsonStr += ",\"light\":" + String(deviceData.light);
-                jsonStr += "}";
+        // MAC address
+        String macAddr = Raft::formatMACAddr(((uint8_t*)&deviceData.MAC), ":", true);
 
-#ifdef DEBUG_SCADER_BTHOME
-                LOG_I(MODULE_PREFIX, "getStatusJSON %s", jsonStr.c_str());
-#endif
-
-                // Return JSON
-                return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + jsonStr + "]}";
-            }
-        }
+        // Form JSON for this element
+        if (numElems > 0)
+            elems += ",";
+        elems += "{\"timeMs\":" + String(bthomeUpdate.timestampMs) + ",";
+        elems += "\"mac\":\"" + macAddr + "\",";
+        elems += "\"motion\":" + String(deviceData.motion);
+        if (deviceData.battery != 255)
+            elems += ",\"batt\":" + String(deviceData.battery);
+        if (deviceData.temp < 200.0)
+            elems += ",\"temp\":" + String(deviceData.temp);
+        if (deviceData.light < 10000000.0)
+            elems += ",\"light\":" + String(deviceData.light);
+        elems += "}";
+        numElems++;
     }
 
-    // Nothing to report
-    return "{" + _scaderCommon.getStatusJSON() + "}";
+#ifdef DEBUG_SCADER_BTHOME
+    LOG_I(MODULE_PREFIX, "getStatusJSON numElems %d", (int)numElems);
+#endif
 
-    // Get status
-    String elemStatus;
-    // for (int i = 0; i < _elemNames.size(); i++)
-    // {
-    //     if (i > 0)
-    //         elemStatus += ",";
-    //     elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(_elemStates[i]) + "}";
-    // }
-
-    // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elemStatus + "]}";
+    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elems + "]}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,19 +192,13 @@ String ScaderBTHome::getStatusJSON() const
 
 void ScaderBTHome::getStatusHash(std::vector<uint8_t>& stateHash)
 {
-    if (_bthomeUpdateQueue.count() == 0)
-    {
-        stateHash.clear();
-        return;
-    }
-
-    // Check if state hash already has an element
-    if (stateHash.size() == 0)
-    {
-        stateHash.push_back(0);
-        return;
-    }
-
-    // Increment state hash
-    stateHash[0]++;
+    // Base the hash on the monotonic count of updates received. Each new update
+    // changes the hash (triggering a change-based publish); draining the queue
+    // does not change it, so there is no spurious re-publish once it is empty.
+    uint32_t count = _updatesEnqueued;
+    stateHash.clear();
+    stateHash.push_back(count & 0xff);
+    stateHash.push_back((count >> 8) & 0xff);
+    stateHash.push_back((count >> 16) & 0xff);
+    stateHash.push_back((count >> 24) & 0xff);
 }

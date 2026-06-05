@@ -57,6 +57,12 @@ private:
     };
     mutable ThreadSafeQueue<BTHomeUpdate> _bthomeUpdateQueue;
 
+    // Monotonic count of updates received (incremented as each update is queued).
+    // Used by the change-detection hash so every new update triggers a publish.
+    // Written from the device-data callback, read in getStatusHash; a 32-bit
+    // aligned access is atomic on ESP32 and the value is only advisory.
+    uint32_t _updatesEnqueued = 0;
+
     // Decode function for BTHome device data
     DeviceTypeRecordDecodeFn _pDecodeFn = nullptr;
     mutable RaftBusDeviceDecodeState _decodeState;

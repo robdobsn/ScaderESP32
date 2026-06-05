@@ -76,6 +76,21 @@
                         "pubTopic": "ScaderLocks",
                         "rateHz": 0.1,
                         "trigger": "time_or_change"
+                    },
+                    {
+                        "pubTopic": "ScaderRelays",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change"
+                    },
+                    {
+                        "pubTopic": "ScaderOpener",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change"
+                    },
+                    {
+                        "pubTopic": "ScaderRFID",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change"
                     }
                 ]
             },
@@ -83,19 +98,41 @@
                 "name": "scaderGas",
                 "inbound": 0,
                 "path": "scader/gas",
-                "qos": 1
+                "qos": 1,
+                "pubSources": [
+                    {
+                        "pubTopic": "ScaderPulseCounter",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change"
+                    }
+                ]
             },
             {
                 "name": "scaderElec",
                 "inbound": 0,
                 "path": "scader/elec",
-                "qos": 1
+                "qos": 1,
+                "pubSources": [
+                    {
+                        "pubTopic": "ScaderElecMeters",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change",
+                        "minMs": 1000
+                    }
+                ]
             },
             {
                 "name": "scaderBTHome",
                 "inbound": 0,
                 "path": "scader/bthome",
-                "qos": 1
+                "qos": 1,
+                "pubSources": [
+                    {
+                        "pubTopic": "ScaderBTHome",
+                        "rateHz": 0.1,
+                        "trigger": "time_or_change"
+                    }
+                ]
             }
         ]
     },
@@ -140,6 +177,11 @@
                 "host": "192.168.86.247",
                 "port": 3100,
                 "path": "/loki/api/v1/push"
+            },
+            {
+                "enable": true,
+                "type": "RaftRemote",
+                "port": 8080
             }
         ]
     },

@@ -1,0 +1,256 @@
+# Build ScaderESP32 firmware images and publish a GitHub Release.
+#
+# - Tag push `v<semver>` (e.g. `v0.1.0`) builds every SysType in the matrix
+#   and attaches every artifact set to one Release.
+# - `workflow_dispatch` accepts an optional `systype` filter (single SysType)
+#   and a `version` override for ad-hoc builds without tagging.
+#
+# First slice: matrix contains only ScaderRelays. Add more SysTypes by
+# extending the `matrix.systype` list once each is validated.
+#
+# Bundle layout per SysType (matches devdocs/scader-reflash-plan.md §4.2):
+#   <systype>-<version>.zip                      # full bundle
+#   <systype>-<version>-manifest.json            # loose manifest
+#   <systype>-<version>-app.bin                  # OTA app image
+#   <systype>-<version>-bootloader.bin
+#   <systype>-<version>-partition-table.bin
+#   <systype>-<version>-ota_data_initial.bin
+#   <systype>-<version>-fs.bin                   # serial-only LittleFS image
+#   <systype>-<version>-fsimage.tar.gz           # unpacked web UI tree (OTA mirror)
+
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      systype:
+        description: "Build a single SysType (leave blank for all)"
+        required: false
+        default: ""
+      version:
+        description: "Version string (semver, no leading v) — defaults to git describe"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    name: Resolve build matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      version: ${{ steps.set-version.outputs.version }}
+      git_tag: ${{ steps.set-version.outputs.git_tag }}
+    steps:
+      - name: Resolve matrix
+        id: set-matrix
+        env:
+          SYSTYPE_FILTER: ${{ github.event.inputs.systype }}
+        run: |
+          set -euo pipefail
+          # Expand the matrix here as more SysTypes come online.
+          ALL_SYSTYPES='["ScaderRelays"]'
+          if [[ -n "${SYSTYPE_FILTER}" ]]; then
+            FILTERED=$(jq -nc --arg s "${SYSTYPE_FILTER}" --argjson all "${ALL_SYSTYPES}" \
+              '$all | map(select(. == $s))')
+            if [[ "${FILTERED}" == "[]" ]]; then
+              echo "::error::Unknown systype: ${SYSTYPE_FILTER}" >&2
+              exit 1
+            fi
+            echo "matrix=${FILTERED}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "matrix=${ALL_SYSTYPES}" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Resolve version
+        id: set-version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${REF_NAME#v}"
+            GIT_TAG="${REF_NAME}"
+          elif [[ -n "${INPUT_VERSION}" ]]; then
+            VERSION="${INPUT_VERSION}"
+            GIT_TAG="v${INPUT_VERSION}"
+          else
+            VERSION="0.0.0-dev+${GITHUB_SHA::7}"
+            GIT_TAG="dev-${GITHUB_SHA::7}"
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "git_tag=${GIT_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved version=${VERSION} git_tag=${GIT_TAG}"
+
+  build:
+    name: Build ${{ matrix.systype }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v6.0.1
+      options: --user root
+    strategy:
+      fail-fast: false
+      matrix:
+        systype: ${{ fromJson(needs.resolve.outputs.matrix) }}
+    env:
+      VERSION: ${{ needs.resolve.outputs.version }}
+      GIT_TAG: ${{ needs.resolve.outputs.git_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Mark workspace as a safe Git directory
+        run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+      - name: Install raftcli build deps
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            pkg-config libudev-dev curl ca-certificates jq
+
+      - name: Install Rust toolchain
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --default-toolchain stable --profile minimal
+          echo "${HOME}/.cargo/bin" >> "${GITHUB_PATH}"
+
+      - name: Cache cargo registry & raftcli binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/raft
+          key: cargo-raftcli-${{ runner.os }}-v1
+
+      - name: Install raftcli
+        run: |
+          set -euo pipefail
+          if ! command -v raft >/dev/null 2>&1; then
+            cargo install raftcli --locked
+          fi
+          raft --version || raft -h | head -n 5
+
+      - name: Build firmware (raft b -s ${{ matrix.systype }})
+        env:
+          IDF_PATH: /opt/esp/idf
+        run: |
+          set -euo pipefail
+          # The Espressif IDF Docker image exports IDF via /opt/esp/entrypoint.sh.
+          . "${IDF_PATH}/export.sh"
+          raft build -s "${{ matrix.systype }}" --no-docker
+      - name: Verify build artifacts
+        run: |
+          set -euo pipefail
+          BD="build/${{ matrix.systype }}"
+          for f in \
+            "${BD}/flasher_args.json" \
+            "${BD}/${{ matrix.systype }}.bin" \
+            "${BD}/bootloader/bootloader.bin" \
+            "${BD}/partition_table/partition-table.bin" \
+            "${BD}/ota_data_initial.bin" \
+            "${BD}/fs.bin"; do
+            if [[ ! -f "${f}" ]]; then
+              echo "::error::Missing expected artifact: ${f}" >&2
+              exit 1
+            fi
+          done
+          test -d "${BD}/raft/FSImage" || {
+            echo "::error::Missing raft/FSImage directory under ${BD}" >&2
+            exit 1
+          }
+
+      - name: Stage bundle
+        id: stage
+        run: |
+          set -euo pipefail
+          BD="build/${{ matrix.systype }}"
+          STAGE="staging/${{ matrix.systype }}"
+          rm -rf "${STAGE}"
+          mkdir -p "${STAGE}/app" "${STAGE}/serial" "${STAGE}/fsimage"
+          cp "${BD}/${{ matrix.systype }}.bin"               "${STAGE}/app/${{ matrix.systype }}.bin"
+          cp "${BD}/bootloader/bootloader.bin"               "${STAGE}/serial/bootloader.bin"
+          cp "${BD}/partition_table/partition-table.bin"     "${STAGE}/serial/partition-table.bin"
+          cp "${BD}/ota_data_initial.bin"                    "${STAGE}/serial/ota_data_initial.bin"
+          cp "${BD}/fs.bin"                                  "${STAGE}/serial/fs.bin"
+          # Preserve subfolders inside the FSImage tree.
+          cp -r "${BD}/raft/FSImage/." "${STAGE}/fsimage/"
+          # Drop FSImage scratch markers if any.
+          find "${STAGE}/fsimage" -type f -name '*.built' -delete || true
+          echo "stage=${STAGE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Generate manifest.json
+        run: |
+          set -euo pipefail
+          python3 scripts/build_manifest.py \
+            --systype "${{ matrix.systype }}" \
+            --version "${VERSION}" \
+            --git-tag "${GIT_TAG}" \
+            --build-dir "build/${{ matrix.systype }}" \
+            --out "staging/${{ matrix.systype }}/manifest.json"
+
+      - name: Pack zip bundle and fsimage tar
+        id: pack
+        run: |
+          set -euo pipefail
+          OUT="dist"
+          mkdir -p "${OUT}"
+          STAGE="staging/${{ matrix.systype }}"
+          PREFIX="${{ matrix.systype }}-${VERSION}"
+
+          (cd "${STAGE}" && zip -qr "${GITHUB_WORKSPACE}/${OUT}/${PREFIX}.zip" .)
+          tar -czf "${OUT}/${PREFIX}-fsimage.tar.gz" -C "${STAGE}/fsimage" .
+
+          # Loose assets named to disambiguate per-systype on the shared release.
+          cp "${STAGE}/manifest.json"                    "${OUT}/${PREFIX}-manifest.json"
+          cp "${STAGE}/app/${{ matrix.systype }}.bin"    "${OUT}/${PREFIX}-app.bin"
+          cp "${STAGE}/serial/bootloader.bin"            "${OUT}/${PREFIX}-bootloader.bin"
+          cp "${STAGE}/serial/partition-table.bin"       "${OUT}/${PREFIX}-partition-table.bin"
+          cp "${STAGE}/serial/ota_data_initial.bin"      "${OUT}/${PREFIX}-ota_data_initial.bin"
+          cp "${STAGE}/serial/fs.bin"                    "${OUT}/${PREFIX}-fs.bin"
+
+          ls -la "${OUT}"
+          echo "out=${OUT}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.systype }}-${{ needs.resolve.outputs.version }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish release
+    needs: [resolve, build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -la dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.resolve.outputs.git_tag }}
+          name: ScaderESP32 ${{ needs.resolve.outputs.version }}
+          generate_release_notes: true
+          files: dist/*
+          fail_on_unmatched_files: true

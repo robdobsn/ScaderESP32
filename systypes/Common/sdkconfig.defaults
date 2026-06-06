@@ -81,3 +81,10 @@ CONFIG_ESP_WIFI_ENABLE_WPA3_SAE=n
 CONFIG_MBEDTLS_TLS_CLIENT_ONLY=y
 CONFIG_MBEDTLS_DES_C=n
 CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
+
+# Task watchdog. esp_ota_begin disables the flash cache for several seconds
+# while erasing the OTA partition, which prevents IDLE from running on the OTA
+# core. Bump the timeout above the worst-case erase (~7s observed) so the WDT
+# does not fire a (cosmetic) backtrace during a normal OTA. Panic stays off.
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=15
+CONFIG_ESP_TASK_WDT_PANIC=n

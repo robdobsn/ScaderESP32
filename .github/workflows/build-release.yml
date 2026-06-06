@@ -44,11 +44,6 @@ defaults:
     # dash, which rejects `set -o pipefail`.
     shell: bash
 
-env:
-  # Opt all JS-based actions into the Node.js 24 runtime ahead of the
-  # June 16th 2026 default switch, silencing Node 20 deprecation warnings.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   resolve:
     name: Resolve build matrix
@@ -147,7 +142,7 @@ jobs:
           echo "${HOME}/.cargo/bin" >> "${GITHUB_PATH}"
 
       - name: Cache cargo registry & raftcli binary
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -245,7 +240,7 @@ jobs:
           echo "out=${OUT}" >> "${GITHUB_OUTPUT}"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.systype }}-${{ needs.resolve.outputs.version }}
           path: dist/*
@@ -259,7 +254,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true

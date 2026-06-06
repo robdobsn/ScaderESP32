@@ -38,6 +38,11 @@ on:
 permissions:
   contents: write
 
+env:
+  # Opt all JS-based actions into the Node.js 24 runtime ahead of the
+  # June 16th 2026 default switch, silencing Node 20 deprecation warnings.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   resolve:
     name: Resolve build matrix
@@ -104,7 +109,7 @@ jobs:
       GIT_TAG: ${{ needs.resolve.outputs.git_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
 

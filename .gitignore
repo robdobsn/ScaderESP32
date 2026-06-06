@@ -17,3 +17,11 @@ node_modules
 .raftcli_history
 evaluations/LEDPixelTiming/data
 raftdevlibs
+
+# Inkscape autosave/backup files (e.g. name.svg.2026_01_15_23_05_35.0.svg)
+*.????_??_??_??_??_??.*.svg
+
+# Windows metadata files
+*:Zone.Identifier
+Thumbs.db
+ehthumbs.db

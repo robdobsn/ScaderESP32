@@ -103,7 +103,9 @@ def build_manifest(
         "ota": {
             "app": app_bundle_path,
             "fsImageDir": "fsimage",
-            "fs": "littlefs",
+            # Public mount name used by Raft's HTTP API (/api/filelist/<fs>/...).
+            # The on-device storage backend is LittleFS but the API exposes it as "local".
+            "fs": "local",
         },
         "sha256": sha256,
     }

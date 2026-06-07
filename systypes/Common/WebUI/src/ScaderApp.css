@@ -443,3 +443,48 @@ code {
     transform: rotate(360deg);
   }
 }
+
+.ScaderApp-reboot-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.ScaderApp-reboot-card {
+  background: #1f232b;
+  color: #fff;
+  padding: 24px 32px;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-width: 240px;
+  max-width: 80vw;
+  text-align: center;
+}
+
+.ScaderApp-reboot-message {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.ScaderApp-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: ScaderApp-spinner-rotate 0.9s linear infinite;
+}
+
+@keyframes ScaderApp-spinner-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

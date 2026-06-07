@@ -23,6 +23,7 @@ ScaderManager.getInstance().setTestServerPath(testServerPath);
 export default function ScaderApp() {
 
   const [isEditingMode, setEditingMode] = React.useState(false);
+  const [rebootStatus, setRebootStatus] = React.useState<null | 'saving' | 'rebooting' | 'reconnecting' | 'failed'>(null);
 
   useEffect(() => {
     const initScaderManager = async () => {
@@ -43,10 +44,29 @@ export default function ScaderApp() {
     setEditingMode(!isEditingMode);
   };
 
-  const handleSettingsSave = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSettingsSave = async (event: React.MouseEvent<HTMLButtonElement>) => {
     console.log(`ScaderApp.handleSettingsSave isChanged ${ScaderManager.getInstance().isConfigChanged()} newConfig ${JSON.stringify(ScaderManager.getInstance().getMutableConfig())} ${event}`);
     setEditingMode(false);
-    ScaderManager.getInstance().persistConfig();
+    setRebootStatus('saving');
+    try {
+      await ScaderManager.getInstance().persistConfig();
+      setRebootStatus('rebooting');
+      const ok = await ScaderManager.getInstance().waitForRebootAndReconnect({
+        onProgress: (phase) => {
+          if (phase === 'reconnecting') setRebootStatus('reconnecting');
+          else if (phase === 'waiting-up') setRebootStatus('rebooting');
+        }
+      });
+      setRebootStatus(ok ? null : 'failed');
+      if (!ok) {
+        // Auto-clear the failure banner after a few seconds.
+        setTimeout(() => setRebootStatus(null), 5000);
+      }
+    } catch (err) {
+      console.error(`ScaderApp.handleSettingsSave error ${err}`);
+      setRebootStatus('failed');
+      setTimeout(() => setRebootStatus(null), 5000);
+    }
   };
 
   const handleSettingsCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -58,6 +78,17 @@ export default function ScaderApp() {
   const screenProps = new ScaderScreenProps(isEditingMode, ScaderManager.getInstance().getConfig());
 
   const bodyClasses = isEditingMode ? "ScaderApp-bodyeditmode" : "ScaderApp-body";
+
+  const rebootMessage = (() => {
+    switch (rebootStatus) {
+      case 'saving': return 'Saving configuration\u2026';
+      case 'rebooting': return 'Rebooting device\u2026';
+      case 'reconnecting': return 'Reconnecting\u2026';
+      case 'failed': return 'Could not reach the device. It may still be restarting.';
+      default: return '';
+    }
+  })();
+
   return (
     <div className="ScaderApp h-full">
     <div className={bodyClasses}>
@@ -79,6 +110,14 @@ export default function ScaderApp() {
       {<ScaderBTHome {...screenProps} />}
       {<ScaderMarbleRun {...screenProps} />}
     </div>
+    {rebootStatus && (
+      <div className="ScaderApp-reboot-overlay" role="alert" aria-live="assertive">
+        <div className="ScaderApp-reboot-card">
+          {rebootStatus !== 'failed' && <div className="ScaderApp-spinner" />}
+          <div className="ScaderApp-reboot-message">{rebootMessage}</div>
+        </div>
+      </div>
+    )}
   </div>
   );
 }

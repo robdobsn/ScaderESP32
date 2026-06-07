@@ -262,6 +262,77 @@ export class ScaderManager {
         });
     }
 
+    // Wait for the device to reboot and come back online, then re-establish
+    // app settings, version info and the websocket. Posting to /postsettings/reboot
+    // returns before the device actually restarts, so the typical sequence we
+    // observe here is: a few successful /api/v responses (still up), then a
+    // window of failures (rebooting), then success again. We watch for a
+    // failure-to-success transition to confirm the device really rebooted.
+    public async waitForRebootAndReconnect(opts?: {
+        overallTimeoutMs?: number;
+        pollIntervalMs?: number;
+        onProgress?: (phase: 'waiting-down' | 'waiting-up' | 'reconnecting') => void;
+    }): Promise<boolean> {
+        const overallTimeoutMs = opts?.overallTimeoutMs ?? 90_000;
+        const pollIntervalMs = opts?.pollIntervalMs ?? 1_500;
+        const onProgress = opts?.onProgress;
+        const start = Date.now();
+
+        // Close the existing websocket - it will be in a bad state through the reboot.
+        if (this._websocket) {
+            try { this._websocket.close(); } catch { /* ignore */ }
+            this._websocket = null;
+        }
+
+        const probe = async (): Promise<boolean> => {
+            try {
+                const ctrl = new AbortController();
+                const tid = setTimeout(() => ctrl.abort(), 2000);
+                const resp = await fetch(this._serverAddressPrefix + this._urlPrefix + "/v",
+                    { signal: ctrl.signal, cache: "no-store" });
+                clearTimeout(tid);
+                return resp.ok;
+            } catch {
+                return false;
+            }
+        };
+
+        // Phase 1: wait for the device to actually go offline. If it never
+        // appears to go offline (very fast restart) we still proceed via the
+        // overall timeout / phase-2 fallback.
+        onProgress?.('waiting-down');
+        const downDeadline = Math.min(start + 15_000, start + overallTimeoutMs);
+        let sawDown = false;
+        while (Date.now() < downDeadline) {
+            if (!(await probe())) { sawDown = true; break; }
+            await new Promise(r => setTimeout(r, pollIntervalMs));
+        }
+
+        // Phase 2: wait for the device to come back. If we never observed
+        // it go down (sawDown=false) we still poll - the simplest correct
+        // behaviour is just to confirm /api/v is reachable.
+        onProgress?.('waiting-up');
+        while (Date.now() - start < overallTimeoutMs) {
+            if (await probe()) {
+                onProgress?.('reconnecting');
+                // Refresh settings + version, then reopen the websocket.
+                await this.getAppSettingsAndCheck();
+                await this.getVersionInfo();
+                await this.connectWebSocket();
+                return true;
+            }
+            await new Promise(r => setTimeout(r, pollIntervalMs));
+        }
+
+        // Timed out - hand back to the existing 5s reconnect timer.
+        if (!sawDown) {
+            // Device probably never went down - try a reconnect anyway so
+            // state is sane.
+            await this.connectWebSocket();
+        }
+        return false;
+    }
+
     // Check if config changed
     public isConfigChanged(): boolean {
         return JSON.stringify(this._scaderConfig) !== JSON.stringify(this._mutableConfig);

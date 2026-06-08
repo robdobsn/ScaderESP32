@@ -5,8 +5,9 @@
 # - `workflow_dispatch` accepts an optional `systype` filter (single SysType)
 #   and a `version` override for ad-hoc builds without tagging.
 #
-# First slice: matrix contains only ScaderRelays. Add more SysTypes by
-# extending the `matrix.systype` list once each is validated.
+# Matrix covers the four current hardware SysTypes: ScaderRelays, ScaderShades,
+# ScaderOpener and ScaderMarbleRun. Add more SysTypes by extending the
+# `matrix.systype` list once each is validated.
 #
 # Bundle layout per SysType (matches devdocs/scader-reflash-plan.md §4.2):
 #   <systype>-<version>.zip                      # full bundle
@@ -60,7 +61,7 @@ jobs:
         run: |
           set -euo pipefail
           # Expand the matrix here as more SysTypes come online.
-          ALL_SYSTYPES='["ScaderRelays"]'
+          ALL_SYSTYPES='["ScaderRelays","ScaderShades","ScaderOpener","ScaderMarbleRun"]'
           if [[ -n "${SYSTYPE_FILTER}" ]]; then
             FILTERED=$(jq -nc --arg s "${SYSTYPE_FILTER}" --argjson all "${ALL_SYSTYPES}" \
               '$all | map(select(. == $s))')

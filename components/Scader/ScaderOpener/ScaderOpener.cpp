@@ -7,6 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderOpener.h"
+#include "ScaderPublisher.h"
 #include "RaftArduino.h"
 #include "ScaderCommon.h"
 #include "RaftUtils.h"
@@ -73,6 +74,12 @@ void ScaderOpener::setup()
                 return getStatusHash(stateHash);
             }
         );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 }
 
@@ -238,8 +245,17 @@ RaftRetCode ScaderOpener::apiControl(const String &reqStr, String &respStr, cons
 
 String ScaderOpener::getStatusJSON() const
 {
-    // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"status\":{" + _doorOpener.getStatusJSON(false) + "}}";
+    String body = getStatusBodyJSON();
+    return "{" + _scaderCommon.getStatusJSON() + (body.length() ? "," + body : String()) + "}";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope, no enclosing braces, no leading comma) — for ScaderPublisher
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderOpener::getStatusBodyJSON() const
+{
+    return "\"status\":{" + _doorOpener.getStatusJSON(false) + "}";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -247,6 +263,12 @@ String ScaderOpener::getStatusJSON() const
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ScaderOpener::getStatusHash(std::vector<uint8_t>& stateHash)
+{
+    stateHash.clear();
+    appendStatusBodyHash(stateHash);
+}
+
+void ScaderOpener::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
 {
     _doorOpener.getStatusHash(stateHash);
 }

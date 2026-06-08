@@ -10,13 +10,14 @@
 
 #include "RaftArduino.h"
 #include "ScaderCommon.h"
+#include "IScaderStatusBody.h"
 #include "RaftUtils.h"
 #include "DoorOpener.h"
 #include "UIModule.h"
 
 class APISourceInfo;
 
-class ScaderOpener : public RaftSysMod
+class ScaderOpener : public RaftSysMod, public IScaderStatusBody
 {
 public:
     ScaderOpener(const char *pModuleName, RaftJsonIF& sysConfig);
@@ -40,6 +41,11 @@ protected:
 
     // Status
     virtual String getStatusJSON() const override final;
+
+    // IScaderStatusBody
+    virtual String getStatusBodyJSON() const override final;
+    virtual void appendStatusBodyHash(std::vector<uint8_t>& stateHash) override final;
+    virtual bool isScaderEnabled() const override final { return _scaderCommon.isEnabled(); }
 
 private:
 

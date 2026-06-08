@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ScaderShades.h"
+#include "ScaderPublisher.h"
 #include "RaftArduino.h"
 #include "RaftUtils.h"
 #include "ConfigPinMap.h"
@@ -117,6 +118,12 @@ void ScaderShades::setup()
             // [this](const char* messageName, std::vector<uint8_t>& stateHash) {
             // }
             );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 
     // Element names
@@ -400,6 +407,16 @@ void ScaderShades::getLightLevels(int lightLevels[], int numLevels) const
 
 String ScaderShades::getStatusJSON() const
 {
+    String body = getStatusBodyJSON();
+    return "{" + _scaderCommon.getStatusJSON() + (body.length() ? "," + body : String()) + "}";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope, no enclosing braces, no leading comma) — for ScaderPublisher
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderShades::getStatusBodyJSON() const
+{
     String lightLevelsStr;
     if (_lightLevelsEnabled)
     {
@@ -422,8 +439,17 @@ String ScaderShades::getStatusJSON() const
         elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(isShadeMoving(i) ? "1" : "0") + "}";
     }
 
-    // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elemStatus + "],\"lux\":[" + lightLevelsStr + "]}";
+    return "\"elems\":[" + elemStatus + "],\"lux\":[" + lightLevelsStr + "]";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body hash — for ScaderPublisher
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ScaderShades::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
+{
+    for (int i = 0; i < _elemNames.size(); i++)
+        stateHash.push_back(isShadeMoving(i) ? 1 : 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

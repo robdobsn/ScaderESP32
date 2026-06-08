@@ -96,7 +96,7 @@ public:
         return jsonStr;
     }
 
-    bool isEnabled()
+    bool isEnabled() const
     {
         return _isEnabled;
     }

@@ -24,6 +24,7 @@
 #include "ScaderElecMeters.h"
 #include "ScaderBTHome.h"
 #include "ScaderMarbleRun.h"
+#include "ScaderPublisher.h"
 // #include "ScaderCat.h"
 // #include "ScaderWaterer.h"
 #include "MotorControl.h"
@@ -68,6 +69,7 @@ extern "C" void app_main(void)
     deviceFactory.registerDevice("MMWave", DeviceMMWave::create);
 
     // Scader hardware support
+    raftCoreApp.registerSysMod("ScaderPublisher", ScaderPublisher::create, true);
     raftCoreApp.registerSysMod("ScaderRelays", ScaderRelays::create, true);
     raftCoreApp.registerSysMod("ScaderShades", ScaderShades::create, true);
     raftCoreApp.registerSysMod("ScaderOpener", ScaderOpener::create, true);

@@ -10,6 +10,7 @@
 #include "Logger.h"
 #include "RaftArduino.h"
 #include "ScaderRFID.h"
+#include "ScaderPublisher.h"
 #include "ConfigPinMap.h"
 #include "RaftUtils.h"
 #include "RestAPIEndpointManager.h"
@@ -111,6 +112,12 @@ void ScaderRFID::setup()
                 return getStatusHash(stateHash);
             }
         );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 
     // HW Now initialised
@@ -252,12 +259,25 @@ String ScaderRFID::getStatusJSON() const
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope) — for ScaderPublisher; RFID has no body fields
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderRFID::getStatusBodyJSON() const
+{
+    return String();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Check status change
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ScaderRFID::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     stateHash.clear();
+}
+
+void ScaderRFID::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
+{
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

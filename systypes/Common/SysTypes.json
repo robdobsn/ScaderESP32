@@ -68,27 +68,7 @@
                 "qos": 1,
                 "pubSources": [
                     {
-                        "pubTopic": "ScaderShades",
-                        "rateHz": 0.1,
-                        "trigger": "time_or_change"
-                    },
-                    {
-                        "pubTopic": "ScaderLocks",
-                        "rateHz": 0.1,
-                        "trigger": "time_or_change"
-                    },
-                    {
-                        "pubTopic": "ScaderRelays",
-                        "rateHz": 0.1,
-                        "trigger": "time_or_change"
-                    },
-                    {
-                        "pubTopic": "ScaderOpener",
-                        "rateHz": 0.1,
-                        "trigger": "time_or_change"
-                    },
-                    {
-                        "pubTopic": "ScaderRFID",
+                        "pubTopic": "Scader",
                         "rateHz": 0.1,
                         "trigger": "time_or_change"
                     }
@@ -232,6 +212,9 @@
         "nimLogLev": "E"
     },
     "Publish": {
+        "enable": 1
+    },
+    "ScaderPublisher": {
         "enable": 1
     }
 }

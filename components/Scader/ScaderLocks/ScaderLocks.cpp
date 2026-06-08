@@ -10,6 +10,7 @@
 #include "Logger.h"
 #include "RaftArduino.h"
 #include "ScaderLocks.h"
+#include "ScaderPublisher.h"
 #include "ConfigPinMap.h"
 #include "RaftUtils.h"
 #include "RestAPIEndpointManager.h"
@@ -169,6 +170,12 @@ void ScaderLocks::setup()
                 return getStatusHash(stateHash);
             }
         );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 
     // HW Now initialised
@@ -377,6 +384,16 @@ uint32_t ScaderLocks::executeUnlockLock(std::vector<int> elemNums, bool unlock)
 
 String ScaderLocks::getStatusJSON() const
 {
+    String body = getStatusBodyJSON();
+    return "{" + _scaderCommon.getStatusJSON() + (body.length() ? "," + body : String()) + "}";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope, no enclosing braces, no leading comma) — for ScaderPublisher
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderLocks::getStatusBodyJSON() const
+{
     // Get status
     String elemStatus;
     for (int i = 0; i < _elemNames.size(); i++)
@@ -394,16 +411,13 @@ String ScaderLocks::getStatusJSON() const
     ThreadSafeQueue<String>& tagReadQueue = const_cast<ThreadSafeQueue<String>&>(_tagReadQueue);
     if (tagReadQueue.get(rfidTagRead))
     {
-        rfidTagRead = ",\"RFIDTag\":\"" + rfidTagRead + "\"";
+        rfidTagRead = "\"RFIDTag\":\"" + rfidTagRead + "\",";
     }
 
     // Bell status str
     String bellStatus = _bellPressedPin >= 0 ? (digitalRead(_bellPressedPin) == _bellPressedPinLevel ? "Y" : "N") : "K";
 
-    // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + rfidTagRead + 
-            ",\"bell\":\"" + bellStatus + 
-            "\",\"elems\":[" + elemStatus + "]}";
+    return rfidTagRead + "\"bell\":\"" + bellStatus + "\",\"elems\":[" + elemStatus + "]";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -414,7 +428,11 @@ void ScaderLocks::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     // Clear hash initially
     stateHash.clear();
+    appendStatusBodyHash(stateHash);
+}
 
+void ScaderLocks::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
+{
     // Add door strike status to the hash
     for (const DoorStrike& doorStrike : _doorStrikes)
         doorStrike.getStatusHash(stateHash);

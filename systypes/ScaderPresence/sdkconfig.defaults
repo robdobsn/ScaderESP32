@@ -1,8 +1,0 @@
-# ScaderPresence-specific overrides (Common sdkconfig.defaults provides the base)
-
-# Serial Console - UART (not USB)
-CONFIG_ESP_PHY_ENABLE_USB=n
-CONFIG_ESP_CONSOLE_UART_DEFAULT=y
-CONFIG_ESP_CONSOLE_USB_CDC=n
-CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=n
-CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y

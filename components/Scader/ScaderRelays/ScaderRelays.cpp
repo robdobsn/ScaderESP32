@@ -11,6 +11,7 @@
 #include "RaftArduino.h"
 #include "ScaderRelays.h"
 #include "ScaderCommon.h"
+#include "ScaderPublisher.h"
 #include "ConfigPinMap.h"
 #include "RaftUtils.h"
 #include "RestAPIEndpointManager.h"
@@ -175,6 +176,12 @@ void ScaderRelays::setup()
                 return getStatusHash(stateHash);
             }
         );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 
     // HW Now initialised
@@ -310,7 +317,16 @@ RaftRetCode ScaderRelays::apiControl(const String &reqStr, String &respStr, cons
 
 String ScaderRelays::getStatusJSON() const
 {
-    // Get status
+    String body = getStatusBodyJSON();
+    return "{" + _scaderCommon.getStatusJSON() + (body.length() ? "," + body : String()) + "}";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope, no enclosing braces, no leading comma) — for ScaderPublisher
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderRelays::getStatusBodyJSON() const
+{
     String elemStatus;
     for (int i = 0; i < _elemNames.size(); i++)
     {
@@ -318,12 +334,7 @@ String ScaderRelays::getStatusJSON() const
             elemStatus += ",";
         elemStatus += R"({"name":")" + _elemNames[i] + R"(","state":)" + String(_elemStates[i]) + "}";
     }
-
-    // Get mains sync status
-    String mainsSyncJson = ",\"mainsHz\":" + String(_spiDimmer.getMainsHz(), 1);
-
-    // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + mainsSyncJson + ",\"elems\":[" + elemStatus + "]}";
+    return "\"mainsHz\":" + String(_spiDimmer.getMainsHz(), 1) + ",\"elems\":[" + elemStatus + "]";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -333,6 +344,11 @@ String ScaderRelays::getStatusJSON() const
 void ScaderRelays::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     stateHash.clear();
+    appendStatusBodyHash(stateHash);
+}
+
+void ScaderRelays::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
+{
     for (uint32_t state : _elemStates)
         stateHash.push_back(state & 0xff);
 }

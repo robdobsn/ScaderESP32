@@ -11,12 +11,13 @@
 #include "RaftUtils.h"
 #include "RaftSysMod.h"
 #include "ScaderCommon.h"
+#include "IScaderStatusBody.h"
 #include "RFIDModuleBase.h"
 #include "StatusIndicator.h"
 
 class APISourceInfo;
 
-class ScaderRFID : public RaftSysMod
+class ScaderRFID : public RaftSysMod, public IScaderStatusBody
 {
   public:
     static const int DEFAULT_MAX_ELEMS = 2;
@@ -41,6 +42,11 @@ protected:
 
     // Status
     virtual String getStatusJSON() const override final;
+
+    // IScaderStatusBody
+    virtual String getStatusBodyJSON() const override final;
+    virtual void appendStatusBodyHash(std::vector<uint8_t>& stateHash) override final;
+    virtual bool isScaderEnabled() const override final { return _scaderCommon.isEnabled(); }
     
 private:
     // Common

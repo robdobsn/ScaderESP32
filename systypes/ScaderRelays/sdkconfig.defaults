@@ -1,15 +1,10 @@
 # ScaderRelays-specific overrides (Common sdkconfig.defaults provides the base)
 
-# Bluetooth
-CONFIG_BT_ENABLED=y
-CONFIG_BTDM_CTRL_MODE_BLE_ONLY=y
-CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY=n
-CONFIG_BTDM_CTRL_MODE_BTDM=n
-CONFIG_BT_NIMBLE_ENABLED=y
-CONFIG_BT_NIMBLE_ROLE_CENTRAL=y
-CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
-CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS=n
-CONFIG_BT_NIMBLE_LOG_LEVEL_WARNING=y
+# Bluetooth disabled - these are wired Ethernet relay boxes with no active BTHome
+# sensors, and the NimBLE stack is ~150KB of flash we need to fit within the
+# 0x1b0000 app slots on legacy-partition devices already in the field.
+CONFIG_BT_ENABLED=n
+CONFIG_BT_NIMBLE_ENABLED=n
 
 # Ethernet (Olimex ESP32-PoE-ISO: internal EMAC + LAN8710 PHY over RMII)
 # RMII clock mode/GPIO live in NetworkSettings JSON now (IDF 6.0 dropped the Kconfig options).

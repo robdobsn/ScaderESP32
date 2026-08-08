@@ -4,10 +4,10 @@ set(DEV_TYPE_JSON_FILES "devtypes/DeviceTypeRecords.json")
 # Raft components
 set(RAFT_COMPONENTS
     RaftCore@v1.52.0
-    RaftSysMods@1.20.1
-    RaftI2C@1.18.1
-    RaftMotorControl@1.8.1
-    RaftWebServer@1.15.1
+    RaftSysMods@v1.20.1
+    RaftI2C@v1.18.1
+    RaftMotorControl@v1.8.1
+    RaftWebServer@v1.15.1
 )
 
 # File system

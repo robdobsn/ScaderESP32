@@ -61,26 +61,37 @@ public:
     String getStatusJSON() const
     {
         // Get network information
+        // NetworkSystem publishes nested objects:
+        //   "eth":     {"conn":<0|1>, "IP":"<ip>", "MAC":"<mac>"}
+        //   "wifiSTA": {"conn":<0|1>, "SSID":"...", "MAC":"<mac>", "IP":"<ip>" (only when connected)}
         RaftJson networkJson = _base.sysModGetStatusJSON("NetMan");
 
         // Extract hostname
         String hostname = networkJson.getString("hostname", "");
 
-        // Check if ethernet connected
-        bool ethConnected = networkJson.getLong("ethConn", false) != 0;
+        // Check if ethernet or WiFi STA are connected (with IP)
+        bool ethConnected = networkJson.getLong("eth/conn", 0) != 0;
+        bool wifiConnected = networkJson.getLong("wifiSTA/conn", 0) != 0;
 
-        // Extract MAC address
+        // Extract MAC address and IP address (prefer Ethernet if both are up)
         String macAddress;
         String ipAddress;
         if (ethConnected)
         {
-            macAddress = getSystemMACAddressStr(ESP_MAC_ETH, ":").c_str(),
-            ipAddress = networkJson.getString("ethIP", "");
+            macAddress = getSystemMACAddressStr(ESP_MAC_ETH, ":").c_str();
+            ipAddress = networkJson.getString("eth/IP", "");
+        }
+        else if (wifiConnected)
+        {
+            macAddress = getSystemMACAddressStr(ESP_MAC_WIFI_STA, ":").c_str();
+            ipAddress = networkJson.getString("wifiSTA/IP", "");
         }
         else
         {
-            macAddress = getSystemMACAddressStr(ESP_MAC_WIFI_STA, ":").c_str(),
-            ipAddress = networkJson.getString("IP", "");
+            // Not connected — still report the WiFi STA MAC so the address-resolver can
+            // correlate the envelope with the device by MAC. IP remains blank.
+            macAddress = getSystemMACAddressStr(ESP_MAC_WIFI_STA, ":").c_str();
+            ipAddress = "";
         }
 
         // Format base JSON

@@ -11,6 +11,7 @@
 #include "RaftArduino.h"
 #include "ScaderCommon.h"
 #include "ScaderPulseCounter.h"
+#include "ScaderPublisher.h"
 #include "ConfigPinMap.h"
 #include "RaftUtils.h"
 #include "RestAPIEndpointManager.h"
@@ -89,6 +90,12 @@ void ScaderPulseCounter::setup()
                 return getStatusHash(stateHash);
             }
         );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 
     // HW Now initialised
@@ -169,11 +176,17 @@ RaftRetCode ScaderPulseCounter::apiControl(const String &reqStr, String &respStr
 
 String ScaderPulseCounter::getStatusJSON() const
 {
-    // Pulse count JSON if enabled
-    String pulseCountStr = R"(,"pulseCount":)" + String(_pulseCount);
+    String body = getStatusBodyJSON();
+    return "{" + _scaderCommon.getStatusJSON() + (body.length() ? "," + body : String()) + "}";
+}
 
-    // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + pulseCountStr + "}";
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope, no enclosing braces, no leading comma) — for ScaderPublisher
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderPulseCounter::getStatusBodyJSON() const
+{
+    return R"("pulseCount":)" + String(_pulseCount);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -183,7 +196,15 @@ String ScaderPulseCounter::getStatusJSON() const
 void ScaderPulseCounter::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     stateHash.clear();
+    appendStatusBodyHash(stateHash);
+}
+
+void ScaderPulseCounter::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
+{
     stateHash.push_back(_pulseCount & 0xff);
+    stateHash.push_back((_pulseCount >> 8) & 0xff);
+    stateHash.push_back((_pulseCount >> 16) & 0xff);
+    stateHash.push_back((_pulseCount >> 24) & 0xff);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

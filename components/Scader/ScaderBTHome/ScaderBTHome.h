@@ -10,12 +10,13 @@
 
 #include "RaftCore.h"
 #include "ScaderCommon.h"
+#include "IScaderStatusBody.h"
 #include "DevicePollRecords_generated.h"
 #include "DeviceTypeRecords.h"
 
 class APISourceInfo;
 
-class ScaderBTHome : public RaftSysMod
+class ScaderBTHome : public RaftSysMod, public IScaderStatusBody
 {
 public:
     static const int DEFAULT_MAX_ELEMS = 24;
@@ -39,6 +40,11 @@ protected:
 
     // Status
     virtual String getStatusJSON() const override final;
+
+    // IScaderStatusBody
+    virtual String getStatusBodyJSON() const override final;
+    virtual void appendStatusBodyHash(std::vector<uint8_t>& stateHash) override final;
+    virtual bool isScaderEnabled() const override final { return _scaderCommon.isEnabled(); }
     
 private:
 

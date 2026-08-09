@@ -9,6 +9,7 @@
 #include <time.h>
 #include "RaftCore.h"
 #include "ScaderBTHome.h"
+#include "ScaderPublisher.h"
 
 #define DEBUG_SCADER_BTHOME
 
@@ -105,6 +106,12 @@ void ScaderBTHome::setup()
                 return getStatusHash(stateHash);
             }
         );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 
     // HW Now initialised
@@ -128,10 +135,21 @@ void ScaderBTHome::loop()
 
 String ScaderBTHome::getStatusJSON() const
 {
-    // Drain all pending updates into the elems array. getStatusJSON is the
-    // publish message generator, so each publish flushes the whole queue (the
-    // change-detection hash, based on _updatesEnqueued, fires once per new
-    // update so queued readings are published promptly rather than backing up).
+    String body = getStatusBodyJSON();
+    return "{" + _scaderCommon.getStatusJSON() + (body.length() ? "," + body : String()) + "}";
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope, no enclosing braces, no leading comma) — for ScaderPublisher
+// Drains all pending updates into the elems array. This function is the single publish source of
+// truth for BTHome data: whichever publisher (legacy per-module or unified ScaderPublisher) is
+// subscribed will drain the queue exactly once per fire; the change-detection hash (based on
+// _updatesEnqueued) triggers a publish for every new update so queued readings are published
+// promptly rather than backing up.
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderBTHome::getStatusBodyJSON() const
+{
     String elems;
     uint32_t numElems = 0;
     BTHomeUpdate bthomeUpdate;
@@ -146,7 +164,7 @@ String ScaderBTHome::getStatusJSON() const
 
 #ifdef DEBUG_SCADER_BTHOME
         String hexStr = Raft::getHexStr(bthomeUpdate.msgData);
-        LOG_I(MODULE_PREFIX, "getStatusJSON %s tsMs %d decoded recs %d ID %d MAC %llx %d %d %d %f %f",
+        LOG_I(MODULE_PREFIX, "getStatusBodyJSON %s tsMs %d decoded recs %d ID %d MAC %llx %d %d %d %f %f",
                 hexStr.c_str(), (unsigned int)bthomeUpdate.timestampMs,
                 recsDecoded,
                 deviceData.ID,
@@ -180,10 +198,10 @@ String ScaderBTHome::getStatusJSON() const
     }
 
 #ifdef DEBUG_SCADER_BTHOME
-    LOG_I(MODULE_PREFIX, "getStatusJSON numElems %d", (int)numElems);
+    LOG_I(MODULE_PREFIX, "getStatusBodyJSON numElems %d", (int)numElems);
 #endif
 
-    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elems + "]}";
+    return "\"elems\":[" + elems + "]";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -192,11 +210,16 @@ String ScaderBTHome::getStatusJSON() const
 
 void ScaderBTHome::getStatusHash(std::vector<uint8_t>& stateHash)
 {
+    stateHash.clear();
+    appendStatusBodyHash(stateHash);
+}
+
+void ScaderBTHome::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
+{
     // Base the hash on the monotonic count of updates received. Each new update
     // changes the hash (triggering a change-based publish); draining the queue
     // does not change it, so there is no spurious re-publish once it is empty.
     uint32_t count = _updatesEnqueued;
-    stateHash.clear();
     stateHash.push_back(count & 0xff);
     stateHash.push_back((count >> 8) & 0xff);
     stateHash.push_back((count >> 16) & 0xff);

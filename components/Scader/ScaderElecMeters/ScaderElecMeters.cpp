@@ -11,6 +11,7 @@
 #include "RaftArduino.h"
 #include "ScaderElecMeters.h"
 #include "ScaderCommon.h"
+#include "ScaderPublisher.h"
 #include "ConfigPinMap.h"
 #include "RaftUtils.h"
 #include "RestAPIEndpointManager.h"
@@ -191,6 +192,12 @@ void ScaderElecMeters::setup()
                 return getStatusHash(stateHash);
             }
         );
+
+        // Register with unified ScaderPublisher (if present)
+        RaftSysMod* pScaderPub = pSysManager->getSysMod("ScaderPublisher");
+        if (pScaderPub)
+            static_cast<ScaderPublisher*>(pScaderPub)->registerContributor(
+                    _scaderCommon.getModuleName().c_str(), this);
     }
 
     // CT Processors
@@ -351,19 +358,24 @@ RaftRetCode ScaderElecMeters::apiControl(const String &reqStr, String &respStr, 
 
 String ScaderElecMeters::getStatusJSON() const
 {
-    // Get status
-    String elemStatus;
+    String body = getStatusBodyJSON();
+    return "{" + _scaderCommon.getStatusJSON() + (body.length() ? "," + body : String()) + "}";
+}
 
-    // Get status for each element
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status body (no envelope, no enclosing braces, no leading comma) — for ScaderPublisher
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String ScaderElecMeters::getStatusBodyJSON() const
+{
+    String elemStatus;
     for (int i = 0; i < _elemNames.size(); i++)
     {
         if (i > 0)
             elemStatus += ",";
         elemStatus += _ctProcessors[i].getStatusJSON();
     }
-
-    // Add base JSON
-    return "{" + _scaderCommon.getStatusJSON() + ",\"elems\":[" + elemStatus + "]}";
+    return "\"elems\":[" + elemStatus + "]";
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,6 +385,11 @@ String ScaderElecMeters::getStatusJSON() const
 void ScaderElecMeters::getStatusHash(std::vector<uint8_t>& stateHash)
 {
     stateHash.clear();
+    appendStatusBodyHash(stateHash);
+}
+
+void ScaderElecMeters::appendStatusBodyHash(std::vector<uint8_t>& stateHash)
+{
     for (int i = 0; i < _elemNames.size(); i++)
     {
         std::vector<uint8_t> elemHash;

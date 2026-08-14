@@ -123,12 +123,17 @@ GET /shade/2/stop        # Stop shade 2
 
 **Features**:
 - Motor control with angle sensor (AS5600) and force sensor
-- UI module integration for control panel
-- Exit button support
-- Motion/presence sensors on both sides
+- UI module integration for control panel (M5Stack over UART)
+- Conservatory push-button (entry/exit)
+- Two PIR sensors with independent enable flags:
+  - Conservatory ("IN") PIR wired directly to the ESP32 (`consvPirPin`)
+  - Kitchen ("OUT") PIR wired to the M5Stack UI panel and forwarded over UART
+  - Each side is gated by its own `inEnabled` / `outEnabled` flag (persisted in NVS)
+  - See [devdocs/SCADER_OPENER_OPERATION.md](devdocs/SCADER_OPENER_OPERATION.md)
 - Position feedback using angle sensor
 - Force monitoring for obstruction detection
 - State machine for door operation (opening/closing/stopped)
+- Auto-close after `DoorRemainOpenTimeSecs` when at least one side is enabled
 - Persistent state in NVS
 
 **REST API Endpoint**: `/opener/<command>`

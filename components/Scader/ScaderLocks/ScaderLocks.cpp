@@ -332,7 +332,7 @@ RaftRetCode ScaderLocks::apiTagRead(const String &reqStr, String &respStr, const
         // Add to tag queue only if it is empty
         bool queueEmpty = (_tagReadQueue.count() == 0);
         if (queueEmpty)
-            _tagReadQueue.put(tagID);
+            (void)_tagReadQueue.put(tagID);
         LOG_I(MODULE_PREFIX, "apiTagRead tagID %s %s", tagID.c_str(), 
                     queueEmpty ? "added to queue" : "queue not empty");
     }

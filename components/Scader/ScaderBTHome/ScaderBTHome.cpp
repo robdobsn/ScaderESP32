@@ -73,8 +73,8 @@ void ScaderBTHome::setup()
                     device.registerForDeviceData(
                         [this](uint16_t deviceTypeIdx, std::vector<uint8_t> data, const void* pCallbackInfo) {
                             // Add to queue and bump the received counter (drives change detection)
-                            _bthomeUpdateQueue.put(BTHomeUpdate{data, millis()});
-                            _updatesEnqueued++;
+                            if (_bthomeUpdateQueue.put(BTHomeUpdate{data, millis()}))
+                                _updatesEnqueued++;
 
                             // Debug
 #ifdef DEBUG_SCADER_BTHOME

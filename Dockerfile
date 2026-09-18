@@ -1,4 +1,4 @@
-FROM espressif/idf:v6.0.1
+FROM espressif/idf:v6.0.2
 WORKDIR /project
 # Install dependencies required for Node.js install
 RUN apt-get update && apt-get install -y curl software-properties-common && \

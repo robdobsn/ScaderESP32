@@ -68,6 +68,9 @@ public:
                 .stop_bits = UART_STOP_BITS_1,
                 .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
                 .rx_flow_ctrl_thresh = 122,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 1, 0)
+                .rx_glitch_filt_thresh = 0,
+#endif
                 .source_clk = UART_SCLK_DEFAULT,
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
                 .flags = {

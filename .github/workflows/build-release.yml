@@ -53,7 +53,29 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       version: ${{ steps.set-version.outputs.version }}
       git_tag: ${{ steps.set-version.outputs.git_tag }}
+      idf_version: ${{ steps.set-idf.outputs.idf_version }}
     steps:
+      - name: Checkout SysType config
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: systypes/Common/features.cmake
+          sparse-checkout-cone-mode: false
+
+      - name: Resolve ESP-IDF version
+        id: set-idf
+        run: |
+          set -euo pipefail
+          # Single source of truth: ESP_IDF_VERSION in systypes/Common/features.cmake
+          # (the same value "raft build" uses for local and Docker builds)
+          IDF_VERSION=$(sed -nE 's/^[[:space:]]*set\(ESP_IDF_VERSION[[:space:]]+"?([0-9.]+)"?\).*/\1/p' \
+            systypes/Common/features.cmake | head -n 1)
+          if [[ -z "${IDF_VERSION}" ]]; then
+            echo "::error::ESP_IDF_VERSION not found in systypes/Common/features.cmake" >&2
+            exit 1
+          fi
+          echo "idf_version=${IDF_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved ESP-IDF version=${IDF_VERSION}"
+
       - name: Resolve matrix
         id: set-matrix
         env:
@@ -100,7 +122,7 @@ jobs:
     needs: resolve
     runs-on: ubuntu-latest
     container:
-      image: espressif/idf:v6.0.1
+      image: espressif/idf:v${{ needs.resolve.outputs.idf_version }}
       options: --user root
     strategy:
       fail-fast: false
